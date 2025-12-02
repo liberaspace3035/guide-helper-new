@@ -1,0 +1,19 @@
+/* ガイド依頼一覧スタイル */
+.info-text {
+  background-color: #dbeafe;
+  color: #1e40af;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 2rem;
+}
+
+.request-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.request-actions button {
+  flex: 1;
+}
+

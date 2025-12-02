@@ -1,0 +1,348 @@
+/* ダッシュボードスタイル - モダンで機能的なレイアウト */
+.dashboard {
+  max-width: 100%;
+}
+
+.dashboard h1 {
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: 0;
+}
+
+.welcome-message {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xl);
+  font-weight: 400;
+}
+
+/* 通知セクション */
+.notifications-section {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.notifications-section h2 {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+  letter-spacing: 0;
+}
+
+.notification-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.notification-item {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color var(--transition-fast);
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item:hover {
+  background-color: var(--surface-hover);
+  border-radius: var(--radius-md);
+}
+
+.notification-item strong {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.notification-item p {
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.notification-item small {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+/* ダッシュボードカード */
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+}
+
+.card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-color);
+  transform: translateY(-2px);
+}
+
+.card h3 {
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.card p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.card .btn-primary,
+.card .btn-secondary {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+/* 統計情報 */
+.stats-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.stats-list li {
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+  color: var(--text-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stats-list li:last-child {
+  border-bottom: none;
+}
+
+.stats-list li strong {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* 利用時間統計 */
+.usage-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.usage-current-month {
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.usage-current-month h4 {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.usage-total {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--primary-color);
+  margin: var(--spacing-sm) 0 var(--spacing-md) 0;
+}
+
+.usage-by-type {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+}
+
+.usage-type-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+  font-size: 14px;
+}
+
+.usage-type-label {
+  color: var(--text-secondary);
+}
+
+.usage-type-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.usage-monthly {
+  margin-top: var(--spacing-sm);
+}
+
+.usage-monthly h4 {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.usage-monthly-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.usage-monthly-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.usage-monthly-item:last-child {
+  border-bottom: none;
+}
+
+.usage-month {
+  color: var(--text-secondary);
+}
+
+.usage-hours {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* マッチング一覧セクション */
+.matchings-section {
+  margin-top: var(--spacing-xl);
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.matchings-section h2 {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-lg);
+  letter-spacing: 0;
+}
+
+.matchings-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.matching-card {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  transition: all var(--transition-base);
+}
+
+.matching-card:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--border-color);
+}
+
+.matching-info {
+  flex: 1;
+}
+
+.matching-info h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.matching-info p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: var(--spacing-xs) 0;
+}
+
+.matching-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.matching-actions .btn-primary,
+.matching-actions .btn-secondary {
+  min-width: 140px;
+  justify-content: center;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .dashboard h1 {
+    font-size: 24px;
+  }
+
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .card {
+    padding: var(--spacing-md);
+  }
+
+  .matching-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .matching-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .matching-actions .btn-primary,
+  .matching-actions .btn-secondary {
+    width: 100%;
+  }
+}

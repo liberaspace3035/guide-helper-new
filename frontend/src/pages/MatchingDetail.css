@@ -1,0 +1,84 @@
+/* マッチング詳細スタイル */
+.matching-detail-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.matching-detail-container h1 {
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xl);
+  letter-spacing: 0;
+}
+
+.matching-card {
+  background-color: var(--surface-color);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+
+.matching-info,
+.matching-participants {
+  margin-bottom: var(--spacing-xl);
+}
+
+.matching-info h2,
+.matching-participants h3 {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+  letter-spacing: 0;
+}
+
+.matching-info p,
+.matching-participants p {
+  font-size: 14px;
+  margin: var(--spacing-sm) 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.matching-info strong {
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-right: var(--spacing-xs);
+}
+
+.matching-actions {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.matching-actions .btn-primary,
+.matching-actions .btn-secondary {
+  min-width: 160px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .matching-detail-container h1 {
+    font-size: 24px;
+  }
+
+  .matching-card {
+    padding: var(--spacing-lg);
+  }
+
+  .matching-actions {
+    flex-direction: column;
+  }
+
+  .matching-actions .btn-primary,
+  .matching-actions .btn-secondary {
+    width: 100%;
+    min-width: auto;
+  }
+}
+

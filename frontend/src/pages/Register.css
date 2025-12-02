@@ -1,0 +1,154 @@
+/* 登録ページスタイル - クリーンでミニマル */
+.register-container {
+  height: 100vh;
+  max-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--background-color);
+  padding: var(--spacing-md);
+  overflow: hidden;
+}
+
+.register-card {
+  background-color: var(--surface-color);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  width: 100%;
+  max-width: 500px;
+  max-height: 95vh;
+  border: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.register-card h1 {
+  font-size: 22px;
+  font-weight: 400;
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+  color: var(--text-primary);
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+.register-card form {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: var(--spacing-xs);
+}
+
+.register-card form::-webkit-scrollbar {
+  width: 6px;
+}
+
+.register-card form::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.register-card form::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.register-card form::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+  margin-bottom: var(--spacing-xs);
+  font-size: 14px;
+}
+
+.required {
+  color: var(--error-color);
+  margin-left: 2px;
+}
+
+small {
+  display: block;
+  margin-top: var(--spacing-xs);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.error-message {
+  background-color: #fce8e6;
+  color: var(--error-color);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  border-left: 4px solid var(--error-color);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-light);
+}
+
+.login-link a {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .register-container {
+    padding: var(--spacing-sm);
+    align-items: flex-start;
+    padding-top: var(--spacing-md);
+  }
+
+  .register-card {
+    max-height: 98vh;
+    padding: var(--spacing-lg);
+  }
+
+  .register-card h1 {
+    font-size: 20px;
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .register-container {
+    padding: var(--spacing-xs);
+    padding-top: var(--spacing-sm);
+  }
+
+  .register-card {
+    padding: var(--spacing-md);
+    max-height: 100vh;
+  }
+
+  .register-card h1 {
+    font-size: 18px;
+    margin-bottom: var(--spacing-sm);
+  }
+}

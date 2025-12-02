@@ -1,0 +1,17 @@
+{
+  "name": "guide-matching-app",
+  "version": "1.0.0",
+  "description": "視覚障害者とガイドヘルパーのマッチングアプリケーション",
+  "main": "index.js",
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "build:frontend": "cd frontend && npm run build",
+    "start:backend": "cd backend && npm start"
+  },
+  "keywords": ["guide", "matching", "accessibility"],
+  "author": "",
+  "license": "ISC"
+}
+
