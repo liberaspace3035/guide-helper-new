@@ -6,42 +6,6 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// 未読メッセージ数取得（パラメータ付きルートの前に定義する必要がある）
-router.get('/unread-count', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    // ユーザーが参加しているマッチングのIDを取得
-    const [matchings] = await pool.execute(
-      'SELECT id FROM matchings WHERE user_id = ? OR guide_id = ?',
-      [userId, userId]
-    );
-
-    if (matchings.length === 0) {
-      return res.json({ unread_count: 0 });
-    }
-
-    const matchingIds = matchings.map(m => m.id);
-
-    // 自分が送信していないメッセージの数をカウント
-    // より正確には、各マッチングで最後に開いた時刻を記録する必要があるが、
-    // シンプルに「自分が送信していないメッセージ」を未読として扱う
-    const placeholders = matchingIds.map(() => '?').join(',');
-    const [result] = await pool.execute(
-      `SELECT COUNT(*) as count
-       FROM chat_messages
-       WHERE matching_id IN (${placeholders})
-       AND sender_id != ?`,
-      [...matchingIds, userId]
-    );
-
-    res.json({ unread_count: result[0].count });
-  } catch (error) {
-    console.error('未読メッセージ数取得エラー:', error);
-    res.status(500).json({ error: '未読メッセージ数の取得中にエラーが発生しました' });
-  }
-});
-
 // チャットメッセージ送信
 router.post('/messages', authenticateToken, [
   body('matching_id').isInt().withMessage('マッチングIDを指定してください'),
@@ -128,6 +92,29 @@ router.get('/messages/:matching_id', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('メッセージ取得エラー:', error);
     res.status(500).json({ error: 'メッセージの取得中にエラーが発生しました' });
+  }
+});
+
+// 未読メッセージ数取得
+router.get('/unread-count', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // ユーザーが参加しているマッチングの未読メッセージ数を取得
+    // 未読 = 自分以外が送信したメッセージ（簡易実装）
+    const [result] = await pool.execute(
+      `SELECT COUNT(*) as count
+       FROM chat_messages cm
+       INNER JOIN matchings m ON cm.matching_id = m.id
+       WHERE (m.user_id = ? OR m.guide_id = ?)
+         AND cm.sender_id != ?`,
+      [userId, userId, userId]
+    );
+
+    res.json({ unread_count: result[0].count });
+  } catch (error) {
+    console.error('未読メッセージ数取得エラー:', error);
+    res.status(500).json({ error: '未読メッセージ数の取得中にエラーが発生しました' });
   }
 });
 

@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUser = async () => {
     try {
-      const response = await axios.get('/auth/me');
+      const response = await axios.get('/auth/user');
       setUser(response.data.user);
     } catch (error) {
       console.error('ユーザー情報取得エラー:', error);

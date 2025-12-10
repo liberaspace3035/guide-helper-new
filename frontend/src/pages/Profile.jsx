@@ -26,7 +26,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await axios.get('/auth/me');
+      const response = await axios.get('/auth/user');
       const userData = response.data.user;
       setFormData({
         name: userData.name || '',
@@ -97,7 +97,12 @@ const Profile = () => {
   };
 
   if (loading) {
-    return <div className="loading-container">読み込み中...</div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>読み込み中...</p>
+      </div>
+    );
   }
 
   return (

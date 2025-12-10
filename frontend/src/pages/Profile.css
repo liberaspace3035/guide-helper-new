@@ -17,7 +17,7 @@
   padding: var(--spacing-2xl);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-color);
 }
 
 .form-group {
@@ -86,7 +86,7 @@
   margin-top: var(--spacing-xl);
   justify-content: flex-end;
   padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-color);
 }
 
 .form-actions .btn-primary,

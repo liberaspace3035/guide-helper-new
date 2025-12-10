@@ -1,26 +1,65 @@
 /* 報告書フォームスタイル */
 .report-form-container {
-  max-width: 800px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.report-form-container h1 {
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xl);
+  letter-spacing: 0;
 }
 
 .report-form {
   background-color: var(--surface-color);
-  padding: 2rem;
-  border-radius: 0.5rem;
-  box-shadow: var(--shadow);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+  margin-bottom: var(--spacing-xs);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
 .form-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
 .form-actions {
   display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
   justify-content: flex-end;
+}
+
+.form-actions .btn-primary,
+.form-actions .btn-secondary {
+  min-width: 120px;
+}
+
+.error-message {
+  background-color: #fce8e6;
+  color: var(--error-color);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  border-left: 4px solid var(--error-color);
+  font-size: 14px;
 }
 
 @media (max-width: 768px) {

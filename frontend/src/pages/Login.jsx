@@ -22,6 +22,7 @@ const Login = () => {
     const result = await login(email, password);
 
     if (result.success) {
+      console.log(result.user);
       showSuccess('ログインに成功しました');
       if (result.user?.role === 'admin') {
         setTimeout(() => {

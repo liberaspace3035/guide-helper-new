@@ -190,7 +190,7 @@ router.post('/login', [
 });
 
 // 現在のユーザー情報取得
-router.get('/me', authenticateToken, async (req, res) => {
+router.get('/user', authenticateToken, async (req, res) => {
   try {
     const [users] = await pool.execute(
       'SELECT id, email, name, phone, role, created_at FROM users WHERE id = ?',

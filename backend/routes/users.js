@@ -13,7 +13,6 @@ router.get('/stats', authenticateToken, requireRole('admin'), async (req, res) =
     console.log('GET /api/users/stats - リクエスト受信');
     console.log('User:', req.user);
     // ユーザー数（ロール別）
-    console.log('=========================================================');
     const [userStats] = await pool.execute(
       `SELECT 
         COUNT(*) as total,

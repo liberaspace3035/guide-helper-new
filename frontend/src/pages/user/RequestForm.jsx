@@ -13,7 +13,6 @@ const RequestForm = () => {
     request_date: '',
     start_time: '',
     end_time: '',
-    duration: '',
     notes: ''
   });
   const [isVoiceInput, setIsVoiceInput] = useState(false);
@@ -318,19 +317,6 @@ const RequestForm = () => {
               />
             </div>
             <small>「X時」形式で入力してください（例: 14時～16時）</small>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="duration">所要時間（分）</label>
-            <input
-              type="number"
-              id="duration"
-              name="duration"
-              value={formData.duration}
-              onChange={handleChange}
-              min="1"
-              placeholder="60"
-            />
           </div>
         </div>
 

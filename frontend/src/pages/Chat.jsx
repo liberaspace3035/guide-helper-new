@@ -29,8 +29,22 @@ const Chat = () => {
   }, [matchingId]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // 初期読み込み時のみ即座にスクロール
+    if (messages.length > 0 && !loading) {
+      const timer = setTimeout(() => scrollToBottom(false), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    // 新しいメッセージが追加された場合のみスクロール
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.sender_id === user?.id || !lastMessage.isSending) {
+        setTimeout(() => scrollToBottom(true), 100);
+      }
+    }
+  }, [messages.length]);
 
   const fetchMatchingInfo = async () => {
     try {
@@ -44,20 +58,36 @@ const Chat = () => {
     }
   };
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (showLoading = false) => {
     try {
+      if (showLoading) setLoading(true);
       const response = await axios.get(`/chat/messages/${matchingId}`);
+      const previousLength = messages.length;
       setMessages(response.data.messages);
+      // 新しいメッセージが追加された場合のみスクロール
+      if (response.data.messages.length > previousLength) {
+        setTimeout(() => scrollToBottom(true), 100);
+      }
     } catch (error) {
       console.error('メッセージ取得エラー:', error);
+      if (error.response?.status === 403 || error.response?.status === 404) {
+        alert('このチャットにアクセスする権限がありません');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const scrollToBottom = () => {
+  const scrollToBottom = (smooth = false) => {
     if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      if (smooth) {
+        messagesContainerRef.current.scrollTo({
+          top: messagesContainerRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      } else {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
     }
   };
 
@@ -72,6 +102,30 @@ const Chat = () => {
     } else {
       return date.toLocaleString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    if (messageDate.getTime() === today.getTime()) {
+      return '今日';
+    } else if (messageDate.getTime() === yesterday.getTime()) {
+      return '昨日';
+    } else {
+      return date.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
+    }
+  };
+
+  const shouldShowDateSeparator = (currentMessage, previousMessage) => {
+    if (!previousMessage) return true;
+    const currentDate = new Date(currentMessage.created_at);
+    const previousDate = new Date(previousMessage.created_at);
+    return currentDate.toDateString() !== previousDate.toDateString();
   };
 
   // 音声認識の初期化
@@ -149,15 +203,34 @@ const Chat = () => {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
 
+    const messageToSend = newMessage.trim();
+    setNewMessage('');
     setSending(true);
+    
+    // 楽観的更新: 送信中のメッセージを一時的に表示
+    const tempMessage = {
+      id: `temp-${Date.now()}`,
+      sender_id: user?.id,
+      sender_name: user?.name || 'あなた',
+      message: messageToSend,
+      created_at: new Date().toISOString(),
+      isSending: true
+    };
+    
+    setMessages(prev => [...prev, tempMessage]);
+    setTimeout(() => scrollToBottom(true), 50);
+
     try {
       await axios.post('/chat/messages', {
         matching_id: parseInt(matchingId),
-        message: newMessage
+        message: messageToSend
       });
-      setNewMessage('');
-      fetchMessages(); // メッセージ一覧を更新
+      // メッセージ一覧を更新（一時メッセージを実際のメッセージに置き換え）
+      fetchMessages();
     } catch (error) {
+      // エラー時は一時メッセージを削除
+      setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
+      setNewMessage(messageToSend); // メッセージを復元
       alert('メッセージの送信に失敗しました');
       console.error(error);
     } finally {
@@ -165,8 +238,17 @@ const Chat = () => {
     }
   };
 
-  if (loading) {
-    return <div className="loading-container">読み込み中...</div>;
+  if (loading && messages.length === 0) {
+    return (
+      <div className="chat-loading-container">
+        <div className="chat-loading-spinner">
+          <div className="spinner-ring"></div>
+          <div className="spinner-ring"></div>
+          <div className="spinner-ring"></div>
+        </div>
+        <p>メッセージを読み込み中...</p>
+      </div>
+    );
   }
 
   const otherUserName = matchingInfo 
@@ -177,17 +259,25 @@ const Chat = () => {
     <div className="chat-container">
       <div className="chat-header">
         <div className="chat-header-info">
-          <Link to={`/matchings/${matchingId}`} className="chat-back-link">
+          <Link to={`/matchings/${matchingId}`} className="chat-back-link" aria-label="戻る">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
           </Link>
-          <div>
-            <h1>{otherUserName}さんとのチャット</h1>
+          <div className="chat-header-content">
+            <div className="chat-header-main">
+              <h1>{otherUserName}さんとのチャット</h1>
+              {matchingInfo && (
+                <p className="chat-subtitle">
+                  {matchingInfo.request_type} - {matchingInfo.masked_address}
+                </p>
+              )}
+            </div>
             {matchingInfo && (
-              <p className="chat-subtitle">
-                {matchingInfo.request_type} - {matchingInfo.masked_address}
-              </p>
+              <div className="chat-header-status">
+                <span className="status-dot"></span>
+                <span className="status-text">アクティブ</span>
+              </div>
             )}
           </div>
         </div>
@@ -202,42 +292,68 @@ const Chat = () => {
       >
         {messages.length === 0 ? (
           <div className="empty-messages">
-            <p>まだメッセージがありません</p>
+            <div className="empty-messages-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
+            <h3>まだメッセージがありません</h3>
             <p className="empty-messages-hint">メッセージを送信して会話を始めましょう</p>
           </div>
         ) : (
           <>
             {messages.map((message, index) => {
               const isOwnMessage = message.sender_id === user?.id;
+              const previousMessage = index > 0 ? messages[index - 1] : null;
               const showAvatar = index === 0 || messages[index - 1].sender_id !== message.sender_id;
               const showTime = index === messages.length - 1 || 
                 new Date(messages[index + 1].created_at).getTime() - new Date(message.created_at).getTime() > 300000; // 5分以上
+              const showDateSeparator = shouldShowDateSeparator(message, previousMessage);
               
               return (
-                <div
-                  key={message.id}
-                  className={`message-wrapper ${isOwnMessage ? 'message-wrapper-sent' : 'message-wrapper-received'}`}
-                >
-                  {!isOwnMessage && showAvatar && (
-                    <div className="message-avatar">
-                      {message.sender_name.charAt(0).toUpperCase()}
+                <React.Fragment key={message.id}>
+                  {showDateSeparator && (
+                    <div className="message-date-separator">
+                      <span>{formatDate(message.created_at)}</span>
                     </div>
                   )}
-                  <div className={`message ${isOwnMessage ? 'message-sent' : 'message-received'}`}>
+                  <div
+                    className={`message-wrapper ${isOwnMessage ? 'message-wrapper-sent' : 'message-wrapper-received'} ${message.isSending ? 'message-sending' : ''}`}
+                  >
                     {!isOwnMessage && showAvatar && (
-                      <div className="message-sender-name">{message.sender_name}</div>
+                      <div className="message-avatar">
+                        {message.sender_name.charAt(0).toUpperCase()}
+                      </div>
                     )}
-                    <div className="message-content">{message.message}</div>
-                    {showTime && (
-                      <div className="message-time">{formatTime(message.created_at)}</div>
+                    <div className={`message ${isOwnMessage ? 'message-sent' : 'message-received'}`}>
+                      {!isOwnMessage && showAvatar && (
+                        <div className="message-sender-name">{message.sender_name}</div>
+                      )}
+                      <div className="message-content">{message.message}</div>
+                      <div className="message-footer">
+                        {showTime && (
+                          <div className="message-time">{formatTime(message.created_at)}</div>
+                        )}
+                        {isOwnMessage && (
+                          <div className="message-status">
+                            {message.isSending ? (
+                              <span className="message-status-sending">送信中</span>
+                            ) : (
+                              <svg className="message-status-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M3 7L6 10L13 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {isOwnMessage && showAvatar && (
+                      <div className="message-avatar message-avatar-own">
+                        {user?.name?.charAt(0).toUpperCase() || 'U'}
+                      </div>
                     )}
                   </div>
-                  {isOwnMessage && showAvatar && (
-                    <div className="message-avatar message-avatar-own">
-                      {user?.name?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                  )}
-                </div>
+                </React.Fragment>
               );
             })}
             <div ref={messagesEndRef} />

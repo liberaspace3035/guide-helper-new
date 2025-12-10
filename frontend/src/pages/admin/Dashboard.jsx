@@ -179,7 +179,12 @@ const AdminDashboard = () => {
   };
 
   if (loading) {
-    return <div className="loading-container">読み込み中...</div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>読み込み中...</p>
+      </div>
+    );
   }
 
   return (
@@ -208,6 +213,8 @@ const AdminDashboard = () => {
         </button>
       </div>
 
+      {/* タブコンテンツラッパー */}
+      <div className="admin-tab-content">
       {/* ダッシュボードタブ */}
       {activeTab === 'dashboard' && (
         <>
@@ -445,7 +452,7 @@ const AdminDashboard = () => {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th>No</th>
                     <th>名前</th>
                     <th>メールアドレス</th>
                     <th>電話番号</th>
@@ -455,9 +462,9 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(user => (
+                  {users.map((user, index) => (
                     <tr key={user.id}>
-                      <td>{user.id}</td>
+                      <td>{index + 1}</td>
                       <td>{user.name}</td>
                       <td>{user.email}</td>
                       <td>{user.phone || '-'}</td>
@@ -504,7 +511,7 @@ const AdminDashboard = () => {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th>No</th>
                     <th>名前</th>
                     <th>メールアドレス</th>
                     <th>電話番号</th>
@@ -514,9 +521,9 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {guides.map(guide => (
+                  {guides.map((guide, index) => (
                     <tr key={guide.id}>
-                      <td>{guide.id}</td>
+                      <td>{index + 1}</td>
                       <td>{guide.name}</td>
                       <td>{guide.email}</td>
                       <td>{guide.phone || '-'}</td>
@@ -551,6 +558,7 @@ const AdminDashboard = () => {
           )}
         </section>
       )}
+      </div>
     </div>
   );
 };

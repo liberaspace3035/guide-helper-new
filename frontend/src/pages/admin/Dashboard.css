@@ -1,14 +1,25 @@
 /* 管理者ダッシュボードスタイル */
 .admin-dashboard {
   max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+}
+
+.admin-dashboard > h1 {
+  margin: 0 0 var(--spacing-xl) 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .admin-section {
   background-color: var(--surface-color);
-  padding: 2rem;
-  border-radius: 0.5rem;
-  box-shadow: var(--shadow);
-  margin-bottom: 2rem;
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-xl);
+  border: 1px solid var(--border-color);
 }
 
 .admin-section h2 {
@@ -107,7 +118,7 @@
 
 .stat-card {
   background-color: var(--background-color);
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
@@ -119,7 +130,7 @@
   color: var(--text-primary);
   margin: 0 0 1rem 0;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .stat-content {
@@ -132,7 +143,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0;
+  padding: 10px;
 }
 
 .stat-label {
@@ -160,7 +171,14 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: 2rem;
-  border-bottom: 2px solid var(--border-light);
+  border-bottom: 2px solid var(--border-color);
+}
+
+/* タブコンテンツラッパー - レイアウトシフトを防ぐ */
+.admin-tab-content {
+  width: 100%;
+  position: relative;
+  contain: layout style;
 }
 
 .admin-tab {

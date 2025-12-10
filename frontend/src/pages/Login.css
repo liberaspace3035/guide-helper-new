@@ -15,7 +15,7 @@
   box-shadow: var(--shadow-md);
   width: 100%;
   max-width: 400px;
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-color);
 }
 
 .login-card h1 {

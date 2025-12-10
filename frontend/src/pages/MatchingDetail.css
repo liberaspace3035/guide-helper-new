@@ -17,7 +17,7 @@
   padding: var(--spacing-2xl);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-color);
 }
 
 .matching-info,
@@ -51,7 +51,7 @@
 .matching-actions {
   margin-top: var(--spacing-xl);
   padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-color);
   display: flex;
   gap: var(--spacing-md);
 }
@@ -59,6 +59,7 @@
 .matching-actions .btn-primary,
 .matching-actions .btn-secondary {
   min-width: 160px;
+  padding: var(--spacing-md) var(--spacing-lg);
 }
 
 /* レスポンシブ対応 */

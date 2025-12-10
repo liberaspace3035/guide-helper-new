@@ -82,7 +82,25 @@ const Layout = () => {
       <aside className={`sidebar ${!sidebarVisible ? 'sidebar-hidden' : ''}`} role="navigation" aria-label="メインナビゲーション">
         <div className="sidebar-header">
           <Link to="/" className="sidebar-logo" aria-label="ホームへ戻る">
-            <span className="sidebar-logo-text">ガイドマッチングアプリ</span>
+            <div className="logo-icon-wrapper">
+              {/* <svg className="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#8b5cf6" />
+                  </linearGradient>
+                </defs>
+                <rect width="32" height="32" rx="8" fill="url(#logoGradient)"/>
+                <path d="M16 8L20 12L16 16L12 12L16 8Z" fill="white" opacity="0.9"/>
+                <path d="M8 16L12 20L16 16L12 12L8 16Z" fill="white" opacity="0.7"/>
+                <path d="M24 16L20 12L16 16L20 20L24 16Z" fill="white" opacity="0.7"/>
+                <path d="M16 24L12 20L16 16L20 20L16 24Z" fill="white" opacity="0.9"/>
+                <circle cx="16" cy="16" r="2" fill="white"/>
+              </svg> */}
+              <img src="../src/logo.png" alt="ガイドマッチ" className="logo-icon" />
+
+            </div>
+            <span className="sidebar-logo-text">ガイドマッチ</span>
           </Link>
         </div>
         <nav className="nav">
@@ -202,17 +220,35 @@ const Layout = () => {
                     <line x1="3" y1="17" x2="21" y2="17" />
                   </svg>
                 </button>
-                <span className="logo-text"></span>
+                {/* <Link to="/" className="header-logo-link">
+                  <div className="header-logo-icon-wrapper">
+                    <svg className="header-logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="headerLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop offset="100%" stopColor="#8b5cf6" />
+                        </linearGradient>
+                      </defs>
+                      <rect width="32" height="32" rx="8" fill="url(#headerLogoGradient)"/>
+                      <path d="M16 8L20 12L16 16L12 12L16 8Z" fill="white" opacity="0.9"/>
+                      <path d="M8 16L12 20L16 16L12 12L8 16Z" fill="white" opacity="0.7"/>
+                      <path d="M24 16L20 12L16 16L20 20L24 16Z" fill="white" opacity="0.7"/>
+                      <path d="M16 24L12 20L16 16L20 20L16 24Z" fill="white" opacity="0.9"/>
+                      <circle cx="16" cy="16" r="2" fill="white"/>
+                    </svg>
+                  </div>
+                  <span className="header-logo-text">ガイドマッチ</span>
+                </Link> */}
               </h1>
           <div className="user-menu">
                 <button 
                   className={`header-icon-btn ${unreadMessageCount > 0 ? 'has-notifications' : ''}`} 
-                  aria-label="通知" 
-                  title={unreadMessageCount > 0 ? `未読メッセージ: ${unreadMessageCount}件` : '通知'}
+                  aria-label="メッセージ" 
+                  title={unreadMessageCount > 0 ? `未読メッセージ: ${unreadMessageCount}件` : 'メッセージ'}
+                  onClick={() => setUnreadMessageCount(0)}
                 >
                   <svg className="header-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                   </svg>
                   {unreadMessageCount > 0 && (
                     <span className="notification-badge" aria-label={`未読メッセージ ${unreadMessageCount}件`}>

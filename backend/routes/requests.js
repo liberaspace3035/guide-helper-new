@@ -79,8 +79,7 @@ router.post('/', authenticateToken, requireRole('user'), [
     // 依頼作成
     const [result] = await pool.execute(
       `INSERT INTO requests 
-      (user_id, request_type, destination_address, meeting_place, masked_address, service_content, 
-       request_date, request_time, start_time, end_time, duration, notes, formatted_notes, status) 
+      (user_id, request_type, destination_address, meeting_place, masked_address, service_content, request_date, request_time, start_time, end_time, duration, notes, formatted_notes, status) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
       [
         userId, 

@@ -66,6 +66,7 @@ const chatRoutes = require('./routes/chat');
 const reportRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
 const notificationRoutes = require('./routes/notifications');
+
 // ルート登録
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
