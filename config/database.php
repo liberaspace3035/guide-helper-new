@@ -85,7 +85,8 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => env('DATABASE_URL'),
+            // DATABASE_URLのパースを無効化（配列として誤認されるバグを回避）
+            // 'url' => env('DATABASE_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'laravel'),
@@ -94,8 +95,8 @@ return [
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-            // search_pathは必ず文字列で設定。環境変数が配列の場合でも'public'を返す
-            'search_path' => is_string(env('DB_SCHEMA')) ? env('DB_SCHEMA') : 'public',
+            // search_pathは必ず文字列として固定（envを使わず直書きで確実に）
+            'search_path' => 'public',
             'sslmode' => 'prefer',
         ],
 

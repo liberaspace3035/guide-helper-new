@@ -59,7 +59,7 @@ APP_URL=https://your-app-name.up.railway.app  # ← Railwayで確認したURLを
 # アプリケーションキー（本番用に新規生成）
 APP_KEY=base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-# データベース接続（Railwayが自動提供するDATABASE_URLから設定）
+# データベース接続（Railwayが自動提供する個別変数を使用）
 DB_CONNECTION=pgsql
 DB_HOST=${PGHOST}
 DB_PORT=${PGPORT}
@@ -67,12 +67,10 @@ DB_DATABASE=${PGDATABASE}
 DB_USERNAME=${PGUSER}
 DB_PASSWORD=${PGPASSWORD}
 
-# または、Railwayが提供するDATABASE_URLを直接使用
-# DATABASE_URL=postgresql://user:password@host:port/database
-
-# ⚠️ 重要: DB_SCHEMAは設定しないでください
-# search_pathはコード内で'public'に固定されています
-# DB_SCHEMAを設定すると配列として解釈され、エラーが発生します
+# ⚠️ 重要: 以下の環境変数は設定しないでください
+# - DATABASE_URL: Laravelのパース処理で配列として誤認される可能性があるため、個別変数を使用
+# - DB_SCHEMA: search_pathはコード内で'public'に固定されています
+# - SEARCH_PATH: Railwayが自動注入する可能性があるが、削除してください
 ```
 
 ### 推奨環境変数
