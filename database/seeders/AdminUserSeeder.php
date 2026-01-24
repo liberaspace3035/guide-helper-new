@@ -14,23 +14,29 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
+        // 環境変数から管理者情報を取得（デフォルト値あり）
+        $adminEmail = env('ADMIN_EMAIL', 'admin@example.com');
+        $adminPassword = env('ADMIN_PASSWORD', 'admin123456');
+        $adminName = env('ADMIN_NAME', '管理者');
+        
         // 既存の管理者アカウントをチェック
-        $adminExists = User::where('email', 'admin@example.com')->exists();
+        $adminExists = User::where('email', $adminEmail)->exists();
         
         if (!$adminExists) {
             User::create([
-                'email' => 'admin@example.com',
-                'password_hash' => Hash::make('admin123'),
-                'name' => '管理者',
+                'email' => $adminEmail,
+                'password_hash' => Hash::make($adminPassword),
+                'name' => $adminName,
                 'role' => 'admin',
                 'is_allowed' => true,
             ]);
             
             $this->command->info('管理者アカウントを作成しました:');
-            $this->command->info('メールアドレス: admin@example.com');
-            $this->command->info('パスワード: admin123');
+            $this->command->info('メールアドレス: ' . $adminEmail);
+            $this->command->info('パスワード: ' . $adminPassword);
+            $this->command->info('名前: ' . $adminName);
         } else {
-            $this->command->warn('管理者アカウントは既に存在します。');
+            $this->command->warn('管理者アカウント（' . $adminEmail . '）は既に存在します。');
         }
     }
 }

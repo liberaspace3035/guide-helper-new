@@ -124,6 +124,8 @@ ADMIN_NAME=管理者
 OPENAI_API_KEY=sk-your-openai-api-key-here
 ```
 
+**重要**: これらの環境変数は**Laravelアプリケーションサービス**の「Variables」タブに設定してください。データベースサービス（PostgreSQL）側ではありません。
+
 **注意事項**:
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`: 初回デプロイ時に管理者アカウントを自動作成するために使用されます。設定しない場合はデフォルト値（`admin@example.com` / `admin123456`）が使用されますが、**本番環境では必ず設定してください**。
 - `OPENAI_API_KEY`: AI入力補助機能（音声入力テキストの整形）で使用されます。設定しない場合でもアプリケーションは動作しますが、基本的な整形処理のみが実行されます。
