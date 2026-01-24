@@ -21,6 +21,32 @@
 
 Railwayのダッシュボードで、プロジェクトの「Variables」タブから以下の環境変数を設定してください。
 
+### APP_URLの確認方法
+
+**重要**: `APP_URL`は、Railwayが自動生成するアプリケーションのURLです。以下の手順で確認できます：
+
+1. **Railwayダッシュボードで確認（最も簡単）**
+   - Railwayダッシュボードにログイン
+   - プロジェクトを選択
+   - サービス（Service）を選択
+   - サービス名の下、または「Settings」タブの「Domains」セクションでURLを確認
+     - 例: `https://your-app-name.up.railway.app`
+     - または、カスタムドメインを設定している場合はそのURL
+
+2. **デプロイログから確認**
+   - デプロイが完了すると、ログに表示されるURLを確認
+   - サービス一覧のカードに表示されるURLを確認
+
+3. **環境変数タブで確認**
+   - Railwayダッシュボードで「Variables」タブを開く
+   - 既に`APP_URL`が設定されている場合は、そこで確認できます
+   - 設定されていない場合は、上記の方法でURLを確認してから設定してください
+
+4. **環境変数での設定**
+   - 確認したURLを`APP_URL`環境変数に設定
+   - **必ず`https://`で始まるURLを設定してください**
+   - 末尾にスラッシュ（`/`）は付けないでください
+
 ### 必須環境変数
 
 ```bash
@@ -28,7 +54,7 @@ Railwayのダッシュボードで、プロジェクトの「Variables」タブ�
 APP_NAME="ガイドヘルパーマッチング"
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://your-app-name.railway.app
+APP_URL=https://your-app-name.up.railway.app  # ← Railwayで確認したURLを設定
 
 # アプリケーションキー（本番用に新規生成）
 APP_KEY=base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -75,17 +101,103 @@ AWS_BUCKET=your-bucket-name
 AWS_URL=https://your-bucket-name.s3.ap-northeast-1.amazonaws.com
 ```
 
+### プロジェクト特有の環境変数
+
+このプロジェクトで使用される追加の環境変数：
+
+```bash
+# 管理者アカウント作成用（初回デプロイ時のみ）
+# マイグレーション実行時に自動的に管理者アカウントを作成します
+ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASSWORD=your-secure-password
+ADMIN_NAME=管理者
+
+# OpenAI API（AI入力補助機能用、オプション）
+# 設定しない場合、基本的な整形処理が実行されます
+OPENAI_API_KEY=sk-your-openai-api-key-here
+```
+
+**注意事項**:
+- `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`: 初回デプロイ時に管理者アカウントを自動作成するために使用されます。設定しない場合はデフォルト値（`admin@example.com` / `admin123456`）が使用されますが、**本番環境では必ず設定してください**。
+- `OPENAI_API_KEY`: AI入力補助機能（音声入力テキストの整形）で使用されます。設定しない場合でもアプリケーションは動作しますが、基本的な整形処理のみが実行されます。
+
+### OPENAI_API_KEYの取得方法
+
+OpenAI APIキーは以下の手順で取得できます：
+
+1. **OpenAIアカウントの作成**
+   - [OpenAI Platform](https://platform.openai.com/) にアクセス
+   - アカウントを作成（既にアカウントがある場合はログイン）
+
+2. **APIキーの生成**
+   - ログイン後、右上のプロフィールアイコンをクリック
+   - 「API keys」を選択
+   - 「Create new secret key」をクリック
+   - キー名を入力（例: "Guide Helper App"）
+   - 「Create secret key」をクリック
+   - **重要**: 表示されたキーをコピーしてください。このキーは一度しか表示されません
+
+3. **キーの形式**
+   - APIキーは `sk-` で始まる文字列です
+   - 例: `sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+
+4. **Railwayでの設定**
+   - Railwayダッシュボードの「Variables」タブで`OPENAI_API_KEY`を追加
+   - コピーしたキーを値として設定
+
+**注意事項**:
+- APIキーは秘密情報です。Gitにコミットしないでください
+- APIキーには使用量に応じた料金が発生します（GPT-3.5-turboの場合、比較的安価）
+- キーが漏洩した場合は、OpenAIダッシュボードから削除して新しいキーを生成してください
+- この機能はオプションです。設定しない場合でもアプリケーションは正常に動作します
+
 ### APP_KEYの生成方法
 
 ローカルの`.env`からコピーせず、本番環境用に新しく生成してください。
 
-Railwayのコンソールで以下のコマンドを実行するか、ローカルで生成した値を設定します：
+**ローカルで生成する方法**：
 
 ```bash
 php artisan key:generate --show
 ```
 
-生成されたキーを`APP_KEY`環境変数に設定してください。
+生成されたキー（`base64:...`で始まる文字列）をコピーして、Railwayダッシュボードの「Variables」タブで`APP_KEY`環境変数に設定してください。
+
+**注意**: Railwayには直接コンソールアクセスがないため、ローカル環境で生成したキーをコピーして設定します。
+
+### PHPバージョンの指定
+
+Railway（Nixpacks）でPHP 8.2以上を使用するように設定する必要があります。以下のいずれかの方法で設定してください：
+
+**方法1: 環境変数で指定（推奨）**
+
+Railwayダッシュボードの「Variables」タブで以下を追加：
+
+```bash
+NIXPACKS_PHP_VERSION=8.2
+```
+
+**方法2: nixpacks.tomlファイルを使用**
+
+プロジェクトルートに`nixpacks.toml`ファイルが作成されています：
+
+```toml
+[phases.setup]
+nixPkgs = ["php82", "composer", "nodejs-18_x"]
+
+[phases.install]
+cmds = ["composer install --no-dev --optimize-autoloader", "npm install"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "bash scripts/start.sh"
+```
+
+**重要**: 
+- `composer.json`の`require`セクションで`"php": "^8.2"`が指定されていることを確認してください（既に更新済み）
+- `composer.lock`も更新されていることを確認してください（`composer update`を実行済み）
 
 ## データベースのセットアップ
 
@@ -199,7 +311,9 @@ Railway（Nixpacks）は`package.json`を検知して自動的に`npm install &&
 ### 1. HTTPSの確認
 
 - `AppServiceProvider.php`で本番環境でHTTPSが強制されていることを確認
+- Railwayダッシュボードの「Variables」タブで`APP_URL`が正しく設定されているか確認
 - ブラウザでアプリケーションにアクセスし、Mixed Contentエラーが発生していないか確認
+- ブラウザの開発者ツール（F12）で、Networkタブを開き、リソースがHTTPSで読み込まれているか確認
 
 ### 2. データベース接続の確認
 
