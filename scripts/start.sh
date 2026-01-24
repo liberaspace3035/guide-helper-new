@@ -27,9 +27,28 @@ if [ ! -L public/storage ]; then
     php artisan storage:link
 fi
 
-# データベースマイグレーションの実行
+# データベースマイグレーションの実行（詳細なエラー出力を有効化）
 echo "🗄️  Running database migrations..."
-php artisan migrate --force
+echo "📋 Database configuration check:"
+echo "  DB_CONNECTION: ${DB_CONNECTION:-not set}"
+echo "  DB_HOST: ${DB_HOST:-not set}"
+echo "  DB_PORT: ${DB_PORT:-not set}"
+echo "  DB_DATABASE: ${DB_DATABASE:-not set}"
+echo "  DB_USERNAME: ${DB_USERNAME:-not set}"
+echo "  DATABASE_URL: ${DATABASE_URL:-not set (good)}"
+echo "  DB_SCHEMA: ${DB_SCHEMA:-not set (good)}"
+echo "  SEARCH_PATH: ${SEARCH_PATH:-not set (good)}"
+
+# マイグレーション実行（エラー時は詳細を出力）
+php artisan migrate --force -vvv 2>&1 || {
+    echo "❌ Migration failed. Detailed error information:"
+    echo "=========================================="
+    php artisan migrate --force 2>&1 || true
+    echo "=========================================="
+    echo "📋 Current database config:"
+    php artisan tinker --execute="dump(config('database.connections.pgsql'));" 2>&1 || true
+    exit 1
+}
 
 # 本番環境での最適化
 if [ "$APP_ENV" = "production" ]; then

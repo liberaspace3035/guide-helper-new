@@ -53,8 +53,12 @@ Railwayのダッシュボードで、プロジェクトの「Variables」タブ�
 # アプリケーション基本設定
 APP_NAME="ガイドヘルパーマッチング"
 APP_ENV=production
-APP_DEBUG=false
+APP_DEBUG=false  # 本番環境ではfalse、デバッグ時のみ一時的にtrueに設定
 APP_URL=https://your-app-name.up.railway.app  # ← Railwayで確認したURLを設定
+
+# ログ設定（デバッグ時は詳細ログを有効化）
+LOG_CHANNEL=stderr  # Railwayのログに出力される
+LOG_LEVEL=debug  # デバッグ時はdebug、本番環境ではinfo推奨
 
 # アプリケーションキー（本番用に新規生成）
 APP_KEY=base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
