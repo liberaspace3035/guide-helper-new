@@ -3,10 +3,17 @@ set -e
 
 echo "🚀 Starting Laravel application..."
 
+# キャッシュファイルを物理削除（artisanコマンドが失敗しても確実に消す）
+echo "🧹 Force removing cache files..."
+rm -f bootstrap/cache/config.php
+rm -f bootstrap/cache/services.php
+rm -f bootstrap/cache/packages.php
+rm -rf bootstrap/cache/*.php
+
 # 設定キャッシュのクリア（古い設定を削除）
 echo "🧹 Clearing configuration cache..."
-php artisan config:clear
-php artisan cache:clear
+php artisan config:clear || true
+php artisan cache:clear || true
 
 # 環境変数の確認
 if [ -z "$APP_KEY" ]; then
