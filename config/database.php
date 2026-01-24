@@ -85,19 +85,15 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            // DATABASE_URLのパースを完全に無効化（配列として誤認されるバグを回避）
-            'url' => null,
-            'host' => env('DB_HOST', '127.0.0.1'),
+            'host' => env('DB_HOST', 'postgres.railway.internal'),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
+            'database' => env('DB_DATABASE', 'railway'),
+            'username' => env('DB_USERNAME', 'postgres'),
             'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
-            'prefix' => '',
+            'charset' => 'utf8',
+            'prefix' => '', // ★ 重要：絶対に空文字列（配列化を防止）
             'prefix_indexes' => true,
-            // search_pathとschemaをenv()を使わず直接文字列で固定（配列化を完全に防止）
-            'search_path' => 'public',
-            'schema' => 'public',
+            'search_path' => 'public', // ★ 文字列で固定（env()を使わない）
             'sslmode' => 'prefer',
         ],
 

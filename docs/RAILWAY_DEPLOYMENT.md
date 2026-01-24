@@ -71,10 +71,11 @@ DB_DATABASE=${PGDATABASE}
 DB_USERNAME=${PGUSER}
 DB_PASSWORD=${PGPASSWORD}
 
-# ⚠️ 重要: 以下の環境変数は設定しないでください（削除してください）
-# - DATABASE_URL: RailwayのVariablesから完全に削除（Laravelのパース処理で配列として誤認される）
+# ⚠️ 重要: 以下の環境変数は設定しないでください（削除または名前変更してください）
+# - DATABASE_URL: RailwayのVariablesから完全に削除、または名前をDISABLED_DATABASE_URLに変更
 # - DB_SCHEMA: search_pathはコード内で'public'に固定されています
 # - SEARCH_PATH: Railwayが自動注入する可能性があるが、削除してください
+# - DB_PREFIX: prefixはコード内で空文字列に固定されています
 ```
 
 ### 推奨環境変数
