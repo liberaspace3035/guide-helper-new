@@ -69,6 +69,15 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') === 'production') {
             URL::forceScheme('https');
         }
+
+        // 本番環境でのセッション設定（HTTPS環境用）
+        if (config('app.env') === 'production') {
+            // HTTPS環境ではセキュアCookieを有効化
+            config(['session.secure' => true]);
+            // SameSite属性をnoneに設定（クロスオリジンリクエスト対応）
+            // ただし、SameSite=noneの場合はsecure=trueが必須
+            config(['session.same_site' => 'none']);
+        }
     }
 }
 

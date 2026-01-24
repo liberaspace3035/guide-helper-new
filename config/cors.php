@@ -28,6 +28,8 @@ return [
         '/^https?:\/\/.*\.ngrok-free\.app$/',
         '/^https?:\/\/.*\.ngrok\.io$/',
         '/^https?:\/\/.*\.ngrok-free\.dev$/',
+        '/^https?:\/\/.*\.up\.railway\.app$/', // Railway本番環境
+        '/^https?:\/\/.*\.railway\.app$/', // Railwayカスタムドメイン
     ],
 
     'allowed_headers' => ['*'],
