@@ -69,6 +69,10 @@ DB_PASSWORD=${PGPASSWORD}
 
 # または、Railwayが提供するDATABASE_URLを直接使用
 # DATABASE_URL=postgresql://user:password@host:port/database
+
+# ⚠️ 重要: DB_SCHEMAは設定しないでください
+# search_pathはコード内で'public'に固定されています
+# DB_SCHEMAを設定すると配列として解釈され、エラーが発生します
 ```
 
 ### 推奨環境変数

@@ -94,7 +94,8 @@ return [
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-            'search_path' => 'public',
+            // search_pathは必ず文字列で設定。環境変数が配列の場合でも'public'を返す
+            'search_path' => is_string(env('DB_SCHEMA')) ? env('DB_SCHEMA') : 'public',
             'sslmode' => 'prefer',
         ],
 

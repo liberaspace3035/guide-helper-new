@@ -3,6 +3,11 @@ set -e
 
 echo "🚀 Starting Laravel application..."
 
+# 設定キャッシュのクリア（古い設定を削除）
+echo "🧹 Clearing configuration cache..."
+php artisan config:clear
+php artisan cache:clear
+
 # 環境変数の確認
 if [ -z "$APP_KEY" ]; then
     echo "⚠️  APP_KEY is not set. Generating new key..."
