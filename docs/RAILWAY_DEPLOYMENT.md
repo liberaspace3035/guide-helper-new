@@ -183,7 +183,7 @@ NIXPACKS_PHP_VERSION=8.2
 
 ```toml
 [phases.setup]
-nixPkgs = ["php82", "composer", "nodejs-18_x"]
+nixPkgs = ["php82", "php82Packages.composer", "nodejs-18_x"]
 
 [phases.install]
 cmds = ["composer install --no-dev --optimize-autoloader", "npm install"]
