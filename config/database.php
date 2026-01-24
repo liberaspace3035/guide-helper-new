@@ -1,5 +1,12 @@
 <?php
 
+// フレームワーク外からの呼び出しでenv()がない場合のフォールバック
+if (!function_exists('env')) {
+    function env($key, $default = null) {
+        return $_ENV[$key] ?? $_SERVER[$key] ?? $default;
+    }
+}
+
 use Illuminate\Support\Str;
 
 return [
@@ -125,10 +132,7 @@ return [
     |
     */
 
-    'migrations' => [
-        'table' => 'migrations',
-        'update_date_on_publish' => true,
-    ],
+    'migrations' => 'migrations', // ★ 必ず単一の文字列にする（配列化を防止）
 
     /*
     |--------------------------------------------------------------------------
