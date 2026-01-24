@@ -71,6 +71,12 @@ if ! php artisan migrate --force -vvv 2>&1; then
     exit 1
 fi
 
+# 管理者アカウントのシーダー実行（初回のみ、または管理者が存在しない場合のみ）
+echo "👤 Running admin user seeder..."
+php artisan db:seed --class=AdminUserSeeder --force || {
+    echo "⚠️  Admin user seeder failed, but continuing..."
+}
+
 # 本番環境での最適化
 if [ "$APP_ENV" = "production" ]; then
     echo "⚡ Optimizing for production..."
