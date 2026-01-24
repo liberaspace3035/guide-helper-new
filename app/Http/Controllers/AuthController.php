@@ -1,0 +1,282 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use App\Models\UserProfile;
+use App\Models\GuideProfile;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+
+class AuthController extends Controller
+{
+    public function showLoginForm()
+    {
+        return view('auth.login');
+    }
+
+    public function showRegisterForm()
+    {
+        return view('auth.register');
+    }
+
+    public function register(Request $request)
+    {
+        // 共通バリデーション
+        $rules = [
+            'email' => 'required|email|unique:users,email',
+            'email_confirmation' => 'required|email|same:email',
+            'password' => 'required|min:6',
+            'confirmPassword' => 'required|same:password',
+            'last_name' => 'required|string|max:50',
+            'first_name' => 'required|string|max:50',
+            'last_name_kana' => 'required|string|max:50|regex:/^[ァ-ヶー\s]+$/u',
+            'first_name_kana' => 'required|string|max:50|regex:/^[ァ-ヶー\s]+$/u',
+            'postal_code' => 'required|string|regex:/^\d{3}-\d{4}$/',
+            'address' => 'required|string',
+            'phone' => 'required|string|regex:/^[\d\-\+\(\)\s]+$/',
+            'gender' => 'required|in:male,female,other,prefer_not_to_say',
+            'birth_date' => 'required|date',
+            'role' => 'required|in:user,guide',
+        ];
+
+        // ロール別の追加バリデーション
+        if ($request->role === 'user') {
+            $rules = array_merge($rules, [
+                'interview_date_1' => 'required|date',
+                'interview_date_2' => 'nullable|date',
+                'interview_date_3' => 'nullable|date',
+                'application_reason' => 'required|string',
+                'visual_disability_status' => 'required|string',
+                'disability_support_level' => 'required|string|max:10',
+                'daily_life_situation' => 'required|string',
+            ]);
+        } else if ($request->role === 'guide') {
+            $rules = array_merge($rules, [
+                'application_reason' => 'required|string',
+                'goal' => 'required|string',
+                'qualifications' => 'required|array|max:3',
+                'qualifications.*.name' => 'required|string',
+                'qualifications.*.obtained_date' => 'required|date',
+                'preferred_work_hours' => 'required|string',
+            ]);
+        }
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            // APIリクエストの場合はJSONレスポンス
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['errors' => $validator->errors()], 400);
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $fullName = $request->name ?? trim($request->last_name . ' ' . $request->first_name);
+
+        // 生年月日から年齢を算出
+        $age = null;
+        if ($request->birth_date) {
+            $today = new \DateTime();
+            $birthDate = new \DateTime($request->birth_date);
+            $age = $today->diff($birthDate)->y;
+        }
+
+        $user = User::create([
+            'email' => $request->email,
+            'password_hash' => Hash::make($request->password),
+            'name' => $fullName,
+            'last_name' => $request->last_name,
+            'first_name' => $request->first_name,
+            'last_name_kana' => $request->last_name_kana,
+            'first_name_kana' => $request->first_name_kana,
+            'birth_date' => $request->birth_date,
+            'age' => $age ?? $request->age,
+            'gender' => $request->gender,
+            'address' => $request->address,
+            'postal_code' => $request->postal_code,
+            'phone' => $request->phone,
+            'role' => $request->role,
+            'is_allowed' => false,
+            'email_confirmed' => false,
+        ]);
+
+        if ($request->role === 'user') {
+            UserProfile::create([
+                'user_id' => $user->id,
+                'interview_date_1' => $request->interview_date_1 ? new \DateTime($request->interview_date_1) : null,
+                'interview_date_2' => $request->interview_date_2 ? new \DateTime($request->interview_date_2) : null,
+                'interview_date_3' => $request->interview_date_3 ? new \DateTime($request->interview_date_3) : null,
+                'application_reason' => $request->application_reason,
+                'visual_disability_status' => $request->visual_disability_status,
+                'disability_support_level' => $request->disability_support_level,
+                'daily_life_situation' => $request->daily_life_situation,
+            ]);
+        } else if ($request->role === 'guide') {
+            // qualificationsを配列からJSONに変換
+            $qualifications = [];
+            if ($request->has('qualifications') && is_array($request->qualifications)) {
+                foreach ($request->qualifications as $qual) {
+                    if (!empty($qual['name']) && !empty($qual['obtained_date'])) {
+                        $qualifications[] = [
+                            'name' => $qual['name'],
+                            'obtained_date' => $qual['obtained_date'],
+                        ];
+                    }
+                }
+            }
+            
+            GuideProfile::create([
+                'user_id' => $user->id,
+                'application_reason' => $request->application_reason,
+                'goal' => $request->goal,
+                'qualifications' => $qualifications,
+                'preferred_work_hours' => $request->preferred_work_hours,
+            ]);
+        }
+
+        // セッション認証でログイン
+        auth()->login($user);
+        
+        // APIリクエストの場合はJSONレスポンスを返す
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'message' => 'ユーザー登録が完了しました。審査完了後、運営からご連絡いたします。',
+                'user' => [
+                    'id' => $user->id,
+                    'email' => $user->email,
+                    'name' => $user->name,
+                    'role' => $user->role,
+                ]
+            ], 201);
+        }
+
+        return redirect()->route('login')
+            ->with('success', 'ユーザー登録が完了しました。審査完了後、運営からご連絡いたします。');
+    }
+
+    public function login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            // APIリクエストの場合はJSONレスポンス
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['errors' => $validator->errors()], 400);
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password_hash)) {
+            // APIリクエストの場合はJSONレスポンス
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'error' => 'メールアドレスまたはパスワードが正しくありません'
+                ], 401);
+            }
+            return redirect()->back()
+                ->withErrors(['email' => 'メールアドレスまたはパスワードが正しくありません'])
+                ->withInput();
+        }
+
+        if (!$user->is_allowed) {
+            // APIリクエストの場合はJSONレスポンス
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'error' => 'ユーザーは承認されていません'
+                ], 401);
+            }
+            return redirect()->back()
+                ->withErrors(['email' => 'ユーザーは承認されていません'])
+                ->withInput();
+        }
+
+        // セッション認証でログイン
+        auth()->login($user);
+        $request->session()->regenerate();
+        
+        // APIリクエストの場合はJSONレスポンスを返す
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'message' => 'ログインに成功しました',
+                'user' => [
+                    'id' => $user->id,
+                    'email' => $user->email,
+                    'name' => $user->name,
+                    'role' => $user->role,
+                ]
+            ]);
+        }
+
+        // ロールに応じてリダイレクト
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        return redirect()->route('dashboard');
+    }
+
+    public function user(Request $request)
+    {
+        // セッション認証を使用
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['error' => '認証が必要です'], 401);
+        }
+        
+        if ($user->role === 'user') {
+            $user->load('userProfile');
+            $user->profile = $user->userProfile;
+        } else if ($user->role === 'guide') {
+            $user->load('guideProfile');
+            $user->profile = $user->guideProfile;
+            // GuideProfileモデルで'array'キャストが設定されているため、既に配列になっている
+            // json_decode()は不要
+            if ($user->profile) {
+                $user->profile->available_areas = $user->profile->available_areas ?? [];
+                $user->profile->available_days = $user->profile->available_days ?? [];
+                $user->profile->available_times = $user->profile->available_times ?? [];
+            }
+        }
+
+        return response()->json(['user' => $user]);
+    }
+
+    public function logout(Request $request)
+    {
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect()->route('home');
+    }
+
+    public function apiLogout(Request $request)
+    {
+        try {
+            // JWT認証の場合は、トークンを無効化する必要はない（ステートレス）
+            // セッション認証の場合のみセッションを無効化
+            if (auth()->check()) {
+                auth()->logout();
+            }
+            
+            // APIリクエストの場合はJSONレスポンスを返す
+            return response()->json([
+                'message' => 'ログアウトに成功しました'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('ログアウトエラー: ' . $e->getMessage());
+            return response()->json(['error' => 'ログアウト中にエラーが発生しました'], 500);
+        }
+    }
+}
+

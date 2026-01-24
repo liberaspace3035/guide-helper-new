@@ -1,0 +1,215 @@
+/* ガイド依頼一覧スタイル - ユーザー依頼一覧と統一 */
+.requests-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.requests-container h1 {
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-lg);
+  letter-spacing: 0;
+}
+
+.info-text {
+  background-color: #dbeafe;
+  color: #1e40af;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-xl);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.request-card {
+  background-color: var(--surface-color);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-base);
+}
+
+.request-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-color);
+  transform: translateY(-1px);
+}
+
+.request-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.request-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: 0;
+  flex: 1;
+}
+
+.status-badge {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+  white-space: nowrap;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-accepted {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-matched {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.request-details {
+  margin-bottom: var(--spacing-md);
+}
+
+.request-details p {
+  margin: var(--spacing-xs) 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.request-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+}
+
+.request-actions button {
+  flex: 1;
+  min-width: 140px;
+  justify-content: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  background-color: var(--surface-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.empty-state p {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* 応募ガイドパネル */
+.applicants-panel {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.loading-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.applicants-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.applicant-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  background: var(--surface-hover);
+}
+
+.applicant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.applicant-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.applicant-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.applicant-actions {
+  margin-top: var(--spacing-sm);
+}
+
+.applicant-actions .btn-primary {
+  min-width: auto;
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 13px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .requests-container h1 {
+    font-size: 24px;
+  }
+
+  .request-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .request-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .request-actions button {
+    width: 100%;
+    min-width: auto;
+  }
+}

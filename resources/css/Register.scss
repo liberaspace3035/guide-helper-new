@@ -1,0 +1,518 @@
+// 登録ページスタイル - クリーンでミニマル 
+.register-container {
+  min-height: 100vh;
+  max-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background-color: var(--background-color);
+  padding: var(--spacing-md);
+  overflow: hidden;
+}
+
+.register-card {
+  background-color: var(--surface-color);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  width: 100%;
+  max-width: 1000px;
+  max-height: calc(100vh - var(--spacing-md) * 2);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  // margin-top: var(--spacing-md); 
+}
+
+.register-card h1 {
+  font-size: 24px;
+  font-weight: 500;
+  margin-bottom: var(--spacing-xl);
+  text-align: center;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.register-card form {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: var(--spacing-xs);
+  padding-bottom: var(--spacing-md);
+}
+
+.register-card form::-webkit-scrollbar {
+  width: 6px;
+}
+
+.register-card form::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.register-card form::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.register-card form::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.form-sections-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  align-items: flex-start;
+}
+
+.form-section {
+  margin-bottom: 0;
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+}
+
+.form-section-half {
+  border-right: 1px solid var(--border-light);
+  padding-right: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.form-section-half:last-child {
+  border-right: none;
+  padding-right: 0;
+  padding-left: var(--spacing-lg);
+}
+
+.form-section-full {
+  width: 100%;
+  grid-column: 1 / -1;
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-xl);
+  border-top: 2px solid var(--border-color);
+}
+
+.form-group-third {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-row .form-group-third {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.sub-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.qualifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.qualification-item {
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-hover);
+  position: relative;
+}
+
+.btn-remove {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background-color: var(--error-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-remove:hover {
+  background-color: #d33b2c;
+}
+
+.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: 14px;
+  transition: all var(--transition-fast);
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+}
+
+.info-box {
+  background-color: var(--primary-light);
+  border: 1px solid var(--primary-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.info-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.info-list {
+  margin: var(--spacing-xs) 0 0 var(--spacing-lg);
+  padding: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.info-list li {
+  margin-bottom: var(--spacing-xs);
+}
+
+.form-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-subsection {
+  margin-bottom: var(--spacing-xl);
+}
+
+.form-subsection:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 2px solid var(--primary-color);
+  display: block;
+  width: 100%;
+  letter-spacing: 0.3px;
+}
+
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.name-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.form-group-half {
+  margin-bottom: var(--spacing-md);
+}
+
+.name-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.name-input-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.name-input-item input {
+  margin-top: 0;
+}
+
+.input-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+// 入力フィールドのスタイルはグローバルスタイルを使用 
+.form-group input,
+.form-group textarea,
+.form-group select {
+  margin-top: var(--spacing-xs);
+}
+
+.required {
+  color: var(--error-color);
+  margin-left: 2px;
+}
+
+small {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-xs);
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  background-color: var(--surface-color);
+  padding-top: var(--spacing-sm);
+  padding-bottom: var(--spacing-xs);
+  z-index: 10;
+}
+
+.error-message {
+  background-color: #fce8e6;
+  color: var(--error-color);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  border-left: 4px solid var(--error-color);
+  font-size: 14px;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--surface-color);
+}
+
+.login-link a {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+// 審査に関する注意書き 
+.registration-notice {
+  background-color: var(--primary-light);
+  border: 1px solid var(--primary-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: flex-start;
+}
+
+.notice-icon {
+  font-size: 30px;
+  color: var(--error-color);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notice-content {
+  flex: 1;
+}
+
+.notice-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0;
+  margin-bottom: var(--spacing-xs);
+}
+
+.notice-text:last-child {
+  margin-bottom: 0;
+}
+
+// レスポンシブ対応 
+@media (max-width: 968px) {
+  .form-sections-row {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .form-section-half {
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+    padding-right: 0;
+    padding-bottom: var(--spacing-lg);
+    padding-left: 0;
+  }
+
+  .form-section-half:last-child {
+    border-bottom: none;
+    padding-left: 0;
+    padding-top: var(--spacing-lg);
+  }
+
+  .form-subsection {
+    margin-bottom: var(--spacing-lg);
+  }
+}
+
+@media (max-width: 768px) {
+  .register-container {
+    padding: var(--spacing-sm);
+    align-items: flex-start;
+    padding-top: var(--spacing-sm);
+  }
+
+  .register-card {
+    max-height: calc(100vh - var(--spacing-sm) * 2);
+    padding: var(--spacing-lg);
+    margin-top: var(--spacing-sm);
+    max-width: 100%;
+  }
+
+  .register-card h1 {
+    font-size: 22px;
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .form-sections-row {
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .form-section {
+    margin-bottom: 0;
+    padding-bottom: var(--spacing-md);
+  }
+
+  .form-subsection {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .section-title {
+    font-size: 15px;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .name-group {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .registration-notice {
+    padding: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .notice-text {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-container {
+    padding: var(--spacing-xs);
+    padding-top: var(--spacing-xs);
+  }
+
+  .register-card {
+    padding: var(--spacing-md);
+    max-height: calc(100vh - var(--spacing-xs) * 2);
+    margin-top: var(--spacing-xs);
+  }
+
+  .register-card h1 {
+    font-size: 20px;
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-sections-row {
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-section {
+    margin-bottom: 0;
+    padding-bottom: var(--spacing-sm);
+  }
+
+  .form-section-half {
+    padding-bottom: var(--spacing-md);
+  }
+
+  .form-subsection {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .section-title {
+    font-size: 14px;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .name-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .name-group {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-notice {
+    padding: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .notice-icon {
+    font-size: 18px;
+  }
+
+  .notice-text {
+    font-size: 11px;
+  }
+}

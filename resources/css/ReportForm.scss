@@ -1,0 +1,178 @@
+// 報告書フォームスタイル 
+.report-form-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.report-form-container h1 {
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xl);
+  letter-spacing: 0;
+}
+
+.report-form {
+  background-color: var(--surface-color);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+  margin-bottom: var(--spacing-xs);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.required {
+  color: var(--error-color);
+  margin-left: 2px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+  justify-content: flex-end;
+}
+
+.form-actions .btn-primary,
+.form-actions .btn-secondary {
+  min-width: 120px;
+}
+
+.error-message {
+  background-color: #fce8e6;
+  color: var(--error-color);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  border-left: 4px solid var(--error-color);
+  font-size: 14px;
+}
+
+.revision-request-alert {
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.revision-request-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  
+  svg {
+    color: #f59e0b;
+    flex-shrink: 0;
+  }
+  
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #92400e;
+    margin: 0;
+  }
+}
+
+.revision-request-content {
+  background-color: white;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  border: 1px solid #fbbf24;
+}
+
+.revision-request-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #92400e;
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.revision-request-notes {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+  padding: var(--spacing-sm);
+  background-color: #fffbeb;
+  border-radius: var(--radius-sm);
+}
+
+@media (max-width: 768px) {
+  .report-form-container {
+    padding: 0 var(--spacing-md);
+  }
+
+  .report-form-container h1 {
+    font-size: 24px;
+  }
+
+  .report-form {
+    padding: var(--spacing-lg);
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+
+  .revision-request-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .report-form-container {
+    padding: 0 var(--spacing-sm);
+  }
+
+  .report-form-container h1 {
+    font-size: 20px;
+  }
+
+  .report-form {
+    padding: var(--spacing-md);
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .revision-request-alert {
+    padding: var(--spacing-md);
+  }
+}
+

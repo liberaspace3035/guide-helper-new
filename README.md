@@ -1,55 +1,36 @@
-# ガイドマッチングアプリケーション
+# ガイドヘルパーマッチングアプリケーション
 
 視覚障害者とガイドヘルパーのマッチングアプリケーションです。
 
 ## 技術スタック
 
-- **フロントエンド**: React + Vite
-- **バックエンド**: Node.js + Express
-- **データベース**: MySQL
-- **認証**: JWT
+- **フロントエンド**: React + Vite（既存）、Blade + Alpine.js（Laravel移行版）
+- **バックエンド**: Laravel 11
+- **データベース**: PostgreSQL
+- **認証**: Session（Laravel標準認証）
 
-## セットアップ
+## クイックスタート
 
-### 1. 依存関係のインストール
+詳細なセットアップ手順は`docs/SETUP.md`を参照してください。
 
-```bash
-npm run install:all
-```
-
-### 2. データベースのセットアップ
-
-MySQLデータベースを作成し、`database/schema.sql`を実行してください。
+### 最小限の動作確認手順
 
 ```bash
-mysql -u root -p < database/schema.sql
+# 1. Composer依存関係のインストール
+composer install
+
+# 2. 環境設定
+cp .env.example .env
+php artisan key:generate
+
+# 3. データベースマイグレーション
+php artisan migrate
+
+# 4. サーバー起動
+php artisan serve
 ```
 
-### 3. 環境変数の設定
-
-`backend/.env.example`をコピーして`backend/.env`を作成し、必要な設定を行ってください。
-
-```bash
-cp backend/.env.example backend/.env
-```
-
-### 4. サーバーの起動
-
-#### バックエンドサーバー
-
-```bash
-npm run dev:backend
-```
-
-バックエンドサーバーは`http://localhost:3001`で起動します。
-
-#### フロントエンドサーバー
-
-```bash
-npm run dev:frontend
-```
-
-フロントエンドサーバーは`http://localhost:5173`で起動します。
+ブラウザで`http://localhost:8000`にアクセスしてください。
 
 ## 機能
 
@@ -79,6 +60,8 @@ npm run dev:frontend
 - 手動判定（OK/NG）
 - 報告書一覧
 - CSV出力
+- ユーザー・ガイド管理
+- お知らせ管理
 
 ## アクセシビリティ
 
@@ -95,12 +78,26 @@ npm run dev:frontend
 
 ## セキュリティ
 
-- JWT認証
+- セッション認証（Laravel標準）
+- CSRF保護
 - ロールベースアクセス制御
 - 住所情報のマスキング処理
 - パスワードハッシュ化
 
+## ドキュメント
+
+- `docs/SETUP.md` - セットアップガイド
+- `docs/IMPLEMENTATION_STATUS.md` - 実装完了状況
+- `docs/API_DESIGN.md` - API設計ドキュメント
+- `docs/TROUBLESHOOTING.md` - トラブルシューティング
+- `docs/ADMIN_FEATURES.md` - 管理者機能ドキュメント
+- `docs/DATABASE.md` - データベースドキュメント
+- `docs/EMAIL_TESTING.md` - メール通知の確認方法
+- `docs/EMAIL_CONFIRMATION.md` - メール通知の動作確認（テストコマンドと実際の動作の関係）
+- `docs/DEVELOPMENT_NOTES.md` - 開発ノート
+- `docs/TESTING_CHECKLIST.md` - テストチェックリスト
+- `docs/NGROK_SETUP.md` - ngrokセットアップガイド
+
 ## ライセンス
 
 ISC
-

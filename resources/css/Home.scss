@@ -1,0 +1,445 @@
+// ホームページスタイル 
+html {
+  scroll-behavior: smooth;
+}
+
+.home-container {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--background-color);
+  animation: fadeIn 0.4s ease;
+}
+
+// ヒーローセクション 
+.hero-section {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: var(--text-on-primary);
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  text-align: center;
+  position: relative;
+}
+
+.hero-logo {
+  position: absolute;
+  top: var(--spacing-xl);
+  left: var(--spacing-xl);
+  height: 100px;
+  width: auto;
+  z-index: 10;
+  opacity: 0;
+  animation: fadeIn 0.6s ease-out 0.1s forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.hero-login-btn {
+  position: absolute;
+  top: var(--spacing-xl);
+  right: var(--spacing-xl);
+  padding: 0.75rem 1.5rem;
+  font-size: 16px;
+  font-weight: 500;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-on-primary);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: all var(--transition-base);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  opacity: 0;
+  animation: fadeIn 0.6s ease-out 0.1s forwards;
+}
+
+.hero-login-btn:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  color: var(--text-on-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.hero-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 140px; // ロゴとログインボタンのスペースを確保
+  box-sizing: border-box;
+}
+
+.hero-title {
+  font-size: 48px;
+  font-weight: 400;
+  margin-bottom: var(--spacing-lg);
+  letter-spacing: 0.02em;
+}
+
+.hero-subtitle {
+  font-size: 30px;
+  font-weight: 500;
+  margin-bottom: var(--spacing-2xl);
+  line-height: 1.8;
+  opacity: 0.95;
+}
+
+.hero-subtitle-line {
+  display: inline-block;
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.hero-subtitle-line:nth-of-type(1) {
+  animation-delay: 0.2s;
+}
+
+.hero-subtitle-line:nth-of-type(2) {
+  animation-delay: 0.8s;
+}
+
+.hero-subtitle-line:nth-of-type(3) {
+  animation-delay: 1.4s;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+  flex-wrap: wrap;
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out 2s forwards;
+}
+
+.btn-large {
+  padding: 0.875rem 2rem;
+  font-size: 16px;
+  min-height: 44px;
+}
+
+// 特徴セクション 
+.features-section {
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  background-color: var(--surface-color);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-title {
+  font-size: 32px;
+  font-weight: 400;
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.features-section .section-title {
+  animation-delay: 2.4s;
+}
+
+.how-it-works-section .section-title {
+  animation-delay: 3.2s;
+}
+
+.cta-section .section-title {
+  animation-delay: 4s;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-xl);
+}
+
+.feature-card {
+  background-color: var(--surface-color);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  text-align: center;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
+  will-change: transform, box-shadow;
+}
+
+.feature-card:nth-child(1) {
+  animation-delay: 2.6s;
+}
+
+.feature-card:nth-child(2) {
+  animation-delay: 2.8s;
+}
+
+.feature-card:nth-child(3) {
+  animation-delay: 3s;
+}
+
+.feature-card:nth-child(4) {
+  animation-delay: 3.2s;
+}
+
+.feature-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--border-color);
+}
+
+.feature-icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-md);
+  line-height: 1;
+}
+
+.feature-title {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.feature-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+// 使い方セクション 
+.how-it-works-section {
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  background-color: var(--background-color);
+}
+
+.steps-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-xl);
+}
+
+.step-item {
+  text-align: center;
+  position: relative;
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.step-item:nth-child(1) {
+  animation-delay: 3.4s;
+}
+
+.step-item:nth-child(2) {
+  animation-delay: 3.6s;
+}
+
+.step-item:nth-child(3) {
+  animation-delay: 3.8s;
+}
+
+.step-item:nth-child(4) {
+  animation-delay: 4s;
+}
+
+.step-number {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: var(--text-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0 auto var(--spacing-md);
+  box-shadow: var(--shadow-md);
+}
+
+.step-title {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.step-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+// CTAセクション 
+.cta-section {
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--surface-color) 100%);
+  text-align: center;
+}
+
+.cta-note {
+  margin-top: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.cta-title {
+  font-size: 32px;
+  font-weight: 400;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out 4.4s forwards;
+}
+
+.cta-description {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xl);
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out 4.6s forwards;
+}
+
+.cta-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+  flex-wrap: wrap;
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out 4.8s forwards;
+}
+
+// レスポンシブ対応 
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 36px;
+  }
+
+  .hero-subtitle {
+    font-size: 20px;
+  }
+
+  .hero-content {
+    padding-top: 100px; // SP表示では上部マージンを小さく
+  }
+
+  .hero-logo {
+    top: var(--spacing-lg);
+    left: var(--spacing-lg);
+    height: 60px;
+    max-width: calc(50% - var(--spacing-lg) - 0.5rem);
+    object-fit: contain;
+  }
+
+  .hero-login-btn {
+    top: var(--spacing-lg);
+    right: var(--spacing-lg);
+    left: auto;
+    padding: 0.625rem 1.25rem;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .section-title {
+    font-size: 28px;
+  }
+
+  .features-grid,
+  .steps-container {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-actions,
+  .cta-actions {
+    flex-direction: column;
+  }
+
+  .hero-actions .btn-large,
+  .cta-actions .btn-large {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section {
+    padding: var(--spacing-xl) var(--spacing-md);
+    min-height: 50vh;
+  }
+
+  .hero-content {
+    padding-top: 90px; // 小さな画面ではさらに上部マージンを調整
+  }
+
+  .hero-logo {
+    top: var(--spacing-md);
+    left: var(--spacing-md);
+    height: 50px;
+    max-width: calc(50% - var(--spacing-md) - 0.5rem);
+    object-fit: contain;
+  }
+
+  .hero-login-btn {
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    left: auto;
+    padding: 0.5rem 1rem;
+    font-size: 13px;
+    min-height: 36px;
+    white-space: nowrap;
+  }
+
+  .hero-title {
+    font-size: 28px;
+  }
+
+  .hero-subtitle {
+    font-size: 18px;
+  }
+
+  .features-section,
+  .how-it-works-section,
+  .cta-section {
+    padding: var(--spacing-xl) var(--spacing-md);
+  }
+
+  .section-title {
+    font-size: 24px;
+  }
+
+  .feature-card,
+  .step-item {
+    padding: var(--spacing-lg);
+  }
+}
+

@@ -1,0 +1,121 @@
+.announcements-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+}
+
+.announcements-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.announcements-header h1 {
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.announcements-subtitle {
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.unread-count-badge {
+  padding: 0.5rem 1rem;
+  background-color: var(--error-color);
+  color: var(--text-on-primary);
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.announcements-filters {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.filter-btn:hover {
+  background-color: var(--surface-hover);
+  border-color: var(--primary-color);
+}
+
+.filter-btn.active {
+  background-color: var(--primary-color);
+  color: var(--text-on-primary);
+  border-color: var(--primary-color);
+}
+
+.filter-count {
+  padding: 0.125rem 0.5rem;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+}
+
+.announcements-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  color: var(--text-secondary);
+}
+
+.empty-state svg {
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-tertiary);
+}
+
+.empty-state h3 {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+// レスポンシブ対応 
+@media (max-width: 768px) {
+  .announcements-page {
+    padding: var(--spacing-md);
+  }
+
+  .announcements-header {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .announcements-header h1 {
+    font-size: 24px;
+  }
+
+  .announcements-filters {
+    flex-wrap: wrap;
+  }
+}
