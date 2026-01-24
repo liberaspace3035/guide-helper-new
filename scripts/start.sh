@@ -40,15 +40,28 @@ echo "  DB_SCHEMA: ${DB_SCHEMA:-not set (good)}"
 echo "  SEARCH_PATH: ${SEARCH_PATH:-not set (good)}"
 
 # マイグレーション実行（エラー時は詳細を出力）
-php artisan migrate --force -vvv 2>&1 || {
+if ! php artisan migrate --force -vvv 2>&1; then
     echo "❌ Migration failed. Detailed error information:"
     echo "=========================================="
+    echo "Full error output:"
     php artisan migrate --force 2>&1 || true
     echo "=========================================="
-    echo "📋 Current database config:"
-    php artisan tinker --execute="dump(config('database.connections.pgsql'));" 2>&1 || true
+    echo "📋 Checking database connection..."
+    php -r "
+    try {
+        \$config = require 'config/database.php';
+        echo 'Database config (pgsql):' . PHP_EOL;
+        echo '  search_path: ' . var_export(\$config['connections']['pgsql']['search_path'] ?? 'not set', true) . PHP_EOL;
+        echo '  schema: ' . var_export(\$config['connections']['pgsql']['schema'] ?? 'not set', true) . PHP_EOL;
+        echo '  url: ' . var_export(\$config['connections']['pgsql']['url'] ?? 'not set', true) . PHP_EOL;
+        echo '  host: ' . var_export(\$config['connections']['pgsql']['host'] ?? 'not set', true) . PHP_EOL;
+    } catch (Exception \$e) {
+        echo 'Error reading config: ' . \$e->getMessage() . PHP_EOL;
+    }
+    " 2>&1 || true
+    echo "=========================================="
     exit 1
-}
+fi
 
 # 本番環境での最適化
 if [ "$APP_ENV" = "production" ]; then

@@ -23,8 +23,19 @@ class Handler extends ExceptionHandler
      */
     public function register(): void
     {
+        // Railway環境では詳細なエラー情報をログに出力
         $this->reportable(function (Throwable $e) {
-            //
+            \Log::error('Exception occurred', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'previous' => $e->getPrevious() ? [
+                    'message' => $e->getPrevious()->getMessage(),
+                    'file' => $e->getPrevious()->getFile(),
+                    'line' => $e->getPrevious()->getLine(),
+                ] : null,
+            ]);
         });
     }
 
