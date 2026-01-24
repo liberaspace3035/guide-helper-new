@@ -350,6 +350,41 @@ Railway（Nixpacks）は`package.json`を検知して自動的に`npm install &&
 - `AppServiceProvider.php`でHTTPSが強制されているか確認
 - `APP_URL`が`https://`で始まっているか確認
 
+### PostgreSQLのexplode()エラー（search_path関連）
+
+**エラーメッセージ**: `explode(): Argument #2 ($string) must be of type string, array given` in `PostgresBuilder.php`
+
+**原因**: `search_path`が配列として解釈されている（DATABASE_URLのパース処理や環境変数の自動注入が原因）
+
+**解決策**（順番に試してください）:
+
+1. **Railwayの環境変数を確認・削除**
+   - `DB_SCHEMA`という環境変数が設定されていないか確認 → **削除**
+   - `SEARCH_PATH`という環境変数が設定されていないか確認 → **削除**（Railwayが自動注入する可能性あり）
+   - `DATABASE_URL`を削除（個別変数を使用するため）
+
+2. **config/database.phpの設定確認**
+   - `'url' => env('DATABASE_URL'),`がコメントアウトされていることを確認
+   - `'search_path' => 'public',`が直書き（envを使わない）になっていることを確認
+
+3. **個別のデータベース変数を設定**
+   - Railwayの「Variables」タブで以下を設定：
+     ```bash
+     DB_CONNECTION=pgsql
+     DB_HOST=${PGHOST}
+     DB_PORT=${PGPORT}
+     DB_DATABASE=${PGDATABASE}
+     DB_USERNAME=${PGUSER}
+     DB_PASSWORD=${PGPASSWORD}
+     ```
+
+4. **ビルドキャッシュのクリア**
+   - Railwayダッシュボードで「Clear Build Cache」を実行
+   - 再デプロイを実行してください
+
+5. **設定キャッシュのクリア**
+   - `scripts/start.sh`に`php artisan config:clear`が含まれていることを確認（既に追加済み）
+
 ### ファイルが保存されない
 
 - `FILESYSTEM_DISK`が`s3`に設定されているか確認
