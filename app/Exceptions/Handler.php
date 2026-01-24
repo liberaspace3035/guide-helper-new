@@ -38,30 +38,6 @@ class Handler extends ExceptionHandler
             ]);
         });
     }
-
-    /**
-     * Render an exception into an HTTP response.
-     * Railwayでのデバッグ用に詳細なエラー情報を出力
-     */
-    public function render($request, Throwable $e)
-    {
-        // Railway環境では詳細なエラー情報をログに出力
-        if (config('app.env') === 'production' && env('RAILWAY_ENVIRONMENT')) {
-            \Log::error('Exception occurred', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-                'previous' => $e->getPrevious() ? [
-                    'message' => $e->getPrevious()->getMessage(),
-                    'file' => $e->getPrevious()->getFile(),
-                    'line' => $e->getPrevious()->getLine(),
-                ] : null,
-            ]);
-        }
-
-        return parent::render($request, $e);
-    }
 }
 
 
