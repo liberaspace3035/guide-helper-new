@@ -5,10 +5,18 @@ echo "🚀 Starting Laravel application..."
 
 # キャッシュファイルを物理削除（artisanコマンドが失敗しても確実に消す）
 echo "🧹 Force removing cache files..."
+echo "📋 Checking for existing cache files:"
+ls -la bootstrap/cache/config.php 2>/dev/null && echo "  ⚠️  WARNING: config.php cache file exists!" || echo "  ✅ No config.php cache file"
+ls -la bootstrap/cache/services.php 2>/dev/null && echo "  ⚠️  WARNING: services.php cache file exists!" || echo "  ✅ No services.php cache file"
+ls -la bootstrap/cache/packages.php 2>/dev/null && echo "  ⚠️  WARNING: packages.php cache file exists!" || echo "  ✅ No packages.php cache file"
+
 rm -f bootstrap/cache/config.php
 rm -f bootstrap/cache/services.php
 rm -f bootstrap/cache/packages.php
 rm -rf bootstrap/cache/*.php
+
+echo "📋 Cache files after removal:"
+ls -la bootstrap/cache/*.php 2>/dev/null && echo "  ⚠️  WARNING: Cache files still exist!" || echo "  ✅ All cache files removed"
 
 # 設定キャッシュのクリア（古い設定を削除）
 echo "🧹 Clearing configuration cache..."

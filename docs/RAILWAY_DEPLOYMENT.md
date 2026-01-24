@@ -359,7 +359,21 @@ Railway（Nixpacks）は`package.json`を検知して自動的に`npm install &&
 
 **エラーメッセージ**: `explode(): Argument #2 ($string) must be of type string, array given` in `PostgresBuilder.php`
 
-**原因**: `search_path`が配列として解釈されている（DATABASE_URLのパース処理や環境変数の自動注入が原因）
+**原因**: `search_path`や`prefix`が配列として解釈されている（DATABASE_URLのパース処理や環境変数の自動注入が原因）
+
+**詳細調査方法**:
+
+Railwayのログで以下の情報を確認してください：
+
+1. **DB Config Type Check**のログを確認
+   - `search_path_type`: `string`であるべき（`array`の場合は問題）
+   - `search_path_value`: `"public"`であるべき（`["public"]`の場合は問題）
+   - `prefix_type`: `string`であるべき
+   - `prefix_value`: `""`（空文字列）であるべき
+
+2. **Environment Variables Check**のログを確認
+   - `DB_SCHEMA`, `SEARCH_PATH`, `PGSCHEMA`, `PGOPTIONS`が`not set`であることを確認
+   - これらが設定されている場合は削除してください
 
 **解決策**（順番に試してください）:
 
