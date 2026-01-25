@@ -228,6 +228,15 @@ function chatData() {
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+                
+                // 419/401エラーのハンドリング
+                if (window.handleApiResponse) {
+                    const shouldContinue = await window.handleApiResponse(response);
+                    if (!shouldContinue) {
+                        return;
+                    }
+                }
+                
                 if (response.ok) {
                     const data = await response.json();
                     const matching = data.matchings?.find(m => m.id === parseInt(this.matchingId));
@@ -249,6 +258,15 @@ function chatData() {
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+                
+                // 419/401エラーのハンドリング
+                if (window.handleApiResponse) {
+                    const shouldContinue = await window.handleApiResponse(response);
+                    if (!shouldContinue) {
+                        return;
+                    }
+                }
+                
                 if (response.ok) {
                     const data = await response.json();
                     const previousLength = this.messages.length;
@@ -305,6 +323,16 @@ function chatData() {
                         message: messageToSend
                     })
                 });
+                
+                // 419/401エラーのハンドリング
+                if (window.handleApiResponse) {
+                    const shouldContinue = await window.handleApiResponse(response);
+                    if (!shouldContinue) {
+                        // 送信失敗時は一時メッセージを削除
+                        this.messages = this.messages.filter(m => m.id !== tempMessage.id);
+                        return;
+                    }
+                }
                 
                 if (response.ok) {
                     // メッセージ一覧を更新（一時メッセージを実際のメッセージに置き換え）

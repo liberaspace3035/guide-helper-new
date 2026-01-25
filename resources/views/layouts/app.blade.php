@@ -167,6 +167,55 @@
     </div>
     @stack('scripts')
     <script>
+        // グローバルなfetchヘルパー関数（419/401エラーハンドリング付き）
+        window.handleApiResponse = async function(response) {
+            // 419エラー（CSRFトークン期限切れ）: ページをリロードして新しいトークンを取得
+            if (response.status === 419) {
+                console.warn('セッション期限切れ（419）。ページを再読み込みします。');
+                alert('セッションの期限が切れました。ページを再読み込みします。');
+                window.location.reload();
+                return false;
+            }
+            
+            // 401エラー（認証エラー）: ログイン画面へリダイレクト
+            if (response.status === 401) {
+                console.error('認証エラー');
+                alert('認証が期限切れです。ログイン画面に移動します。');
+                window.location.href = '/login?message=expired';
+                return false;
+            }
+            
+            return true;
+        };
+        
+        // グローバルなfetchラッパー関数
+        window.apiFetch = async function(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(options.headers || {})
+                }
+            });
+            
+            // 419/401エラーのハンドリング
+            const shouldContinue = await window.handleApiResponse(response);
+            if (!shouldContinue) {
+                throw new Error('認証エラーまたはセッション期限切れ');
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'エラーが発生しました' }));
+                console.error('APIエラー:', url, errorData);
+                throw new Error(errorData.error || 'エラーが発生しました');
+            }
+            
+            return response.json();
+        };
+        
         function headerMenu() {
             return {
                 unreadCount: 0,
@@ -196,8 +245,19 @@
                         }
                     });
                     
+                    // 419エラー（CSRFトークン期限切れ）: ページをリロードして新しいトークンを取得
+                    if (response.status === 419) {
+                        console.warn('セッション期限切れ（419）。ページを再読み込みします。');
+                        alert('セッションの期限が切れました。ページを再読み込みします。');
+                        window.location.reload();
+                        return;
+                    }
+                    
+                    // 401エラー（認証エラー）: ログイン画面へリダイレクト
                     if (response.status === 401) {
                         console.error('認証エラー:', url);
+                        alert('認証が期限切れです。ログイン画面に移動します。');
+                        window.location.href = '/login?message=expired';
                         throw new Error('認証エラー');
                     }
                     

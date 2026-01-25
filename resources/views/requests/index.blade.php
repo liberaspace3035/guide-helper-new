@@ -167,6 +167,14 @@ function requestsData() {
                     }
                 });
                 
+                // 419/401エラーのハンドリング
+                if (window.handleApiResponse) {
+                    const shouldContinue = await window.handleApiResponse(response);
+                    if (!shouldContinue) {
+                        return;
+                    }
+                }
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -190,6 +198,15 @@ function requestsData() {
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+                
+                // 419/401エラーのハンドリング
+                if (window.handleApiResponse) {
+                    const shouldContinue = await window.handleApiResponse(res);
+                    if (!shouldContinue) {
+                        return;
+                    }
+                }
+                
                 const data = await res.json();
                 const matched = {};
                 const selected = {};
@@ -245,6 +262,15 @@ function requestsData() {
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+                
+                // 419/401エラーのハンドリング
+                if (window.handleApiResponse) {
+                    const shouldContinue = await window.handleApiResponse(res);
+                    if (!shouldContinue) {
+                        return;
+                    }
+                }
+                
                 const data = await res.json();
                 const guides = data.guides || [];
                 this.applicantsMap = { ...this.applicantsMap, [requestId]: guides };

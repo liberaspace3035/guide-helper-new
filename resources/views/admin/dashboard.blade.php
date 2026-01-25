@@ -1063,10 +1063,19 @@ function adminDashboard() {
                 }
             });
             
+            // 419エラー（CSRFトークン期限切れ）: ページをリロードして新しいトークンを取得
+            if (response.status === 419) {
+                console.warn('セッション期限切れ（419）。ページを再読み込みします。');
+                alert('セッションの期限が切れました。ページを再読み込みします。');
+                window.location.reload();
+                return;
+            }
+            
+            // 401エラー（認証エラー）: ログイン画面へリダイレクト
             if (response.status === 401) {
                 console.error('認証エラー:', url);
-                alert('セッションが期限切れです。再度ログインしてください。');
-                window.location.href = '/login';
+                alert('認証が期限切れです。ログイン画面に移動します。');
+                window.location.href = '/login?message=expired';
                 throw new Error('認証エラー');
             }
             
