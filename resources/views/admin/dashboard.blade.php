@@ -318,7 +318,7 @@
                                             <td x-text="report.id"></td>
                                             <td x-text="report.user?.name || '—'"></td>
                                             <td x-text="report.guide?.name || '—'"></td>
-                                            <td x-text="report.actual_date || '-'"></td>
+                                            <td x-text="formatReportDate(report.actual_date) || '-'"></td>
                                             <td>
                                                 <span class="status-badge" :class="{
                                                     'status-approved': report.status === 'approved' || report.status === 'admin_approved',
@@ -400,7 +400,7 @@
                                             <td x-text="report.id"></td>
                                             <td x-text="report.user?.name || '—'"></td>
                                             <td x-text="report.guide?.name || '—'"></td>
-                                            <td x-text="report.actual_date || '-'"></td>
+                                            <td x-text="formatReportDate(report.actual_date) || '-'"></td>
                                             <td>
                                                 <span class="status-badge status-pending">
                                                     ユーザー承認済み／管理者承認待ち
@@ -979,7 +979,7 @@
                     </div>
                     <div>
                         <strong>実施日</strong><br>
-                        <span x-text="selectedReport.actual_date || '-'"></span>
+                        <span x-text="formatReportDate(selectedReport.actual_date) || '-'"></span>
                     </div>
                     <div>
                         <strong>ユーザー</strong><br>
@@ -1717,6 +1717,17 @@ function adminDashboard() {
             }
             
             return `${year}/${month}/${day}${timeDisplay ? ' ' + timeDisplay : ''}`;
+        },
+        formatReportDate(dateStr) {
+            if (!dateStr) return '';
+            
+            // 日付を年/月/日にフォーマット
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            return `${year}/${month}/${day}`;
         }
     }
 }

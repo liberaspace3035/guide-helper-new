@@ -126,7 +126,7 @@
                             <a :href="`{{ url('/reports') }}/${report.id}`" class="pending-report-item" :class="{'revision-requested': report.status === 'revision_requested'}">
                                 <div class="report-info">
                                     <span class="report-type" x-text="report.request_type"></span>
-                                    <span class="report-date" x-text="formatDate(report.actual_date)"></span>
+                                    <span class="report-date" x-text="formatReportDate(report.actual_date)"></span>
                                     <template x-if="report.status === 'revision_requested'">
                                         <span class="report-status-badge revision-badge">修正待ち</span>
                                     </template>
@@ -745,6 +745,17 @@ function dashboardData() {
             if (!dateStr) return '';
             const date = new Date(dateStr);
             return date.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
+        },
+        formatReportDate(dateStr) {
+            if (!dateStr) return '';
+            
+            // 日付を年/月/日にフォーマット
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            return `${year}/${month}/${day}`;
         },
         formatRequestDateTime(dateStr, timeStr) {
             if (!dateStr) return '';

@@ -57,7 +57,7 @@
                 </div>
                 <div class="report-section-content">
                     <div class="date-time-info">
-                        <span class="date-value" x-text="report.actual_date || '—'"></span>
+                        <span class="date-value" x-text="formatReportDate(report.actual_date) || '—'"></span>
                         <template x-if="report.actual_start_time && report.actual_end_time">
                             <span class="time-range" x-text="`${report.actual_start_time.substring(0, 5)} ～ ${report.actual_end_time.substring(0, 5)}`"></span>
                         </template>
@@ -235,6 +235,17 @@ function reportDetail() {
             } finally {
                 this.processing = false;
             }
+        },
+        formatReportDate(dateStr) {
+            if (!dateStr) return '';
+            
+            // 日付を年/月/日にフォーマット
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            return `${year}/${month}/${day}`;
         }
     }
 }
