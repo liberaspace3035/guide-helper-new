@@ -2202,6 +2202,7 @@
   .admin-table td {
     padding: var(--spacing-sm);
     white-space: nowrap;
+    text-align: center;
   }
 
   // レスポンシブでも特定の列は改行可能
@@ -2211,11 +2212,13 @@
     white-space: normal;
   }
 
-  .table-actions {
-    display: flex;
-    gap: var(--spacing-xs);
-    flex-wrap: wrap;
-  }
+.table-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
 
   .setting-card-header {
     flex-direction: column;
@@ -2317,6 +2320,7 @@
   .admin-table td {
     padding: var(--spacing-xs);
     white-space: nowrap;
+    text-align: center;
   }
 
   // スマホでも特定の列は改行可能
