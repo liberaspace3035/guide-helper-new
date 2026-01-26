@@ -21,7 +21,7 @@
                 <h2>依頼情報</h2>
                 <p><strong>タイプ:</strong> <span x-text="getRequestTypeLabel(matching.request_type)"></span></p>
                 <p><strong>場所:</strong> <span x-text="matching.masked_address"></span></p>
-                <p><strong>日時:</strong> <span x-text="matching.request_date + ' ' + matching.request_time"></span></p>
+                <p><strong>日時:</strong> <span x-text="formatRequestDateTime(matching.request_date, matching.request_time)"></span></p>
             </div>
             <div class="matching-participants">
                 @if(auth()->user()->isUser())
@@ -87,6 +87,29 @@ function matchingData() {
                 home: '自宅'
             };
             return map[type] || type;
+        },
+        formatRequestDateTime(dateStr, timeStr) {
+            if (!dateStr) return '';
+            
+            // 日付を年/月/日にフォーマット
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            // 時間をフォーマット（秒を除く）
+            let timeDisplay = '';
+            if (timeStr) {
+                // "HH:MM:SS" または "HH:MM" 形式から "HH:MM" を抽出
+                const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})/);
+                if (timeMatch) {
+                    const hours = parseInt(timeMatch[1], 10);
+                    const minutes = timeMatch[2];
+                    timeDisplay = `${String(hours).padStart(2, '0')}:${minutes}`;
+                }
+            }
+            
+            return `${year}/${month}/${day}${timeDisplay ? ' ' + timeDisplay : ''}`;
         }
     }
 }
