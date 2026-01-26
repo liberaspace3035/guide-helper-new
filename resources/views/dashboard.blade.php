@@ -710,7 +710,7 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/Dashboard.css') }}">
+{{-- CSSはViteでビルドされたapp.scssに含まれています --}}
 @endpush
 
 @push('scripts')
