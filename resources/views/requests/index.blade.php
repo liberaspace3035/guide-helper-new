@@ -62,6 +62,8 @@
                                 <button
                                     type="button"
                                     class="btn-secondary"
+                                    :class="{ 'btn-disabled': isApplicantsEmpty(request.id) }"
+                                    :disabled="isApplicantsEmpty(request.id)"
                                     @click="fetchApplicants(request.id)"
                                 >
                                     応募ガイドを表示
@@ -377,6 +379,18 @@ function requestsData() {
             }
             
             return `${year}/${month}/${day}${timeDisplay ? ' ' + timeDisplay : ''}`;
+        },
+        isApplicantsEmpty(requestId) {
+            // 応募ガイドを取得済みで、0件の場合にtrueを返す
+            if (this.applicantsMap[requestId] && Array.isArray(this.applicantsMap[requestId])) {
+                return this.applicantsMap[requestId].length === 0;
+            }
+            // 応募ガイドを取得していない場合、request.statusが'pending'の場合は応募ガイドがいない可能性が高い
+            const request = this.requests.find(r => r.id == requestId);
+            if (request && request.status === 'pending') {
+                return true;
+            }
+            return false;
         }
     }
 }
