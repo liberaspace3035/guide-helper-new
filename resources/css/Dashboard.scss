@@ -168,13 +168,13 @@
 .admin-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: auto;
+  table-layout: fixed;
 }
 
 .admin-table th,
 .admin-table td {
   padding: 0.75rem;
-  text-align: left;
+  text-align: center;
   border-bottom: 1px solid var(--border-color);
   white-space: nowrap;
   vertical-align: middle;
