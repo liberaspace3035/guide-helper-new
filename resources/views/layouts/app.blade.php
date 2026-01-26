@@ -9,6 +9,146 @@
     <meta name="theme-color" content="#2563eb">
     @vite(['resources/css/app.scss'])
     @stack('styles')
+    <script>
+        // グローバルなfetchヘルパー関数（419/401エラーハンドリング付き）
+        window.handleApiResponse = async function(response) {
+            // 419エラー（CSRFトークン期限切れ）: ページをリロードして新しいトークンを取得
+            if (response.status === 419) {
+                console.warn('セッション期限切れ（419）。ページを再読み込みします。');
+                alert('セッションの期限が切れました。ページを再読み込みします。');
+                window.location.reload();
+                return false;
+            }
+            
+            // 401エラー（認証エラー）: ログイン画面へリダイレクト
+            if (response.status === 401) {
+                console.error('認証エラー');
+                alert('認証が期限切れです。ログイン画面に移動します。');
+                window.location.href = '/login?message=expired';
+                return false;
+            }
+            
+            return true;
+        };
+        
+        // グローバルなfetchラッパー関数
+        window.apiFetch = async function(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(options.headers || {})
+                }
+            });
+            
+            // 419/401エラーのハンドリング
+            const shouldContinue = await window.handleApiResponse(response);
+            if (!shouldContinue) {
+                throw new Error('認証エラーまたはセッション期限切れ');
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'エラーが発生しました' }));
+                console.error('APIエラー:', url, errorData);
+                throw new Error(errorData.error || 'エラーが発生しました');
+            }
+            
+            return response.json();
+        };
+        
+        function headerMenu() {
+            return {
+                unreadCount: 0,
+                activeMatchingId: null,
+                intervalId: null,
+                init() {
+                    this.fetchUnreadCount();
+                    this.fetchActiveMatching();
+                    // 30秒ごとに未読メッセージ数を更新
+                    this.intervalId = setInterval(() => {
+                        this.fetchUnreadCount();
+                    }, 30000);
+                    // チャットページを開いたときに未読数を更新
+                    window.addEventListener('chat-opened', () => {
+                        this.fetchUnreadCount();
+                    });
+                },
+                async apiFetch(url, options = {}) {
+                    const response = await fetch(url, {
+                        ...options,
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            ...(options.headers || {})
+                        }
+                    });
+                    
+                    // 419エラー（CSRFトークン期限切れ）: ページをリロードして新しいトークンを取得
+                    if (response.status === 419) {
+                        console.warn('セッション期限切れ（419）。ページを再読み込みします。');
+                        alert('セッションの期限が切れました。ページを再読み込みします。');
+                        window.location.reload();
+                        return;
+                    }
+                    
+                    // 401エラー（認証エラー）: ログイン画面へリダイレクト
+                    if (response.status === 401) {
+                        console.error('認証エラー:', url);
+                        alert('認証が期限切れです。ログイン画面に移動します。');
+                        window.location.href = '/login?message=expired';
+                        throw new Error('認証エラー');
+                    }
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ error: 'エラーが発生しました' }));
+                        console.error('APIエラー:', url, errorData);
+                        throw new Error(errorData.error || 'エラーが発生しました');
+                    }
+                    
+                    return response.json();
+                },
+                async fetchUnreadCount() {
+                    try {
+                        const data = await this.apiFetch('/api/chat/unread-count');
+                        this.unreadCount = data.unread_count || 0;
+                    } catch (error) {
+                        if (error.message !== '認証エラー') {
+                            console.error('未読メッセージ数取得エラー:', error);
+                        }
+                    }
+                },
+                async fetchActiveMatching() {
+                    try {
+                        const data = await this.apiFetch('/api/matchings/my-matchings');
+                        // アクティブなマッチング（matched または in_progress）を取得
+                        const activeMatching = data.matchings?.find(
+                            m => m.status === 'matched' || m.status === 'in_progress'
+                        );
+                        if (activeMatching) {
+                            this.activeMatchingId = activeMatching.id;
+                        }
+                    } catch (error) {
+                        if (error.message !== '認証エラー') {
+                            console.error('アクティブマッチング取得エラー:', error);
+                        }
+                    }
+                },
+                handleChatClick() {
+                    if (this.activeMatchingId) {
+                        this.unreadCount = 0; // クリックしたら未読数をリセット
+                        window.location.href = `/chat/${this.activeMatchingId}`;
+                    } else {
+                        alert('マッチングが確定していません。');
+                    }
+                }
+            }
+        }
+    </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body>
@@ -166,146 +306,6 @@
         </div>
     </div>
     @stack('scripts')
-    <script>
-        // グローバルなfetchヘルパー関数（419/401エラーハンドリング付き）
-        window.handleApiResponse = async function(response) {
-            // 419エラー（CSRFトークン期限切れ）: ページをリロードして新しいトークンを取得
-            if (response.status === 419) {
-                console.warn('セッション期限切れ（419）。ページを再読み込みします。');
-                alert('セッションの期限が切れました。ページを再読み込みします。');
-                window.location.reload();
-                return false;
-            }
-            
-            // 401エラー（認証エラー）: ログイン画面へリダイレクト
-            if (response.status === 401) {
-                console.error('認証エラー');
-                alert('認証が期限切れです。ログイン画面に移動します。');
-                window.location.href = '/login?message=expired';
-                return false;
-            }
-            
-            return true;
-        };
-        
-        // グローバルなfetchラッパー関数
-        window.apiFetch = async function(url, options = {}) {
-            const response = await fetch(url, {
-                ...options,
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    ...(options.headers || {})
-                }
-            });
-            
-            // 419/401エラーのハンドリング
-            const shouldContinue = await window.handleApiResponse(response);
-            if (!shouldContinue) {
-                throw new Error('認証エラーまたはセッション期限切れ');
-            }
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'エラーが発生しました' }));
-                console.error('APIエラー:', url, errorData);
-                throw new Error(errorData.error || 'エラーが発生しました');
-            }
-            
-            return response.json();
-        };
-        
-        function headerMenu() {
-            return {
-                unreadCount: 0,
-                activeMatchingId: null,
-                intervalId: null,
-                init() {
-                    this.fetchUnreadCount();
-                    this.fetchActiveMatching();
-                    // 30秒ごとに未読メッセージ数を更新
-                    this.intervalId = setInterval(() => {
-                        this.fetchUnreadCount();
-                    }, 30000);
-                    // チャットページを開いたときに未読数を更新
-                    window.addEventListener('chat-opened', () => {
-                        this.fetchUnreadCount();
-                    });
-                },
-                async apiFetch(url, options = {}) {
-                    const response = await fetch(url, {
-                        ...options,
-                        credentials: 'include',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            ...(options.headers || {})
-                        }
-                    });
-                    
-                    // 419エラー（CSRFトークン期限切れ）: ページをリロードして新しいトークンを取得
-                    if (response.status === 419) {
-                        console.warn('セッション期限切れ（419）。ページを再読み込みします。');
-                        alert('セッションの期限が切れました。ページを再読み込みします。');
-                        window.location.reload();
-                        return;
-                    }
-                    
-                    // 401エラー（認証エラー）: ログイン画面へリダイレクト
-                    if (response.status === 401) {
-                        console.error('認証エラー:', url);
-                        alert('認証が期限切れです。ログイン画面に移動します。');
-                        window.location.href = '/login?message=expired';
-                        throw new Error('認証エラー');
-                    }
-                    
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({ error: 'エラーが発生しました' }));
-                        console.error('APIエラー:', url, errorData);
-                        throw new Error(errorData.error || 'エラーが発生しました');
-                    }
-                    
-                    return response.json();
-                },
-                async fetchUnreadCount() {
-                    try {
-                        const data = await this.apiFetch('/api/chat/unread-count');
-                        this.unreadCount = data.unread_count || 0;
-                    } catch (error) {
-                        if (error.message !== '認証エラー') {
-                            console.error('未読メッセージ数取得エラー:', error);
-                        }
-                    }
-                },
-                async fetchActiveMatching() {
-                    try {
-                        const data = await this.apiFetch('/api/matchings/my-matchings');
-                        // アクティブなマッチング（matched または in_progress）を取得
-                        const activeMatching = data.matchings?.find(
-                            m => m.status === 'matched' || m.status === 'in_progress'
-                        );
-                        if (activeMatching) {
-                            this.activeMatchingId = activeMatching.id;
-                        }
-                    } catch (error) {
-                        if (error.message !== '認証エラー') {
-                            console.error('アクティブマッチング取得エラー:', error);
-                        }
-                    }
-                },
-                handleChatClick() {
-                    if (this.activeMatchingId) {
-                        this.unreadCount = 0; // クリックしたら未読数をリセット
-                        window.location.href = `/chat/${this.activeMatchingId}`;
-                    } else {
-                        alert('マッチングが確定していません。');
-                    }
-                }
-            }
-        }
-    </script>
 </body>
 </html>
 
