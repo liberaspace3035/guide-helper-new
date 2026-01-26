@@ -5,7 +5,10 @@ nixPkgs = ["php82", "php82Packages.composer", "nodejs-18_x"]
 cmds = ["composer install --no-dev --optimize-autoloader", "npm install"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = [
+  "npm run build",
+  "echo 'Build completed successfully'"
+]
 
 [start]
 cmd = "bash scripts/start.sh"
