@@ -385,7 +385,7 @@
                                     </td>
                                     <td x-text="matching.request_type"></td>
                                     <td x-text="matching.guide_name"></td>
-                                    <td x-text="formatDate(matching.request_date) + ' ' + (matching.request_time || '')"></td>
+                                    <td x-text="formatRequestDateTime(matching.request_date, matching.request_time)"></td>
                                     <td x-text="matching.masked_address"></td>
                                     <td class="table-actions">
                                         <div class="action-buttons">
@@ -644,7 +644,7 @@
                                             <line x1="8" y1="2" x2="8" y2="6"></line>
                                             <line x1="3" y1="10" x2="21" y2="10"></line>
                                         </svg>
-                                        <span x-text="formatDate(matching.request_date) + ' ' + (matching.request_time || '')"></span>
+                                        <span x-text="formatRequestDateTime(matching.request_date, matching.request_time)"></span>
                                     </p>
                                 </div>
                             </div>
@@ -745,6 +745,29 @@ function dashboardData() {
             if (!dateStr) return '';
             const date = new Date(dateStr);
             return date.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
+        },
+        formatRequestDateTime(dateStr, timeStr) {
+            if (!dateStr) return '';
+            
+            // 日付を年/月/日にフォーマット
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            // 時間をフォーマット（秒を除く）
+            let timeDisplay = '';
+            if (timeStr) {
+                // "HH:MM:SS" または "HH:MM" 形式から "HH:MM" を抽出
+                const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})/);
+                if (timeMatch) {
+                    const hours = parseInt(timeMatch[1], 10);
+                    const minutes = timeMatch[2];
+                    timeDisplay = `${String(hours).padStart(2, '0')}:${minutes}`;
+                }
+            }
+            
+            return `${year}/${month}/${day}${timeDisplay ? ' ' + timeDisplay : ''}`;
         },
         getPendingReportsTitle() {
             const hasRevisionRequested = this.pendingReports.some(r => r.status === 'revision_requested');

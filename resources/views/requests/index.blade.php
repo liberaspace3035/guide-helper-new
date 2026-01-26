@@ -39,7 +39,7 @@
                     </div>
                     <div class="request-details">
                         <p><strong>場所:</strong> <span x-text="request.masked_address"></span></p>
-                        <p><strong>日時:</strong> <span x-text="request.request_date + ' ' + request.request_time"></span></p>
+                        <p><strong>日時:</strong> <span x-text="formatRequestDateTime(request.request_date, request.request_time)"></span></p>
                         <p><strong>内容:</strong> <span x-text="request.service_content"></span></p>
                         <p><strong>作成日:</strong> <span x-text="formatDate(request.created_at)"></span></p>
                     </div>
@@ -354,6 +354,29 @@ function requestsData() {
             if (!dateStr) return '';
             const date = new Date(dateStr);
             return date.toLocaleString('ja-JP');
+        },
+        formatRequestDateTime(dateStr, timeStr) {
+            if (!dateStr) return '';
+            
+            // 日付を年/月/日にフォーマット
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            // 時間をフォーマット（秒を除く）
+            let timeDisplay = '';
+            if (timeStr) {
+                // "HH:MM:SS" または "HH:MM" 形式から "HH:MM" を抽出
+                const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})/);
+                if (timeMatch) {
+                    const hours = parseInt(timeMatch[1], 10);
+                    const minutes = timeMatch[2];
+                    timeDisplay = `${String(hours).padStart(2, '0')}:${minutes}`;
+                }
+            }
+            
+            return `${year}/${month}/${day}${timeDisplay ? ' ' + timeDisplay : ''}`;
         }
     }
 }
