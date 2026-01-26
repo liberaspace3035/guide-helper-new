@@ -42,8 +42,8 @@ class RequestController extends Controller
             'request_date' => 'required|date',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',
-            'guide_gender' => 'required|in:none,male,female',
-            'guide_age' => 'required|in:none,20s,30s,40s,50s,60s',
+            'guide_gender' => 'nullable|in:none,male,female',
+            'guide_age' => 'nullable|in:none,20s,30s,40s,50s,60s',
         ]);
 
         if ($validator->fails()) {

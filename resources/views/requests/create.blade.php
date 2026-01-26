@@ -148,16 +148,14 @@
         </div>
 
         <div class="form-group full-width">
-            <h3 class="section-subtitle">希望するガイドについて <span class="required">*</span></h3>
+            <h3 class="section-subtitle">希望するガイドについて（任意）</h3>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="guide_gender">希望するガイドの性別 <span class="required">*</span></label>
+                    <label for="guide_gender">希望するガイドの性別</label>
                     <select
                         id="guide_gender"
                         name="guide_gender"
                         x-model="formData.guide_gender"
-                        required
-                        aria-required="true"
                     >
                         <option value="none">選択しない（どの性別でも構わない）</option>
                         <option value="male">男性</option>
@@ -165,13 +163,11 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="guide_age">希望するガイドの年代 <span class="required">*</span></label>
+                    <label for="guide_age">希望するガイドの年代</label>
                     <select
                         id="guide_age"
                         name="guide_age"
                         x-model="formData.guide_age"
-                        required
-                        aria-required="true"
                     >
                         <option value="none">選択しない（どの年代でも構わない）</option>
                         <option value="20s">20代</option>
@@ -402,13 +398,7 @@ function requestForm() {
         handleSubmit(event) {
             this.error = '';
             
-            // バリデーション1: ガイドの性別・年代が選択されているか
-            if (this.formData.guide_gender === 'none' || this.formData.guide_age === 'none') {
-                this.error = '希望するガイドの性別と年代を選択してください';
-                return;
-            }
-
-            // バリデーション2: 開始時刻 < 終了時刻か（日付を考慮）
+            // バリデーション1: 開始時刻 < 終了時刻か（日付を考慮）
             if (this.formData.start_time && this.formData.end_time) {
                 // 時刻を分単位に変換する関数
                 const timeToMinutes = (timeStr) => {
