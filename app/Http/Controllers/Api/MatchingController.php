@@ -23,14 +23,11 @@ class MatchingController extends Controller
         ]);
 
         try {
-            // セッション認証（web）とJWT認証（api）の両方をサポート
-            $guideId = Auth::guard('web')->id() ?? Auth::guard('api')->id();
+            // セッション認証を使用
+            $guideId = auth()->id();
             
             if (!$guideId) {
-                \Log::warning('MatchingController::accept - 認証ユーザーが見つかりません', [
-                    'web_user' => Auth::guard('web')->id(),
-                    'api_user' => Auth::guard('api')->id(),
-                ]);
+                \Log::warning('MatchingController::accept - 認証ユーザーが見つかりません');
                 return response()->json(['error' => '認証が必要です'], 401);
             }
             
@@ -62,8 +59,8 @@ class MatchingController extends Controller
         ]);
 
         try {
-            // セッション認証（web）とJWT認証（api）の両方をサポート
-            $guideId = Auth::guard('web')->id() ?? Auth::guard('api')->id();
+            // セッション認証を使用
+            $guideId = auth()->id();
             
             if (!$guideId) {
                 return response()->json(['error' => '認証が必要です'], 401);
@@ -90,8 +87,8 @@ class MatchingController extends Controller
 
     public function myMatchings()
     {
-        // セッション認証（web）とJWT認証（api）の両方をサポート
-        $userId = Auth::guard('web')->id() ?? Auth::guard('api')->id();
+        // セッション認証を使用
+        $userId = auth()->id();
         
         if (!$userId) {
             return response()->json(['error' => '認証が必要です'], 401);

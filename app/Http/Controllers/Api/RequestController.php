@@ -52,8 +52,8 @@ class RequestController extends Controller
 
     public function availableForGuide()
     {
-        // セッション認証（web）とJWT認証（api）の両方をサポート
-        $guide = Auth::guard('web')->user() ?? Auth::guard('api')->user();
+        // セッション認証を使用
+        $guide = auth()->user();
         
         if (!$guide) {
             return response()->json(['error' => '認証が必要です'], 401);

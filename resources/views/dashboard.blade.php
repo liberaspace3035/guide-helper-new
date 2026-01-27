@@ -380,14 +380,14 @@
                         <tbody>
                             <template x-for="matching in matchings" :key="matching.id">
                                 <tr>
-                                    <td>
+                                    <td class="text-center">
                                         <span class="status-badge" :class="getStatusBadgeClass(matching.status)" x-text="getStatusLabel(matching.status)"></span>
                                     </td>
-                                    <td x-text="matching.request_type"></td>
-                                    <td x-text="matching.guide_name"></td>
-                                    <td x-text="formatRequestDateTime(matching.request_date, matching.request_time)"></td>
-                                    <td x-text="matching.masked_address"></td>
-                                    <td class="table-actions">
+                                    <td x-text="matching.request_type" class="text-center"></td>
+                                    <td x-text="matching.guide_name" class="text-center"></td>
+                                    <td x-text="formatRequestDateTime(matching.request_date, matching.request_time)" class="text-center"></td>
+                                    <td x-text="matching.masked_address" class="text-center"></td>
+                                    <td class="table-actions text-center">
                                         <div class="action-buttons">
                                             <a :href="`{{ url('/chat') }}/${matching.id}`" class="action-btn action-btn-chat" :aria-label="`チャット: ${matching.guide_name}`" :title="`${matching.guide_name}さんとチャット`">
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

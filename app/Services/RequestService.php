@@ -252,7 +252,13 @@ class RequestService
             ->toArray();
 
         // 利用可能な依頼（pending または guide_accepted ステータス）
+        // 指名ガイドが設定されていない依頼、またはこのガイドが指名されている依頼のみを取得
         $requests = Request::whereIn('status', ['pending', 'guide_accepted'])
+            ->where(function($query) use ($guideId) {
+                // 指名ガイドが設定されていない依頼、またはこのガイドが指名されている依頼
+                $query->whereNull('nominated_guide_id')
+                      ->orWhere('nominated_guide_id', $guideId);
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 

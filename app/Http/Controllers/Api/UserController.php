@@ -22,8 +22,8 @@ class UserController extends Controller
     public function getMyMonthlyLimit(Request $request)
     {
         try {
-            // セッション認証（web）とJWT認証（api）の両方をサポート
-            $user = Auth::guard('web')->user() ?? Auth::guard('api')->user();
+            // セッション認証を使用
+            $user = auth()->user();
             
             if (!$user) {
                 return response()->json(['error' => '認証が必要です'], 401);
@@ -66,8 +66,8 @@ class UserController extends Controller
     public function getMyMonthlyLimits(Request $request)
     {
         try {
-            // セッション認証（web）とJWT認証（api）の両方をサポート
-            $user = Auth::guard('web')->user() ?? Auth::guard('api')->user();
+            // セッション認証を使用
+            $user = auth()->user();
             
             if (!$user) {
                 return response()->json(['error' => '認証が必要です'], 401);

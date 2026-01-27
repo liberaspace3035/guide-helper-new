@@ -24,8 +24,8 @@ class ChatController extends Controller
         ]);
 
         try {
-            // セッション認証（web）とJWT認証（api）の両方をサポート
-            $senderId = Auth::guard('web')->id() ?? Auth::guard('api')->id();
+            // セッション認証を使用
+            $senderId = auth()->id();
             
             if (!$senderId) {
                 return response()->json(['error' => '認証が必要です'], 401);
@@ -33,7 +33,7 @@ class ChatController extends Controller
             
             \Log::info('ChatController::sendMessage', [
                 'auth_id' => $senderId,
-                'user' => Auth::guard('web')->user() ?? Auth::guard('api')->user(),
+                'user' => auth()->user(),
                 'matching_id' => $request->input('matching_id'),
                 'message' => $request->input('message')
             ]);
@@ -61,8 +61,8 @@ class ChatController extends Controller
     public function getMessages($matchingId)
     {
         try {
-            // セッション認証（web）とJWT認証（api）の両方をサポート
-            $userId = Auth::guard('web')->id() ?? Auth::guard('api')->id();
+            // セッション認証を使用
+            $userId = auth()->id();
             
             if (!$userId) {
                 return response()->json(['error' => '認証が必要です'], 401);
@@ -78,8 +78,8 @@ class ChatController extends Controller
 
     public function unreadCount()
     {
-        // セッション認証（web）とJWT認証（api）の両方をサポート
-        $userId = Auth::guard('web')->id() ?? Auth::guard('api')->id();
+        // セッション認証を使用
+        $userId = auth()->id();
         
         if (!$userId) {
             return response()->json(['error' => '認証が必要です'], 401);

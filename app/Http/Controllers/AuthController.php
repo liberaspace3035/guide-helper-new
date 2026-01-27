@@ -176,6 +176,7 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->email)->first();
+        // dump($user);
 
         if (!$user || !Hash::check($request->password, $user->password_hash)) {
             // APIリクエストの場合はJSONレスポンス
@@ -204,6 +205,7 @@ class AuthController extends Controller
         // セッション認証でログイン
         auth()->login($user);
         $request->session()->regenerate();
+        // dd($request->session()->all());
         
         // APIリクエストの場合はJSONレスポンスを返す
         if ($request->expectsJson() || $request->is('api/*')) {

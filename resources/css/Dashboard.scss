@@ -167,10 +167,23 @@
 
 .admin-table {
   width: 100%;
+  min-width: 1000px;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
+// ユーザー管理タブとガイド管理タブのテーブルのみ横スクロールを有効にする
+.admin-table-scrollable-large {
+  min-width: 1800px; // デスクトップ表示でも横スクロールを有効にするため最小幅を設定
+  width: auto; // table-layout: fixed;とwidth: 100%;の組み合わせでmin-widthが効かないため、autoに変更
+  table-layout: auto; // 横スクロールを有効にするためautoに変更
+}
+
+.admin-table-scrollable-medium {
+  min-width: 1000px; // デスクトップ表示でも横スクロールを有効にするため最小幅を設定
+  width: auto; // table-layout: fixed;とwidth: 100%;の組み合わせでmin-widthが効かないため、autoに変更
+  table-layout: auto; // 横スクロールを有効にするためautoに変更
+}
 .admin-table th,
 .admin-table td {
   padding: 0.75rem;
@@ -204,6 +217,14 @@
 .admin-table th:nth-child(5),
 .admin-table td:nth-child(5) {
   min-width: 120px; // ステータス列
+  white-space: normal; // ステータスバッジの改行を許可
+}
+
+// ステータス列のバッジで改行を許可
+.admin-table td:nth-child(5) .status-badge {
+  white-space: normal;
+  word-break: keep-all;
+  line-height: 1.4;
 }
 
 .admin-table th:nth-child(6),
@@ -225,11 +246,13 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  justify-content: center;
 }
 
 .table-inline-field input {
-  min-width: 120px;
+  min-width: 90px;
   max-width: 120px;
+  text-align: center;
 }
 
 .admin-table th {
@@ -1051,6 +1074,7 @@
   display: flex;
   align-items: baseline;
   gap: 4px;
+  white-space: nowrap; // 「時間」が改行されないようにする
 }
 
 .limit-number {
@@ -1181,6 +1205,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
+  margin: 0 auto;
 }
 
 .btn-icon-small:hover {
@@ -1457,7 +1482,7 @@
 
 .matchings-table th {
   padding: var(--spacing-md);
-  text-align: left;
+  text-align: center;
   font-weight: 500;
   color: var(--text-primary);
   border-bottom: 2px solid var(--border-color);
@@ -1480,9 +1505,13 @@
 }
 
 .table-actions {
-  padding: var(--spacing-sm);
+  // padding: var(--spacing-sm);
   text-align: center;
   vertical-align: middle;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--spacing-xs);
 }
 
 .action-buttons {
@@ -1592,6 +1621,7 @@
 
 .usage-table {
   width: 100%;
+  min-width: 310px; // デスクトップ表示でも横スクロールを有効にするため最小幅を設定
   border-collapse: collapse;
   font-size: 13px;
   margin-top: var(--spacing-md);
@@ -2214,7 +2244,8 @@
 
 .table-actions {
   display: flex;
-  gap: var(--spacing-xs);
+  flex-direction: column;
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;

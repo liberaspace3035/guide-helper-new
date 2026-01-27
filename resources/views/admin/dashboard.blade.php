@@ -408,28 +408,15 @@
                                             </td>
                                             <td>
                                                 <div class="table-actions">
+                                                    <!-- 管理者承認待ち報告書ではCSV出力ボタンを非表示 -->
                                                     <button
-                                                        class="btn-icon-small"
-                                                        @click="exportReportCSV(report.id)"
-                                                        :aria-label="'報告書ID ' + report.id + ' をCSV出力'"
-                                                        title="CSV出力"
-                                                        style="margin-right: 4px;"
-                                                    >
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                                            <polyline points="7 10 12 15 17 10"></polyline>
-                                                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                                                        </svg>
-                                                    </button>
-                                                    <button
-                                                        class="btn-secondary btn-sm"
-                                                        style="margin-right: 8px;"
+                                                        class="btn-secondary"
                                                         @click="openReportModal(report)"
                                                     >
                                                         詳細を見る
                                                     </button>
                                                     <button
-                                                        class="btn-primary btn-sm"
+                                                        class="btn-primary "
                                                         @click="approveReport(report.id)"
                                                     >
                                                         管理者承認
@@ -463,7 +450,7 @@
                 </template>
                 <template x-if="users.length > 0">
                     <div class="table-container">
-                        <table class="admin-table">
+                        <table class="admin-table admin-table-scrollable-large">
                             <thead>
                                 <tr>
                                     <th>No</th>
@@ -566,8 +553,7 @@
                 </template>
                 <template x-if="guides.length > 0">
                     <div class="table-container">
-                        <table class="admin-table">
-                            <thead>
+                        <table class="admin-table admin-table-scrollable-large">
                                 <tr>
                                     <th>No</th>
                                     <th>名前</th>
@@ -657,7 +643,7 @@
                 </template>
                 <template x-if="users.length > 0">
                     <div class="table-container">
-                        <table class="admin-table">
+                        <table class="admin-table ">
                             <thead>
                                 <tr>
                                     <th>ユーザー名</th>
@@ -957,7 +943,7 @@
                         type="button"
                         class="btn-secondary btn-sm"
                         @click="exportReportCSV(selectedReport.id)"
-                        x-show="selectedReport"
+                        x-show="selectedReport && selectedReport.status === 'approved'"
                     >
                         CSV出力
                     </button>
@@ -1061,6 +1047,8 @@ function adminDashboard() {
                     ...(options.headers || {})
                 }
             });
+
+            console.log("response", response);
             
             // 419エラー（CSRFトークン期限切れ）: ページをリロードして新しいトークンを取得
             if (response.status === 419) {

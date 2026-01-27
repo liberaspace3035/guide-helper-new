@@ -194,6 +194,8 @@ function chatData() {
         matchingInfo: null,
         isRecording: false,
         recognition: null,
+        processedResultIndices: new Set(), // 処理済みの結果インデックスを追跡
+        interimText: '', // 中間結果を一時保存（表示用）
         userRole: '{{ auth()->user()->role }}',
         userId: {{ auth()->id() }},
         get otherUserName() {
@@ -274,8 +276,6 @@ function chatData() {
                         ...msg,
                         isSending: false
                     }));
-                    console.log('Fetched messages:', this.messages);
-                    console.log('Current userId:', this.userId, 'type:', typeof this.userId);
                     // 新しいメッセージが追加された場合のみスクロール
                     if (this.messages.length > previousLength) {
                         this.$nextTick(() => this.scrollToBottom(true));
@@ -370,14 +370,7 @@ function chatData() {
             const msgSenderId = Number(message.sender_id);
             const currentUserId = Number(this.userId);
             const isOwn = msgSenderId === currentUserId;
-            console.log('isOwnMessage check:', {
-                messageSenderId: message.sender_id,
-                msgSenderId: msgSenderId,
-                currentUserId: currentUserId,
-                userId: this.userId,
-                isOwn: isOwn,
-                message: message
-            });
+
             return isOwn;
         },
         formatTime(dateString) {
@@ -441,36 +434,68 @@ function chatData() {
                 this.recognition.interimResults = true;
 
                 this.recognition.onresult = (event) => {
-                    let interimTranscript = '';
                     let finalTranscript = '';
-
+                    
+                    // 確定結果のみを処理（重複を防ぐ）
                     for (let i = event.resultIndex; i < event.results.length; i++) {
-                        const transcript = event.results[i][0].transcript;
-                        if (event.results[i].isFinal) {
-                            finalTranscript += transcript;
+                        const result = event.results[i];
+                        const transcript = result[0].transcript;
+                        
+                        if (result.isFinal) {
+                            // 確定結果は一度だけ追加（重複チェック）
+                            if (!this.processedResultIndices.has(i)) {
+                                finalTranscript += transcript;
+                                this.processedResultIndices.add(i);
+                            }
                         } else {
-                            interimTranscript += transcript;
+                            // 中間結果は表示用のみ（追加しない）
+                            this.interimText = transcript;
                         }
                     }
-
-                    const currentText = this.newMessage.trim();
-                    const newText = finalTranscript + (interimTranscript ? ' ' + interimTranscript : '');
-                    this.newMessage = currentText ? currentText + ' ' + newText : newText;
+                    
+                    // 確定結果のみを追加（スペースを適切に追加）
+                    if (finalTranscript) {
+                        const currentText = this.newMessage.trim();
+                        // 既存のテキストの末尾が空白でない場合、スペースを追加
+                        const separator = currentText && 
+                            !currentText.endsWith(' ') && 
+                            !currentText.endsWith('\n') && 
+                            !currentText.endsWith('。') && 
+                            !currentText.endsWith('、') 
+                            ? ' ' : '';
+                        this.newMessage = currentText + separator + finalTranscript;
+                        // 中間結果をクリア
+                        this.interimText = '';
+                    }
                 };
 
                 this.recognition.onerror = (event) => {
                     console.error('音声認識エラー:', event.error);
                     this.isRecording = false;
+                    this.interimText = '';
                 };
 
                 this.recognition.onend = () => {
                     this.isRecording = false;
+                    this.interimText = '';
+                    // 処理済み結果をリセット（次回の録音に備える）
+                    this.processedResultIndices = new Set();
+                };
+                
+                this.recognition.onstart = () => {
+                    // 開始時に処理済み結果をリセット
+                    this.processedResultIndices = new Set();
+                    this.interimText = '';
                 };
             } else {
                 alert('お使いのブラウザは音声認識に対応していません');
             }
         },
         startRecording() {
+            // 処理済み結果をリセット
+            this.processedResultIndices = new Set();
+            this.interimText = '';
+            
             if (!this.recognition) {
                 this.initSpeechRecognition();
             }
@@ -492,6 +517,7 @@ function chatData() {
             if (this.recognition && this.isRecording) {
                 this.recognition.stop();
                 this.isRecording = false;
+                this.interimText = '';
             }
         }
     }

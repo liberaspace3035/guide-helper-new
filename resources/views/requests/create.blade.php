@@ -188,6 +188,8 @@
                     id="request_date"
                     name="request_date"
                     x-model="formData.request_date"
+                    @input="formData.request_date = $event.target.value"
+                    :value="formData.request_date"
                     required
                     :min="new Date().toISOString().split('T')[0]"
                     aria-required="true"
@@ -248,19 +250,37 @@
 function requestForm() {
     const getDefaultDateTime = () => {
         const now = new Date();
-        const toHM = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        console.log('now', now);
+        
+        // 日本時間（JST）で時刻を取得（getHours()とgetMinutes()はローカル時間を返す）
+        const toHM = (d) => {
+            const hours = d.getHours(); // ローカル時間の時間（0-23）
+            const minutes = d.getMinutes(); // ローカル時間の分（0-59）
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        };
+        
+        // 現在時刻から2時間後を開始時刻、その1時間後を終了時刻とする
         const start = new Date(now.getTime() + 2 * 60 * 60 * 1000);
         const end = new Date(start.getTime() + 60 * 60 * 1000);
+        
+        // 日本時間（JST）で日付を取得
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const request_date = `${year}-${month}-${day}`;
+        
         return {
-            request_date: now.toISOString().split('T')[0],
-            start_time: toHM(start),
-            end_time: toHM(end)
+            request_date: request_date,
+            start_time: toHM(start), // ローカル時間（日本時間）で取得
+            end_time: toHM(end) // ローカル時間（日本時間）で取得
         };
     };
 
     const defaultDateTime = getDefaultDateTime();
+    console.log('defaultDateTime', defaultDateTime);
 
     return {
+        getDefaultDateTime, // メソッドとして公開
         formData: {
             request_type: 'outing',
             destination_address: '',
@@ -281,7 +301,19 @@ function requestForm() {
         recognition: null,
         availableGuides: [],
         guidesLoading: false,
+        processedResultIndices: new Set(), // 処理済みの結果インデックスを追跡
+        interimText: '', // 中間結果を一時保存（表示用）
         async init() {
+            console.log('init');
+            // 依頼作成ページが開かれるたびに、日付フィールドに最新の日付を設定
+            const defaultDateTime = this.getDefaultDateTime();
+            console.log('defaultDateTime', defaultDateTime);
+            this.formData.request_date = defaultDateTime.request_date;
+            console.log('this.formData.request_date', this.formData.request_date);
+            // 時刻も最新の値に設定（必要に応じて）
+            this.formData.start_time = defaultDateTime.start_time;
+            this.formData.end_time = defaultDateTime.end_time;
+            
             // 音声認識のサポート確認
             if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
                 this.isVoiceInputSupported = true;
@@ -323,25 +355,45 @@ function requestForm() {
             this.recognition.interimResults = true;
             
             this.recognition.onresult = (event) => {
-                let interimTranscript = '';
                 let finalTranscript = '';
                 
+                // 確定結果のみを処理（重複を防ぐ）
                 for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript;
+                    const result = event.results[i];
+                    const transcript = result[0].transcript;
+                    
+                    if (result.isFinal) {
+                        // 確定結果は一度だけ追加（重複チェック）
+                        if (!this.processedResultIndices.has(i)) {
+                            finalTranscript += transcript;
+                            this.processedResultIndices.add(i);
+                        }
                     } else {
-                        interimTranscript += transcript;
+                        // 中間結果は表示用のみ（追加しない）
+                        this.interimText = transcript;
                     }
                 }
                 
-                // サービス内容に音声認識結果を追加
-                this.formData.service_content += finalTranscript + (interimTranscript ? ' ' + interimTranscript : '');
+                // 確定結果のみを追加（スペースを適切に追加）
+                if (finalTranscript) {
+                    const currentText = this.formData.service_content;
+                    // 既存のテキストの末尾が空白でない場合、スペースを追加
+                    const separator = currentText && 
+                        !currentText.endsWith(' ') && 
+                        !currentText.endsWith('\n') && 
+                        !currentText.endsWith('。') && 
+                        !currentText.endsWith('、') 
+                        ? ' ' : '';
+                    this.formData.service_content = currentText + separator + finalTranscript;
+                    // 中間結果をクリア
+                    this.interimText = '';
+                }
             };
             
             this.recognition.onerror = (event) => {
                 console.error('音声認識エラー:', event.error);
                 this.isRecording = false;
+                this.interimText = '';
                 if (event.error === 'no-speech') {
                     alert('音声が検出されませんでした。もう一度お試しください。');
                 } else if (event.error === 'not-allowed') {
@@ -351,6 +403,15 @@ function requestForm() {
             
             this.recognition.onend = () => {
                 this.isRecording = false;
+                this.interimText = '';
+                // 処理済み結果をリセット（次回の録音に備える）
+                this.processedResultIndices = new Set();
+            };
+            
+            this.recognition.onstart = () => {
+                // 開始時に処理済み結果をリセット
+                this.processedResultIndices = new Set();
+                this.interimText = '';
             };
         },
         toggleVoiceInput() {
@@ -366,6 +427,10 @@ function requestForm() {
             }
         },
         startRecording() {
+            // 処理済み結果をリセット
+            this.processedResultIndices = new Set();
+            this.interimText = '';
+            
             if (this.recognition) {
                 try {
                     this.recognition.start();
@@ -393,6 +458,7 @@ function requestForm() {
             if (this.recognition && this.isRecording) {
                 this.recognition.stop();
                 this.isRecording = false;
+                this.interimText = '';
             }
         },
         handleSubmit(event) {
