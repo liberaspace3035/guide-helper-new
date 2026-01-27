@@ -214,12 +214,6 @@ function chatData() {
             this.interval = setInterval(() => this.fetchMessages(false), 3000);
             // チャットページを開いたときに未読数を更新
             window.dispatchEvent(new CustomEvent('chat-opened'));
-            // 初期読み込み時のみ即座にスクロール
-            this.$watch('messages.length', (newLength, oldLength) => {
-                if (newLength > 0 && !this.loading) {
-                    this.$nextTick(() => this.scrollToBottom(true));
-                }
-            });
         },
         async fetchMatchingInfo() {
             try {
@@ -276,10 +270,6 @@ function chatData() {
                         ...msg,
                         isSending: false
                     }));
-                    // 新しいメッセージが追加された場合のみスクロール
-                    if (this.messages.length > previousLength) {
-                        this.$nextTick(() => this.scrollToBottom(true));
-                    }
                 }
             } catch (error) {
                 console.error('メッセージ取得エラー:', error);
@@ -305,7 +295,6 @@ function chatData() {
             };
             
             this.messages.push(tempMessage);
-            this.$nextTick(() => this.scrollToBottom(true));
 
             try {
                 console.log('Current userId from Alpine:', this.userId);
