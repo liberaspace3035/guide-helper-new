@@ -42,6 +42,27 @@
         aria-live="polite" 
         aria-label="チャットメッセージ"
     >
+        <!-- ネットワークエラー通知 -->
+        <template x-if="networkError">
+            <div class="chat-network-error" role="alert" aria-live="assertive">
+                <div class="chat-network-error-content">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span>ネットワーク接続に問題があります。再接続を試みています...</span>
+                    <button 
+                        @click="networkError = false; consecutiveErrors = 0; fetchMessages(false)"
+                        class="chat-network-error-retry"
+                        aria-label="再接続"
+                    >
+                        再試行
+                    </button>
+                </div>
+            </div>
+        </template>
+        
         <template x-if="loading && messages.length === 0">
             <div class="chat-loading-container">
                 <div class="chat-loading-spinner">
@@ -143,14 +164,15 @@
                     </svg>
                 </template>
             </button>
-            <input
-                type="text"
+            <textarea
                 x-model="newMessage"
                 :placeholder="isRecording ? '音声入力中...' : 'メッセージを入力...'"
                 class="chat-input"
                 aria-label="メッセージ入力"
                 :disabled="sending"
-            />
+                rows="1"
+                @input="autoResize($event.target)"
+            ></textarea>
             <button
                 type="submit"
                 :disabled="sending || !newMessage.trim()"
@@ -198,6 +220,13 @@ function chatData() {
         interimText: '', // 中間結果を一時保存（表示用）
         userRole: '{{ auth()->user()->role }}',
         userId: {{ auth()->id() }},
+        // ネットワークエラーハンドリング
+        networkError: false,
+        consecutiveErrors: 0,
+        pollingInterval: 3000, // 通常のポーリング間隔（3秒）
+        maxConsecutiveErrors: 5, // 最大連続エラー回数
+        retryDelay: 1000, // リトライの初期遅延（1秒）
+        interval: null, // ポーリングのインターバルID
         get otherUserName() {
             if (!this.matchingInfo) return 'チャット相手';
             if (this.userRole === 'user') {
@@ -211,9 +240,33 @@ function chatData() {
             this.fetchMatchingInfo();
             this.fetchMessages();
             // 定期的にメッセージを取得（ポーリング）
-            this.interval = setInterval(() => this.fetchMessages(false), 3000);
+            this.startPolling();
             // チャットページを開いたときに未読数を更新
             window.dispatchEvent(new CustomEvent('chat-opened'));
+            // ページの可視性変更を監視（非アクティブ時はポーリングを停止）
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    this.stopPolling();
+                } else {
+                    this.startPolling();
+                }
+            });
+        },
+        startPolling() {
+            // 既存のインターバルをクリア
+            this.stopPolling();
+            // ポーリングを開始
+            this.interval = setInterval(() => {
+                if (!document.hidden) {
+                    this.fetchMessages(false);
+                }
+            }, this.pollingInterval);
+        },
+        stopPolling() {
+            if (this.interval) {
+                clearInterval(this.interval);
+                this.interval = null;
+            }
         },
         async fetchMatchingInfo() {
             try {
@@ -244,16 +297,24 @@ function chatData() {
                 console.error('マッチング情報取得エラー:', error);
             }
         },
-        async fetchMessages(showLoading = false) {
+        async fetchMessages(showLoading = false, retryCount = 0) {
             try {
                 if (showLoading) this.loading = true;
+                
+                // タイムアウト処理（AbortControllerを使用）
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒でタイムアウト
+                
                 const response = await fetch(`/api/chat/messages/${this.matchingId}`, {
                     credentials: 'include',
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    },
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 
                 // 419/401エラーのハンドリング
                 if (window.handleApiResponse) {
@@ -270,11 +331,87 @@ function chatData() {
                         ...msg,
                         isSending: false
                     }));
+                    
+                    // 成功時はエラー状態をリセット
+                    this.handleNetworkSuccess();
+                } else {
+                    // HTTPエラー（4xx, 5xx）
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
             } catch (error) {
-                console.error('メッセージ取得エラー:', error);
+                // ネットワークエラーの判定
+                const isNetworkError = this.isNetworkError(error);
+                
+                if (isNetworkError) {
+                    this.handleNetworkError(error, retryCount);
+                } else {
+                    // ネットワークエラー以外（タイムアウトなど）
+                    console.error('メッセージ取得エラー:', error);
+                    this.consecutiveErrors++;
+                    if (this.consecutiveErrors >= this.maxConsecutiveErrors) {
+                        this.networkError = true;
+                    }
+                }
             } finally {
                 this.loading = false;
+            }
+        },
+        isNetworkError(error) {
+            // ネットワークエラーの判定
+            const errorMessage = error.message || error.toString();
+            const errorName = error.name || '';
+            
+            // AbortError（タイムアウト）もネットワークエラーとして扱う
+            if (errorName === 'AbortError' || errorMessage.includes('aborted')) {
+                return true;
+            }
+            
+            const networkErrorPatterns = [
+                'ERR_NETWORK_CHANGED',
+                'Failed to fetch',
+                'NetworkError',
+                'Network request failed',
+                'TypeError: Failed to fetch'
+            ];
+            
+            return networkErrorPatterns.some(pattern => 
+                errorMessage.includes(pattern)
+            );
+        },
+        async handleNetworkError(error, retryCount) {
+            console.warn('ネットワークエラー:', error.message);
+            
+            this.consecutiveErrors++;
+            this.networkError = true;
+            
+            // リトライ（最大3回、指数バックオフ）
+            if (retryCount < 3 && this.consecutiveErrors < this.maxConsecutiveErrors) {
+                const delay = this.retryDelay * Math.pow(2, retryCount);
+                console.log(`${delay}ms後にリトライします（${retryCount + 1}/3）`);
+                
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return this.fetchMessages(false, retryCount + 1);
+            }
+            
+            // 連続エラーが最大値を超えた場合、ポーリング間隔を延長
+            if (this.consecutiveErrors >= this.maxConsecutiveErrors) {
+                this.pollingInterval = Math.min(this.pollingInterval * 2, 30000); // 最大30秒
+                this.stopPolling();
+                this.startPolling();
+                console.warn(`ポーリング間隔を${this.pollingInterval}msに延長しました`);
+            }
+        },
+        handleNetworkSuccess() {
+            // 成功時にエラー状態をリセット
+            if (this.consecutiveErrors > 0) {
+                this.consecutiveErrors = 0;
+                this.networkError = false;
+                // ポーリング間隔を元に戻す
+                if (this.pollingInterval > 3000) {
+                    this.pollingInterval = 3000;
+                    this.stopPolling();
+                    this.startPolling();
+                }
             }
         },
         async sendMessage() {
@@ -336,7 +473,14 @@ function chatData() {
                 // エラー時は一時メッセージを削除
                 this.messages = this.messages.filter(m => m.id !== tempMessage.id);
                 this.newMessage = messageToSend; // メッセージを復元
-                alert('メッセージの送信に失敗しました');
+                
+                // ネットワークエラーの判定
+                if (this.isNetworkError(error)) {
+                    this.networkError = true;
+                    alert('ネットワーク接続に問題があります。メッセージの送信に失敗しました。');
+                } else {
+                    alert('メッセージの送信に失敗しました');
+                }
                 console.error(error);
             } finally {
                 this.sending = false;
@@ -507,6 +651,12 @@ function chatData() {
                 this.recognition.stop();
                 this.isRecording = false;
                 this.interimText = '';
+            }
+        },
+        autoResize(textarea) {
+            if (textarea) {
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
             }
         }
     }
