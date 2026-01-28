@@ -64,17 +64,62 @@
                 unreadCount: 0,
                 activeMatchingId: null,
                 intervalId: null,
+                consecutiveErrors: 0, // 連続エラーカウント
+                pollingInterval: 30000, // ポーリング間隔（30秒）
                 init() {
                     this.fetchUnreadCount();
                     this.fetchActiveMatching();
                     // 30秒ごとに未読メッセージ数を更新
-                    this.intervalId = setInterval(() => {
-                        this.fetchUnreadCount();
-                    }, 30000);
+                    this.startPolling();
                     // チャットページを開いたときに未読数を更新
                     window.addEventListener('chat-opened', () => {
                         this.fetchUnreadCount();
                     });
+                    // ページの可視性変更を監視（非アクティブ時はポーリングを停止）
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.hidden) {
+                            this.stopPolling();
+                        } else {
+                            this.startPolling();
+                        }
+                    });
+                },
+                startPolling() {
+                    this.stopPolling();
+                    this.intervalId = setInterval(() => {
+                        if (!document.hidden) {
+                            this.fetchUnreadCount();
+                        }
+                    }, this.pollingInterval);
+                },
+                stopPolling() {
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                        this.intervalId = null;
+                    }
+                },
+                isNetworkError(error) {
+                    // ネットワークエラーの判定
+                    const errorMessage = error.message || error.toString();
+                    const errorName = error.name || '';
+                    
+                    // AbortError（タイムアウト）もネットワークエラーとして扱う
+                    if (errorName === 'AbortError' || errorMessage.includes('aborted')) {
+                        return true;
+                    }
+                    
+                    const networkErrorPatterns = [
+                        'ERR_NETWORK_CHANGED',
+                        'ERR_NAME_NOT_RESOLVED',
+                        'Failed to fetch',
+                        'NetworkError',
+                        'Network request failed',
+                        'TypeError: Failed to fetch'
+                    ];
+                    
+                    return networkErrorPatterns.some(pattern => 
+                        errorMessage.includes(pattern)
+                    );
                 },
                 async apiFetch(url, options = {}) {
                     const response = await fetch(url, {
@@ -112,12 +157,66 @@
                     
                     return response.json();
                 },
-                async fetchUnreadCount() {
+                async fetchUnreadCount(retryCount = 0) {
                     try {
-                        const data = await this.apiFetch('/api/chat/unread-count');
-                        this.unreadCount = data.unread_count || 0;
+                        // タイムアウト処理（AbortControllerを使用）
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒でタイムアウト
+                        
+                        const response = await fetch('/api/chat/unread-count', {
+                            credentials: 'include',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            signal: controller.signal
+                        });
+                        
+                        clearTimeout(timeoutId);
+                        
+                        // 419エラー（CSRFトークン期限切れ）: ページをリロード
+                        if (response.status === 419) {
+                            console.warn('セッション期限切れ（419）。ページを再読み込みします。');
+                            window.location.reload();
+                            return;
+                        }
+                        
+                        // 401エラー（認証エラー）: エラーメッセージを表示せずに終了
+                        if (response.status === 401) {
+                            // 認証エラーは静かに処理（ログイン画面へのリダイレクトはapiFetchで処理）
+                            return;
+                        }
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.unreadCount = data.unread_count || 0;
+                            this.consecutiveErrors = 0; // 成功時はエラーカウントをリセット
+                        } else {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
                     } catch (error) {
-                        if (error.message !== '認証エラー') {
+                        // ネットワークエラーの判定
+                        const isNetworkError = this.isNetworkError(error);
+                        
+                        if (isNetworkError) {
+                            // ネットワークエラーの場合、リトライ（最大3回、指数バックオフ）
+                            if (retryCount < 3) {
+                                const delay = 1000 * Math.pow(2, retryCount); // 1秒、2秒、4秒
+                                await new Promise(resolve => setTimeout(resolve, delay));
+                                return this.fetchUnreadCount(retryCount + 1);
+                            }
+                            
+                            // 連続エラーが発生した場合、ポーリング間隔を延長
+                            this.consecutiveErrors++;
+                            if (this.consecutiveErrors >= 5) {
+                                // ポーリング間隔を延長（最大60秒）
+                                const newInterval = Math.min(this.pollingInterval * 2, 60000);
+                                this.pollingInterval = newInterval;
+                                this.stopPolling();
+                                this.startPolling();
+                            }
+                        } else if (error.message !== '認証エラー') {
+                            // ネットワークエラー以外で、認証エラーでない場合のみログ出力
                             console.error('未読メッセージ数取得エラー:', error);
                         }
                     }

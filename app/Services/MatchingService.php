@@ -213,6 +213,8 @@ class MatchingService
                     'masked_address' => $matching->request->masked_address ?? '',
                     'request_date' => $requestDate ?? '',
                     'request_time' => $matching->request->request_time ?? '',
+                    'start_time' => $matching->request->start_time ?? null,
+                    'end_time' => $matching->request->end_time ?? null,
                 ];
             })
             ->values()
@@ -268,6 +270,44 @@ class MatchingService
         ]);
 
         return $matching;
+    }
+
+    /**
+     * ガイドが依頼を辞退する
+     */
+    public function declineRequest(int $requestId, int $guideId): void
+    {
+        $acceptance = GuideAcceptance::where('request_id', $requestId)
+            ->where('guide_id', $guideId)
+            ->where('status', 'pending')
+            ->firstOrFail();
+        
+        // ステータスを更新
+        $acceptance->update(['status' => 'declined']);
+        
+        // ユーザーに通知
+        $request = Request::findOrFail($requestId);
+        Notification::create([
+            'user_id' => $request->user_id,
+            'type' => 'request',
+            'title' => 'ガイドが依頼を辞退しました',
+            'message' => "依頼ID {$requestId} について、ガイドが辞退しました。",
+            'related_id' => $requestId,
+            'created_at' => now(),
+        ]);
+        
+        // 管理者に通知
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => 'acceptance',
+                'title' => 'ガイドが依頼を辞退しました',
+                'message' => "依頼ID {$requestId} について、ガイドが辞退しました。",
+                'related_id' => $requestId,
+                'created_at' => now(),
+            ]);
+        }
     }
 }
 

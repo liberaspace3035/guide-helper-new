@@ -21,7 +21,7 @@
                 <h2>依頼情報</h2>
                 <p><strong>タイプ:</strong> <span x-text="getRequestTypeLabel(matching.request_type)"></span></p>
                 <p><strong>場所:</strong> <span x-text="matching.masked_address"></span></p>
-                <p><strong>日時:</strong> <span x-text="formatRequestDateTime(matching.request_date, matching.request_time)"></span></p>
+                <p><strong>日時:</strong> <span x-text="formatRequestDateTime(matching.request_date, matching.start_time, matching.end_time)"></span></p>
             </div>
             <div class="matching-participants">
                 @if(auth()->user()->isUser())
@@ -88,7 +88,7 @@ function matchingData() {
             };
             return map[type] || type;
         },
-        formatRequestDateTime(dateStr, timeStr) {
+        formatRequestDateTime(dateStr, startTimeStr, endTimeStr) {
             if (!dateStr) return '';
             
             // 日付を年/月/日にフォーマット
@@ -97,19 +97,34 @@ function matchingData() {
             const month = date.getMonth() + 1;
             const day = date.getDate();
             
-            // 時間をフォーマット（秒を除く）
-            let timeDisplay = '';
-            if (timeStr) {
+            const dateDisplay = `${year}/${month}/${day}`;
+            
+            // 開始時間と終了時間をフォーマット
+            const formatTime = (timeStr) => {
+                if (!timeStr) return null;
                 // "HH:MM:SS" または "HH:MM" 形式から "HH:MM" を抽出
                 const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})/);
                 if (timeMatch) {
                     const hours = parseInt(timeMatch[1], 10);
                     const minutes = timeMatch[2];
-                    timeDisplay = `${String(hours).padStart(2, '0')}:${minutes}`;
+                    return `${String(hours).padStart(2, '0')}:${minutes}`;
                 }
-            }
+                return null;
+            };
             
-            return `${year}/${month}/${day}${timeDisplay ? ' ' + timeDisplay : ''}`;
+            const startTime = formatTime(startTimeStr);
+            const endTime = formatTime(endTimeStr);
+            
+            // 開始時間と終了時間の両方がある場合
+            if (startTime && endTime) {
+                return `${dateDisplay} ${startTime} - ${endTime}`;
+            }
+            // 開始時間のみある場合
+            if (startTime) {
+                return `${dateDisplay} ${startTime}`;
+            }
+            // どちらもない場合は日付のみ
+            return dateDisplay;
         }
     }
 }

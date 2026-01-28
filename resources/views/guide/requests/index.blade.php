@@ -57,7 +57,8 @@
                                 応募済み
                             </button>
                         </template>
-                        <template x-if="!request.has_applied">
+                        <!-- 辞退ボタン: 応募済みでpending状態の場合のみ表示 -->
+                        <template x-if="request.has_applied && request.acceptance_status === 'pending'">
                             <button
                                 @click="handleDecline(request.id)"
                                 class="btn-secondary"
@@ -66,14 +67,9 @@
                                 辞退
                             </button>
                         </template>
-                        <template x-if="request.has_applied">
-                            <button
-                                class="btn-secondary btn-disabled"
-                                disabled
-                                aria-label="辞退不可"
-                            >
-                                辞退
-                            </button>
+                        <!-- 辞退済み表示 -->
+                        <template x-if="request.has_applied && request.acceptance_status === 'declined'">
+                            <span class="status-badge status-draft">辞退済み</span>
                         </template>
                     </div>
                 </div>
@@ -114,8 +110,6 @@ function guideRequestsData() {
                 });
                 const data = await response.json();
                 this.requests = data.requests || [];
-                // デバッグ: has_appliedの値を確認
-                console.log('依頼一覧:', this.requests.map(r => ({ id: r.id, has_applied: r.has_applied, acceptance_status: r.acceptance_status })));
             } catch (err) {
                 this.error = '依頼一覧の取得に失敗しました';
                 console.error(err);
@@ -215,7 +209,9 @@ function guideRequestsData() {
         },
         getStatusLabel(request) {
             if (request.has_applied) {
-                if (request.display_status === 'approval_pending') {
+                if (request.acceptance_status === 'declined') {
+                    return '辞退済み';
+                } else if (request.display_status === 'approval_pending') {
                     return '承認待ち';
                 } else if (request.acceptance_status === 'matched') {
                     return 'マッチング済み';
@@ -227,7 +223,9 @@ function guideRequestsData() {
         },
         getStatusClass(request) {
             if (request.has_applied) {
-                if (request.display_status === 'approval_pending') {
+                if (request.acceptance_status === 'declined') {
+                    return 'status-draft';
+                } else if (request.display_status === 'approval_pending') {
                     return 'status-pending';
                 } else if (request.acceptance_status === 'matched') {
                     return 'status-matched';

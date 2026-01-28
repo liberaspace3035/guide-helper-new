@@ -87,9 +87,9 @@ class RequestController extends Controller
             return response()->json(['error' => 'この依頼の応募者を見る権限がありません'], 403);
         }
 
-        // 応募ガイドの情報を取得
+        // 応募ガイドの情報を取得（pending と declined の両方）
         $acceptances = GuideAcceptance::where('request_id', $id)
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'declined'])
             ->with(['guide:id,name,gender,birth_date', 'guide.guideProfile:id,user_id,introduction'])
             ->get();
 

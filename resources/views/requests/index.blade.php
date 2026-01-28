@@ -94,6 +94,9 @@
                                                 <div class="applicant-card">
                                                     <div class="applicant-header">
                                                         <span class="applicant-name" x-text="guide.name || 'ガイド'"></span>
+                                                        <template x-if="guide.status === 'declined'">
+                                                            <span class="status-badge status-draft">辞退済み</span>
+                                                        </template>
                                                         <template x-if="selectedGuideMap[request.id] === guide.guide_id">
                                                             <span class="status-badge status-matched">選択済み</span>
                                                         </template>
@@ -106,7 +109,7 @@
                                                         </template>
                                                     </div>
                                                     <div class="applicant-actions">
-                                                        <template x-if="selectedGuideMap[request.id] !== guide.guide_id">
+                                                        <template x-if="selectedGuideMap[request.id] !== guide.guide_id && guide.status !== 'declined'">
                                                             <button
                                                                 type="button"
                                                                 class="btn-primary btn-sm"

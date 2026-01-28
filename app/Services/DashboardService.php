@@ -7,6 +7,7 @@ use App\Models\Announcement;
 use App\Models\Request;
 use App\Models\Matching;
 use App\Models\Report;
+use App\Models\GuideAcceptance;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -65,12 +66,21 @@ class DashboardService
         $pendingReports = Report::where('user_id', $userId)
             ->where('status', 'submitted')
             ->count();
+        
+        // 応募がある依頼数（pending状態の応募がある依頼）
+        $requestsWithApplications = Request::where('user_id', $userId)
+            ->whereIn('status', ['pending', 'guide_accepted'])
+            ->whereHas('guideAcceptances', function($query) {
+                $query->where('status', 'pending');
+            })
+            ->count();
 
         return [
             'requests' => $requests,
             'activeMatchings' => $activeMatchings,
             'completedMatchings' => $completedMatchings,
             'pendingReports' => $pendingReports,
+            'requestsWithApplications' => $requestsWithApplications,
         ];
     }
 

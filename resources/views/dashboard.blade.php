@@ -102,6 +102,9 @@
                             <line x1="3" y1="18" x2="3.01" y2="18"></line>
                         </svg>
                         <span>依頼一覧</span>
+                        <template x-if="stats && stats.requestsWithApplications > 0">
+                            <span class="action-badge" :aria-label="`応募がある依頼 ${stats.requestsWithApplications}件`" x-text="stats.requestsWithApplications > 99 ? '99+' : stats.requestsWithApplications"></span>
+                        </template>
                     </a>
                 </div>
             </section>
