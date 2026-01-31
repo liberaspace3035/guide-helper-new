@@ -384,7 +384,10 @@
                             <template x-for="matching in matchings" :key="matching.id">
                                 <tr>
                                     <td class="text-center">
-                                        <span class="status-badge" :class="getStatusBadgeClass(matching.status)" x-text="getStatusLabel(matching.status)"></span>
+                                        <span class="status-badge" :class="getStatusBadgeClass(matching.status)" :aria-label="getStatusLabel(matching.status) + 'の状態'">
+                                            <span class="status-icon" x-html="getStatusIcon(matching.status)"></span>
+                                            <span x-text="getStatusLabel(matching.status)"></span>
+                                        </span>
                                     </td>
                                     <td x-text="matching.request_type" class="text-center"></td>
                                     <td x-text="matching.guide_name" class="text-center"></td>
@@ -627,7 +630,10 @@
                     <template x-for="matching in activeMatchings" :key="matching.id">
                         <div class="matching-card">
                             <div class="matching-header">
-                                <span class="status-badge" :class="getStatusBadgeClass(matching.status)" x-text="getStatusLabel(matching.status)"></span>
+                                <span class="status-badge" :class="getStatusBadgeClass(matching.status)" :aria-label="getStatusLabel(matching.status) + 'の状態'">
+                                    <span class="status-icon" x-html="getStatusIcon(matching.status)"></span>
+                                    <span x-text="getStatusLabel(matching.status)"></span>
+                                </span>
                                 <span class="matching-type" x-text="matching.request_type"></span>
                             </div>
                             <div class="matching-info">
@@ -811,6 +817,15 @@ function dashboardData() {
                 'cancelled': 'キャンセル'
             };
             return statusMap[status] || status;
+        },
+        getStatusIcon(status) {
+            const iconMap = {
+                'matched': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+                'in_progress': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>',
+                'completed': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+                'cancelled': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
+            };
+            return iconMap[status] || iconMap['matched'];
         },
         selectedMonth: (() => {
             const now = new Date();

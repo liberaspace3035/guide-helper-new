@@ -142,22 +142,133 @@
   grid-column: 1 / -1;
 }
 
+/* 日付入力ラッパー */
+.date-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.date-input-wrapper input[type="date"] {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.date-picker-button {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: color var(--transition-base);
+  pointer-events: auto;
+}
+
+.date-picker-button:hover {
+  color: var(--primary-color);
+}
+
+.date-picker-button:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.date-picker-button svg {
+  width: 20px;
+  height: 20px;
+}
+
 /* 時間入力グループ */
 .time-input-group {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+  align-items: flex-end;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
 }
 
-.time-input-group input {
+.time-input-item {
   flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.time-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0;
+}
+
+.time-select-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xs);
+  transition: border-color var(--transition-base);
+  width: 100%;
+}
+
+.time-select-group:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+}
+
+.time-select {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-xs);
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  padding-right: 24px;
+}
+
+.time-select:focus {
+  outline: none;
+}
+
+.time-colon {
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+  padding: 0 var(--spacing-xs);
 }
 
 .time-separator {
   color: var(--text-secondary);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   flex-shrink: 0;
+  margin-bottom: var(--spacing-xs);
+  align-self: flex-end;
+  padding-bottom: calc(var(--spacing-sm) + 2px);
+}
+
+.time-help-text {
+  display: block;
+  margin-top: var(--spacing-xs);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 /* レスポンシブ対応 */
@@ -188,6 +299,21 @@
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .time-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .time-input-item {
+    min-width: 100%;
+  }
+
+  .time-separator {
+    align-self: center;
+    margin: var(--spacing-xs) 0;
+    padding-bottom: 0;
   }
 
   .form-actions {

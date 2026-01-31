@@ -30,7 +30,12 @@
                 <div class="request-card">
                     <div class="request-header">
                         <h3 x-text="getRequestTypeLabel(request.request_type)"></h3>
-                        <span class="status-badge" :class="getStatusClass(request)" x-text="getStatusLabel(request)"></span>
+                        <div class="status-badge-wrapper">
+                            <span class="status-badge" :class="getStatusClass(request)" :aria-label="getStatusLabel(request) + 'の状態'">
+                                <span class="status-icon" x-html="getStatusIcon(request)"></span>
+                                <span x-text="getStatusLabel(request)"></span>
+                            </span>
+                        </div>
                     </div>
                     <div class="request-details">
                         <p><strong>場所:</strong> <span x-text="request.masked_address"></span></p>
@@ -43,9 +48,9 @@
                             <button
                                 @click="handleAccept(request.id)"
                                 class="btn-primary"
-                                aria-label="依頼を承諾"
+                                aria-label="依頼に応募"
                             >
-                                承諾
+                                応募
                             </button>
                         </template>
                         <template x-if="request.has_applied">
@@ -61,7 +66,7 @@
                         <template x-if="request.has_applied && request.acceptance_status === 'pending'">
                             <button
                                 @click="handleDecline(request.id)"
-                                class="btn-secondary"
+                                class="btn-danger"
                                 aria-label="依頼を辞退"
                             >
                                 辞退
@@ -69,7 +74,7 @@
                         </template>
                         <!-- 辞退済み表示 -->
                         <template x-if="request.has_applied && request.acceptance_status === 'declined'">
-                            <span class="status-badge status-draft">辞退済み</span>
+                            <span class="status-badge status-cancelled">辞退済み</span>
                         </template>
                     </div>
                 </div>
@@ -95,27 +100,78 @@ function guideRequestsData() {
         },
         async fetchRequests() {
             try {
-                const token = localStorage.getItem('token');
-                const headers = {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
+                this.loading = true;
+                this.error = '';
+                
+                // タイムアウト処理（AbortControllerを使用）
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒でタイムアウト
                 
                 const response = await fetch('/api/requests/guide/available', {
-                    headers: headers,
-                    credentials: 'same-origin'
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    signal: controller.signal
                 });
-                const data = await response.json();
-                this.requests = data.requests || [];
+                
+                clearTimeout(timeoutId);
+                
+                // 419/401エラーのハンドリング
+                if (window.handleApiResponse) {
+                    const shouldContinue = await window.handleApiResponse(response);
+                    if (!shouldContinue) {
+                        this.loading = false;
+                        return;
+                    }
+                }
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    this.requests = data.requests || [];
+                    this.error = '';
+                } else {
+                    const errorData = await response.json().catch(() => ({ error: '依頼一覧の取得に失敗しました' }));
+                    this.error = errorData.error || '依頼一覧の取得に失敗しました';
+                    console.error('依頼一覧取得エラー:', response.status, errorData);
+                }
             } catch (err) {
-                this.error = '依頼一覧の取得に失敗しました';
-                console.error(err);
+                // ネットワークエラーやタイムアウトの処理
+                if (err.name === 'AbortError') {
+                    this.error = 'リクエストがタイムアウトしました。再度お試しください。';
+                } else if (this.isNetworkError(err)) {
+                    this.error = 'ネットワーク接続に問題があります。接続を確認してください。';
+                } else {
+                    this.error = '依頼一覧の取得に失敗しました: ' + (err.message || '不明なエラー');
+                }
+                console.error('依頼一覧取得エラー:', err);
             } finally {
                 this.loading = false;
             }
+        },
+        isNetworkError(error) {
+            // ネットワークエラーの判定
+            const errorMessage = error.message || error.toString();
+            const errorName = error.name || '';
+            
+            // AbortError（タイムアウト）もネットワークエラーとして扱う
+            if (errorName === 'AbortError' || errorMessage.includes('aborted')) {
+                return true;
+            }
+            
+            const networkErrorPatterns = [
+                'ERR_NETWORK_CHANGED',
+                'ERR_NAME_NOT_RESOLVED',
+                'Failed to fetch',
+                'NetworkError',
+                'Network request failed',
+                'TypeError: Failed to fetch'
+            ];
+            
+            return networkErrorPatterns.some(pattern => 
+                errorMessage.includes(pattern)
+            );
         },
         async handleAccept(requestId) {
             // 既に応募済みの場合は処理しない
@@ -130,28 +186,39 @@ function guideRequestsData() {
             }
 
             try {
-                const token = localStorage.getItem('token');
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
+                // タイムアウト処理
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
                 
                 const response = await fetch('/api/matchings/accept', {
                     method: 'POST',
-                    headers: headers,
-                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    credentials: 'include',
+                    signal: controller.signal,
                     body: JSON.stringify({ request_id: requestId })
                 });
+                
+                clearTimeout(timeoutId);
+                
+                // 419/401エラーのハンドリング
+                if (window.handleApiResponse) {
+                    const shouldContinue = await window.handleApiResponse(response);
+                    if (!shouldContinue) {
+                        return;
+                    }
+                }
                 
                 const responseData = await response.json().catch(() => ({}));
                 
                 if (response.ok) {
                     alert(responseData.message || '依頼に応募しました');
-                    this.fetchRequests();
+                    // 確実に状態を更新
+                    await this.fetchRequests();
                 } else {
                     console.error('応募エラー詳細:', {
                         status: response.status,
@@ -161,8 +228,14 @@ function guideRequestsData() {
                     alert(responseData.error || responseData.message || '応募に失敗しました');
                 }
             } catch (err) {
-                console.error('応募エラー:', err);
-                alert('応募に失敗しました: ' + (err.message || 'ネットワークエラー'));
+                if (err.name === 'AbortError') {
+                    alert('リクエストがタイムアウトしました。再度お試しください。');
+                } else if (this.isNetworkError(err)) {
+                    alert('ネットワーク接続に問題があります。接続を確認してください。');
+                } else {
+                    console.error('応募エラー:', err);
+                    alert('応募に失敗しました: ' + (err.message || 'ネットワークエラー'));
+                }
             }
         },
         async handleDecline(requestId) {
@@ -171,33 +244,50 @@ function guideRequestsData() {
             }
 
             try {
-                const token = localStorage.getItem('token');
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                };
-                if (token) {
-                    headers['Authorization'] = `Bearer ${token}`;
-                }
+                // タイムアウト処理
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
                 
                 const response = await fetch('/api/matchings/decline', {
                     method: 'POST',
-                    headers: headers,
-                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    credentials: 'include',
+                    signal: controller.signal,
                     body: JSON.stringify({ request_id: requestId })
                 });
                 
+                clearTimeout(timeoutId);
+                
+                // 419/401エラーのハンドリング
+                if (window.handleApiResponse) {
+                    const shouldContinue = await window.handleApiResponse(response);
+                    if (!shouldContinue) {
+                        return;
+                    }
+                }
+                
                 if (response.ok) {
                     alert('依頼を辞退しました');
-                    this.fetchRequests();
+                    // 確実に状態を更新
+                    await this.fetchRequests();
                 } else {
                     const error = await response.json().catch(() => ({ error: '辞退に失敗しました' }));
                     alert(error.error || '辞退に失敗しました');
                 }
             } catch (err) {
-                console.error('辞退エラー:', err);
-                alert('辞退に失敗しました');
+                if (err.name === 'AbortError') {
+                    alert('リクエストがタイムアウトしました。再度お試しください。');
+                } else if (this.isNetworkError(err)) {
+                    alert('ネットワーク接続に問題があります。接続を確認してください。');
+                } else {
+                    console.error('辞退エラー:', err);
+                    alert('辞退に失敗しました');
+                }
             }
         },
         getRequestTypeLabel(type) {
@@ -208,32 +298,52 @@ function guideRequestsData() {
             return map[type] || type;
         },
         getStatusLabel(request) {
+            // 応募済みの場合
             if (request.has_applied) {
                 if (request.acceptance_status === 'declined') {
                     return '辞退済み';
+                } else if (request.acceptance_status === 'matched') {
+                    return 'マッチング確定';
                 } else if (request.display_status === 'approval_pending') {
                     return '承認待ち';
-                } else if (request.acceptance_status === 'matched') {
-                    return 'マッチング済み';
                 } else {
                     return '応募済み';
                 }
             }
-            return request.status === 'pending' ? '応募待ち' : '応募済み';
+            // 未応募の場合
+            return request.status === 'pending' ? '応募待ち' : '応募可能';
         },
         getStatusClass(request) {
+            // 応募済みの場合
             if (request.has_applied) {
                 if (request.acceptance_status === 'declined') {
-                    return 'status-draft';
-                } else if (request.display_status === 'approval_pending') {
-                    return 'status-pending';
+                    return 'status-cancelled';
                 } else if (request.acceptance_status === 'matched') {
                     return 'status-matched';
+                } else if (request.display_status === 'approval_pending') {
+                    return 'status-approval-pending';
                 } else {
                     return 'status-accepted';
                 }
             }
-            return request.status === 'pending' ? 'status-pending' : 'status-accepted';
+            // 未応募の場合
+            return request.status === 'pending' ? 'status-pending' : 'status-pending';
+        },
+        getStatusIcon(request) {
+            // 応募済みの場合
+            if (request.has_applied) {
+                if (request.acceptance_status === 'declined') {
+                    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+                } else if (request.acceptance_status === 'matched') {
+                    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+                } else if (request.display_status === 'approval_pending') {
+                    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
+                } else {
+                    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+                }
+            }
+            // 未応募の場合
+            return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
         },
         formatDate(dateStr) {
             if (!dateStr) return '';

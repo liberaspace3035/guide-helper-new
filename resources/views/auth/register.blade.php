@@ -408,7 +408,7 @@
                                     </div>
                                     <button
                                         type="button"
-                                        class="btn-remove"
+                                        class="btn-danger btn-sm"
                                         @click="removeQualification(index)"
                                         x-show="formData.qualifications.length > 1"
                                         aria-label="資格を削除"

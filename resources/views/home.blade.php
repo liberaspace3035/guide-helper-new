@@ -134,9 +134,3 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/Home.css') }}">
 @endpush
-
-
-
-
-
-

@@ -151,8 +151,17 @@
 
             <div class="form-group">
                 <label>対応可能エリア</label>
+                <p class="form-help-text">対応可能な都道府県を選択してください。複数選択可能です。</p>
                 <div class="checkbox-group">
-                    @foreach(['東京都', '大阪府', '京都府', '神奈川県', '埼玉県', '千葉県', '愛知県', 'その他'] as $area)
+                    @foreach([
+                        '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+                        '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+                        '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県',
+                        '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県',
+                        '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+                        '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県',
+                        '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'
+                    ] as $area)
                         <label class="checkbox-label">
                             <input
                                 type="checkbox"
@@ -215,11 +224,14 @@
             @if(!$user->isAdmin())
                 <div class="form-group">
                     <label>運営側からのコメント（閲覧のみ）</label>
+                    <p class="form-help-text">管理者が記入するコメント欄です。ガイドの方は閲覧のみ可能です。運営からの連絡事項や注意事項などが記載される場合があります。</p>
                     <textarea
                         value="{{ $user->guideProfile->admin_comment ?? '' }}"
                         readOnly
+                        disabled
                         aria-readonly="true"
                         rows="3"
+                        class="readonly-textarea"
                     >{{ $user->guideProfile->admin_comment ?? '' }}</textarea>
                 </div>
             @endif

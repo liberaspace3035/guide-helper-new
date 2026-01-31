@@ -11,24 +11,51 @@
             </a>
             <div class="chat-header-content">
                 <div class="chat-header-main">
-                    <h1>
+                    <div class="chat-header-title-section">
+                        <h1>
+                            <template x-if="matchingInfo">
+                                <span x-text="otherUserName + 'さん'"></span>
+                            </template>
+                            <template x-if="!matchingInfo">
+                                <span>チャット相手</span>
+                            </template>
+                        </h1>
                         <template x-if="matchingInfo">
-                            <span x-text="otherUserName + 'さんとのチャット'"></span>
+                            <div class="chat-header-badge">
+                                <template x-if="userRole === 'user'">
+                                    <span class="chat-role-badge chat-role-badge-guide">ガイド</span>
+                                </template>
+                                <template x-if="userRole === 'guide'">
+                                    <span class="chat-role-badge chat-role-badge-user">利用者</span>
+                                </template>
+                            </div>
                         </template>
-                        <template x-if="!matchingInfo">
-                            <span>チャット相手</span>
-                        </template>
-                    </h1>
+                    </div>
                     <template x-if="matchingInfo">
-                        <p class="chat-subtitle">
-                            <span x-text="matchingInfo.request_type"></span> - <span x-text="matchingInfo.masked_address"></span>
-                        </p>
+                        <div class="chat-header-details">
+                            <p class="chat-subtitle">
+                                <svg class="chat-detail-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                <span x-text="matchingInfo.masked_address"></span>
+                            </p>
+                            <p class="chat-subtitle">
+                                <svg class="chat-detail-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                <span x-text="matchingInfo.request_type"></span>
+                            </p>
+                        </div>
                     </template>
                 </div>
                 <template x-if="matchingInfo">
                     <div class="chat-header-status">
                         <span class="status-dot"></span>
-                        <span class="status-text">アクティブ</span>
+                        <span class="status-text">チャット利用可能</span>
                     </div>
                 </template>
             </div>
@@ -83,6 +110,17 @@
                 </div>
                 <h3>まだメッセージがありません</h3>
                 <p class="empty-messages-hint">メッセージを送信して会話を始めましょう</p>
+                <div class="chat-info-box">
+                    <svg class="chat-info-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <div class="chat-info-content">
+                        <p class="chat-info-title">チャットについて</p>
+                        <p class="chat-info-text">チャットはマッチング確定後から報告書承認完了まで利用できます。確定したガイドとの連絡にご利用ください。</p>
+                    </div>
+                </div>
             </div>
         </template>
 

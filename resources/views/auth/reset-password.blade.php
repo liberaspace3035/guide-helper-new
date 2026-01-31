@@ -2,20 +2,25 @@
 
 @section('content')
 <div class="login-container" x-data="{ 
-    email: '', 
+    email: '{{ $email }}',
     password: '', 
+    password_confirmation: '',
     showPassword: false,
+    showPasswordConfirmation: false,
     error: '', 
     loading: false 
 }">
     <div class="login-card">
         <div class="login-header">
-            <h1>ログイン</h1>
-            <p class="login-subtitle">アカウントにログインしてください</p>
+            <h1>パスワードをリセット</h1>
+            <p class="login-subtitle">新しいパスワードを入力してください</p>
         </div>
         
-        <form method="POST" action="{{ route('login') }}" @submit.prevent="loading = true; $el.submit()" aria-label="ログインフォーム">
+        <form method="POST" action="{{ route('password.update') }}" @submit.prevent="loading = true; $el.submit()" aria-label="パスワードリセットフォーム">
             @csrf
+            <input type="hidden" name="token" value="{{ $token }}">
+            <input type="hidden" name="email" value="{{ $email }}">
+            
             <div x-show="error" class="error-message" role="alert" aria-live="polite" x-text="error" x-transition></div>
             @if($errors->any())
                 <div class="error-message" role="alert" aria-live="polite">
@@ -42,12 +47,13 @@
                         id="email"
                         name="email"
                         x-model="email"
-                        value="{{ old('email') }}"
+                        value="{{ $email }}"
                         required
                         autocomplete="email"
                         aria-required="true"
-                        placeholder="example@email.com"
+                        readonly
                         class="input-with-icon"
+                        style="background-color: #f5f5f5;"
                     />
                 </div>
             </div>
@@ -58,7 +64,7 @@
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
-                    パスワード
+                    新しいパスワード
                 </label>
                 <div class="input-wrapper password-wrapper">
                     <input
@@ -67,9 +73,9 @@
                         name="password"
                         x-model="password"
                         required
-                        autocomplete="current-password"
+                        autocomplete="new-password"
                         aria-required="true"
-                        placeholder="パスワードを入力"
+                        placeholder="新しいパスワードを入力"
                         class="input-with-icon"
                     />
                     <button
@@ -91,36 +97,69 @@
                 </div>
             </div>
             
+            <div class="form-group">
+                <label for="password_confirmation">
+                    <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    パスワード（確認）
+                </label>
+                <div class="input-wrapper password-wrapper">
+                    <input
+                        :type="showPasswordConfirmation ? 'text' : 'password'"
+                        id="password_confirmation"
+                        name="password_confirmation"
+                        x-model="password_confirmation"
+                        required
+                        autocomplete="new-password"
+                        aria-required="true"
+                        placeholder="パスワードを再入力"
+                        class="input-with-icon"
+                    />
+                    <button
+                        type="button"
+                        @click="showPasswordConfirmation = !showPasswordConfirmation"
+                        class="password-toggle"
+                        :aria-label="showPasswordConfirmation ? 'パスワードを非表示' : 'パスワードを表示'"
+                        tabindex="-1"
+                    >
+                        <svg x-show="!showPasswordConfirmation" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <svg x-show="showPasswordConfirmation" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" x-cloak>
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
             <button
                 type="submit"
                 class="btn-primary btn-block btn-login"
                 :disabled="loading"
-                aria-label="ログインボタン"
+                aria-label="パスワードリセットボタン"
             >
                 <span x-show="!loading" class="btn-content">
                     <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                        <polyline points="10 17 15 12 10 7"></polyline>
-                        <line x1="15" y1="12" x2="3" y2="12"></line>
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
                     </svg>
-                    ログイン
+                    パスワードをリセット
                 </span>
                 <span x-show="loading" class="btn-content" x-cloak>
                     <svg class="btn-icon spinner" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
                     </svg>
-                    ログイン中...
+                    リセット中...
                 </span>
             </button>
         </form>
         
         <div class="login-footer">
-            <p class="forgot-password-link">
-                <a href="{{ route('password.request') }}">パスワードを忘れた方</a>
-            </p>
             <p class="register-link">
-                アカウントをお持ちでない方は
-                <a href="{{ route('register') }}">こちらから登録</a>
+                <a href="{{ route('login') }}">ログイン画面に戻る</a>
             </p>
         </div>
     </div>
@@ -130,6 +169,4 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/Login.css') }}">
 @endpush
-
-
 

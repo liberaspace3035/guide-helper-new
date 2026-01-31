@@ -67,6 +67,20 @@
   cursor: pointer;
 }
 
+.form-help-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: var(--spacing-xs) 0 var(--spacing-sm) 0;
+  line-height: 1.5;
+}
+
+.readonly-textarea {
+  background-color: var(--surface-hover);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  resize: none;
+}
+
 .success-message {
   background-color: #d1fae5;
   color: #065f46;

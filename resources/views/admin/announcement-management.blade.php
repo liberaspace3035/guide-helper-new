@@ -103,7 +103,7 @@
                                 </button>
                                 <button
                                     @click="handleDelete(announcement.id)"
-                                    class="btn-secondary btn-sm btn-danger"
+                                    class="btn-danger btn-sm"
                                 >
                                     削除
                                 </button>

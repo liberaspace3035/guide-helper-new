@@ -16,6 +16,16 @@
         </div>
     </template>
 
+    @if(session('success'))
+        <div class="success-message" role="alert" aria-live="polite">
+            <svg class="success-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            {{ session('success') }}
+        </div>
+    @endif
+
     <template x-if="error">
         <div class="error-message" x-text="error"></div>
     </template>
@@ -35,11 +45,16 @@
                 <div class="request-card">
                     <div class="request-header">
                         <h3 x-text="getRequestTypeLabel(request.request_type)"></h3>
-                        <span class="status-badge" :class="getStatusClass(request.status)" x-text="getStatusLabel(request.status)"></span>
+                        <div class="status-badge-wrapper">
+                            <span class="status-badge" :class="getStatusClass(request.status)" :aria-label="getStatusLabel(request.status) + 'の状態'">
+                                <span class="status-icon" x-html="getStatusIcon(request.status)"></span>
+                                <span x-text="getStatusLabel(request.status)"></span>
+                            </span>
+                        </div>
                     </div>
                     <div class="request-details">
                         <p><strong>場所:</strong> <span x-text="request.masked_address"></span></p>
-                        <p><strong>日時:</strong> <span x-text="formatRequestDateTime(request.request_date, request.request_time)"></span></p>
+                        <p><strong>日時:</strong> <span x-text="formatRequestDateTime(request.request_date, request.start_time, request.end_time)"></span></p>
                         <p><strong>内容:</strong> <span x-text="request.service_content"></span></p>
                         <p><strong>作成日:</strong> <span x-text="formatDate(request.created_at)"></span></p>
                     </div>
@@ -71,6 +86,14 @@
                                 <template x-if="selectMessageMap[request.id]">
                                     <p class="info-text" style="color: var(--text-secondary); font-size: 14px; margin: 0;" x-text="selectMessageMap[request.id]"></p>
                                 </template>
+                                <div class="chat-availability-info">
+                                    <svg class="chat-availability-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    <span class="chat-availability-text">チャットはマッチング確定後に利用可能になります</span>
+                                </div>
                             </div>
                         </template>
                     </div>
@@ -139,10 +162,6 @@
 </div>
 @endsection
 
-@push('styles')
-<link rel="stylesheet" href="{{ asset('css/Requests.css') }}">
-@endpush
-
 @push('scripts')
 <script>
 function requestsData() {
@@ -164,13 +183,20 @@ function requestsData() {
         },
         async fetchRequests() {
             try {
+                // タイムアウト設定（10秒）
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
                 const response = await fetch('/api/requests/my-requests', {
                     credentials: 'include',
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    },
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 
                 // 419/401エラーのハンドリング
                 if (window.handleApiResponse) {
@@ -186,57 +212,33 @@ function requestsData() {
                 
                 const data = await response.json();
                 this.requests = data.requests || [];
-                await this.fetchMatchedGuides();
-            } catch (err) {
-                this.error = '依頼一覧の取得に失敗しました';
-                console.error('依頼一覧取得エラー:', err);
-            } finally {
-                this.loading = false;
-            }
-        },
-        async fetchMatchedGuides() {
-            try {
-                const res = await fetch('/api/requests/matched-guides/all', {
-                    credentials: 'include',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
                 
-                // 419/401エラーのハンドリング
-                if (window.handleApiResponse) {
-                    const shouldContinue = await window.handleApiResponse(res);
-                    if (!shouldContinue) {
-                        return;
-                    }
-                }
-                
-                const data = await res.json();
+                // マッチング情報を設定
                 const matched = {};
                 const selected = {};
-                
-                // マッチング成立済みのガイド（matching_idがあるもの）
-                (data.matched || []).forEach(row => {
-                    if (row.matching_id) {
-                        matched[row.request_id] = { matching_id: row.matching_id, guide_id: row.guide_id };
-                        selected[row.request_id] = row.guide_id;
+                this.requests.forEach(request => {
+                    if (request.matching_id) {
+                        matched[request.id] = { 
+                            matching_id: request.matching_id, 
+                            guide_id: request.matched_guide_id 
+                        };
+                        selected[request.id] = request.matched_guide_id;
+                    } else if (request.matched_guide_id) {
+                        selected[request.id] = request.matched_guide_id;
                     }
-                });
-                
-                // ユーザーが選択済みだが、まだマッチング成立していないガイドも含める
-                (data.selected || []).forEach(row => {
-                    if (row.matching_id) {
-                        matched[row.request_id] = { matching_id: row.matching_id, guide_id: row.guide_id };
-                    }
-                    // user_selected=1のガイドは選択済みとして扱う
-                    selected[row.request_id] = row.guide_id;
                 });
                 
                 this.matchedGuideMap = matched;
                 this.selectedGuideMap = { ...this.selectedGuideMap, ...selected };
             } catch (err) {
-                console.error('マッチ済みガイド取得エラー:', err);
+                if (err.name === 'AbortError') {
+                    this.error = 'リクエストがタイムアウトしました。しばらく待ってから再度お試しください。';
+                } else {
+                    this.error = '依頼一覧の取得に失敗しました';
+                }
+                console.error('依頼一覧取得エラー:', err);
+            } finally {
+                this.loading = false;
             }
         },
         async fetchApplicants(requestId) {
@@ -337,7 +339,18 @@ function requestsData() {
                 completed: 'status-completed',
                 cancelled: 'status-cancelled'
             };
-            return classMap[status] || '';
+            return classMap[status] || 'status-pending';
+        },
+        getStatusIcon(status) {
+            const iconMap = {
+                pending: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>',
+                guide_accepted: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+                matched: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+                in_progress: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>',
+                completed: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+                cancelled: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
+            };
+            return iconMap[status] || iconMap.pending;
         },
         getGenderLabel(gender) {
             const map = {
@@ -360,7 +373,7 @@ function requestsData() {
             const date = new Date(dateStr);
             return date.toLocaleString('ja-JP');
         },
-        formatRequestDateTime(dateStr, timeStr) {
+        formatRequestDateTime(dateStr, startTimeStr, endTimeStr) {
             if (!dateStr) return '';
             
             // 日付を年/月/日にフォーマット
@@ -369,19 +382,34 @@ function requestsData() {
             const month = date.getMonth() + 1;
             const day = date.getDate();
             
-            // 時間をフォーマット（秒を除く）
-            let timeDisplay = '';
-            if (timeStr) {
+            const dateDisplay = `${year}/${month}/${day}`;
+            
+            // 開始時間と終了時間をフォーマット
+            const formatTime = (timeStr) => {
+                if (!timeStr) return null;
                 // "HH:MM:SS" または "HH:MM" 形式から "HH:MM" を抽出
                 const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})/);
                 if (timeMatch) {
                     const hours = parseInt(timeMatch[1], 10);
                     const minutes = timeMatch[2];
-                    timeDisplay = `${String(hours).padStart(2, '0')}:${minutes}`;
+                    return `${String(hours).padStart(2, '0')}:${minutes}`;
                 }
-            }
+                return null;
+            };
             
-            return `${year}/${month}/${day}${timeDisplay ? ' ' + timeDisplay : ''}`;
+            const startTime = formatTime(startTimeStr);
+            const endTime = formatTime(endTimeStr);
+            
+            // 開始時間と終了時間の両方がある場合
+            if (startTime && endTime) {
+                return `${dateDisplay} ${startTime} - ${endTime}`;
+            }
+            // 開始時間のみある場合
+            if (startTime) {
+                return `${dateDisplay} ${startTime}`;
+            }
+            // どちらもない場合は日付のみ
+            return dateDisplay;
         },
         isApplicantsEmpty(requestId) {
             // 応募ガイドを取得済みで、0件の場合にtrueを返す

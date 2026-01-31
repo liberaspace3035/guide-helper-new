@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\GuideProfile;
+use App\Services\EmailNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -279,6 +283,174 @@ class AuthController extends Controller
             \Log::error('ログアウトエラー: ' . $e->getMessage());
             return response()->json(['error' => 'ログアウト中にエラーが発生しました'], 500);
         }
+    }
+
+    /**
+     * パスワードリセットリクエスト画面を表示
+     */
+    public function showForgotPasswordForm()
+    {
+        return view('auth.forgot-password');
+    }
+
+    /**
+     * パスワードリセットリンクを送信
+     */
+    public function sendPasswordResetLink(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        // セキュリティのため、存在しないメールアドレスでも「送信しました」と表示
+        if (!$user) {
+            return redirect()->back()->with('status', 'パスワードリセットリンクを送信しました。メールをご確認ください。');
+        }
+
+        // リセットトークンを生成
+        $token = Str::random(64);
+        $hashedToken = Hash::make($token);
+
+        // 既存のトークンを削除
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        // 新しいトークンを保存
+        DB::table('password_reset_tokens')->insert([
+            'email' => $request->email,
+            'token' => $hashedToken,
+            'created_at' => Carbon::now(),
+        ]);
+
+        // リセットリンクを生成
+        $resetUrl = url('/password/reset/' . $token . '?email=' . urlencode($request->email));
+
+        // メール送信
+        try {
+            $emailService = new EmailNotificationService();
+            $emailService->sendPasswordResetNotification($user, $resetUrl);
+        } catch (\Exception $e) {
+            \Log::error('パスワードリセットメール送信エラー: ' . $e->getMessage());
+            // エラーが発生してもユーザーには送信したと表示（セキュリティのため）
+        }
+
+        return redirect()->back()->with('status', 'パスワードリセットリンクを送信しました。メールをご確認ください。');
+    }
+
+    /**
+     * パスワードリセット画面を表示
+     */
+    public function showResetPasswordForm(Request $request, $token = null)
+    {
+        $email = $request->query('email');
+
+        if (!$token || !$email) {
+            return redirect()->route('password.request')
+                ->withErrors(['email' => '無効なリセットリンクです。']);
+        }
+
+        // トークンを検証
+        $resetRecord = DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->first();
+
+        if (!$resetRecord) {
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'このリセットリンクは無効または期限切れです。']);
+        }
+
+        // トークンの有効期限をチェック（60分）
+        $expiresAt = Carbon::parse($resetRecord->created_at)->addMinutes(60);
+        if (Carbon::now()->gt($expiresAt)) {
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'このリセットリンクは期限切れです。再度リセットリンクをリクエストしてください。']);
+        }
+
+        // トークンを検証
+        if (!Hash::check($token, $resetRecord->token)) {
+            return redirect()->route('password.request')
+                ->withErrors(['email' => '無効なリセットリンクです。']);
+        }
+
+        return view('auth.reset-password', [
+            'token' => $token,
+            'email' => $email,
+        ]);
+    }
+
+    /**
+     * パスワードをリセット
+     */
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        // トークンを検証
+        $resetRecord = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$resetRecord) {
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'このリセットリンクは無効または期限切れです。']);
+        }
+
+        // トークンの有効期限をチェック（60分）
+        $expiresAt = Carbon::parse($resetRecord->created_at)->addMinutes(60);
+        if (Carbon::now()->gt($expiresAt)) {
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'このリセットリンクは期限切れです。再度リセットリンクをリクエストしてください。']);
+        }
+
+        // トークンを検証
+        if (!Hash::check($request->token, $resetRecord->token)) {
+            return redirect()->route('password.request')
+                ->withErrors(['email' => '無効なリセットリンクです。']);
+        }
+
+        // ユーザーを取得
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'ユーザーが見つかりません。']);
+        }
+
+        // 元のパスワードと同じかチェック
+        if (Hash::check($request->password, $user->password_hash)) {
+            return redirect()->back()
+                ->withErrors(['password' => '新しいパスワードは現在のパスワードと異なるものを入力してください。'])
+                ->withInput();
+        }
+
+        // パスワードを更新
+        $user->password_hash = Hash::make($request->password);
+        $user->save();
+
+        // 使用済みトークンを削除
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        return redirect()->route('login')
+            ->with('success', 'パスワードをリセットしました。新しいパスワードでログインしてください。');
     }
 }
 

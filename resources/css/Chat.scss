@@ -59,6 +59,13 @@
   min-width: 0;
 }
 
+.chat-header-title-section {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
 .chat-header-info h1 {
   font-size: 18px;
   font-weight: 500;
@@ -70,13 +77,53 @@
   text-overflow: ellipsis;
 }
 
+.chat-header-badge {
+  display: flex;
+  align-items: center;
+}
+
+.chat-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.chat-role-badge-guide {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.chat-role-badge-user {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.chat-header-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
 .chat-subtitle {
   font-size: 12px;
   color: var(--text-secondary);
-  margin: var(--spacing-xs) 0 0 0;
+  margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.chat-detail-icon {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
 }
 
 .chat-header-status {
@@ -272,6 +319,44 @@
   font-size: 14px;
   color: var(--text-tertiary);
   margin: 0;
+}
+
+.chat-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  max-width: 500px;
+  width: 100%;
+}
+
+.chat-info-icon {
+  flex-shrink: 0;
+  color: var(--primary-color);
+  margin-top: 2px;
+}
+
+.chat-info-content {
+  flex: 1;
+  text-align: left;
+}
+
+.chat-info-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.chat-info-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
 }
 
 // 日付セパレーター 

@@ -84,6 +84,7 @@ class EmailNotificationService
             'report_submitted' => 'report',
             'report_approved' => 'report',
             'reminder_pending_request' => 'reminder',
+            'password_reset' => 'password_reset',
         ];
         return $mapping[$templateKey] ?? 'request';
     }
@@ -146,6 +147,44 @@ class EmailNotificationService
         return $this->sendNotification('reminder_pending_request', $user, [
             'request_id' => $reminderData['id'] ?? '',
         ]);
+    }
+
+    /**
+     * パスワードリセット通知を送信
+     */
+    public function sendPasswordResetNotification(User $user, string $resetUrl): bool
+    {
+        // テンプレートを使用する場合
+        $template = $this->getTemplate('password_reset');
+        if ($template) {
+            return $this->sendNotification('password_reset', $user, [
+                'reset_url' => $resetUrl,
+                'user_name' => $user->name ?? '',
+            ]);
+        }
+
+        // テンプレートがない場合は直接メール送信
+        try {
+            $subject = 'パスワードリセットのご案内';
+            $body = "{$user->name} 様\n\n";
+            $body .= "パスワードリセットのリクエストを受け付けました。\n\n";
+            $body .= "以下のリンクをクリックして、新しいパスワードを設定してください。\n";
+            $body .= "このリンクは60分間有効です。\n\n";
+            $body .= "{$resetUrl}\n\n";
+            $body .= "このリクエストをしていない場合は、このメールを無視してください。\n\n";
+            $body .= "ガイドマッチングアプリ";
+
+            Mail::raw($body, function ($message) use ($user, $subject) {
+                $message->to($user->email, $user->name)
+                    ->subject($subject);
+            });
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('パスワードリセットメール送信エラー: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+            ]);
+            return false;
+        }
     }
 }
 

@@ -187,22 +187,7 @@
   }
 }
 
-.btn-danger {
-  color: var(--error-color);
-  border-color: var(--error-color);
-  transition: all var(--transition-fast);
-}
-
-.btn-danger:hover:not(:disabled) {
-  background-color: var(--error-color);
-  color: var(--text-on-primary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-danger:active:not(:disabled) {
-  transform: translateY(0);
-}
+// btn-dangerはindex.scssで定義されているため、ここでは削除
 
 .empty-message {
   text-align: center;

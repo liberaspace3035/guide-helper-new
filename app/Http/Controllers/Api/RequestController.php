@@ -33,19 +33,70 @@ class RequestController extends Controller
         // 完了したマッチングに関連する依頼を除外
         $requests = RequestModel::where('requests.user_id', $user->id)
             ->whereNotIn('requests.id', $completedMatchingRequestIds)
-            ->leftJoin('matchings', 'requests.id', '=', 'matchings.request_id')
-            ->select('requests.*', 'matchings.id as matching_id')
             ->orderBy('requests.created_at', 'desc')
+            ->get();
+        
+        // 依頼IDのリストを取得
+        $requestIds = $requests->pluck('id')->toArray();
+        
+        // マッチング情報を一括取得（依頼がある場合のみ）
+        $matchedGuides = collect();
+        if (!empty($requestIds)) {
+            $matchedGuides = GuideAcceptance::join('requests', 'guide_acceptances.request_id', '=', 'requests.id')
+                ->where('requests.user_id', $user->id)
+                ->whereIn('guide_acceptances.request_id', $requestIds)
+            ->where(function($query) {
+                // マッチング成立済み
+                $query->where(function($q) {
+                    $q->where('guide_acceptances.status', 'matched')
+                      ->where('guide_acceptances.admin_decision', 'approved')
+                      ->where('guide_acceptances.user_selected', 1);
+                })
+                // またはユーザーが選択済み
+                ->orWhere('guide_acceptances.user_selected', 1);
+            })
+            ->leftJoin('matchings', function($join) {
+                $join->on('matchings.request_id', '=', 'guide_acceptances.request_id')
+                     ->on('matchings.guide_id', '=', 'guide_acceptances.guide_id');
+            })
+            ->where(function($query) {
+                // マッチングのステータスが 'completed' でないもの、またはマッチングが存在しないもの
+                $query->whereNull('matchings.status')
+                      ->orWhere('matchings.status', '!=', 'completed');
+            })
+            ->select('guide_acceptances.request_id', 'guide_acceptances.guide_id', 'matchings.id as matching_id')
             ->get()
-            ->map(function ($request) {
-                // request_typeを日本語に変換
-                $requestTypeMap = [
-                    'outing' => '外出',
-                    'home' => '自宅',
+            ->groupBy('request_id')
+            ->map(function ($items) {
+                // マッチングIDがあるものを優先
+                $matched = $items->firstWhere('matching_id', '!=', null);
+                return $matched ? [
+                    'guide_id' => $matched->guide_id,
+                    'matching_id' => $matched->matching_id,
+                ] : [
+                    'guide_id' => $items->first()->guide_id,
+                    'matching_id' => null,
                 ];
-                $request->request_type = $requestTypeMap[$request->request_type] ?? $request->request_type;
-                return $request;
             });
+        }
+        
+        // リクエストにマッチング情報を追加
+        $requests = $requests->map(function ($request) use ($matchedGuides) {
+            // request_typeを日本語に変換
+            $requestTypeMap = [
+                'outing' => '外出',
+                'home' => '自宅',
+            ];
+            $request->request_type = $requestTypeMap[$request->request_type] ?? $request->request_type;
+            
+            // マッチング情報を追加
+            if (isset($matchedGuides[$request->id])) {
+                $request->matched_guide_id = $matchedGuides[$request->id]['guide_id'];
+                $request->matching_id = $matchedGuides[$request->id]['matching_id'];
+            }
+            
+            return $request;
+        });
 
         return response()->json(['requests' => $requests]);
     }

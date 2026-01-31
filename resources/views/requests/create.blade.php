@@ -183,43 +183,100 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="request_date">希望日 <span class="required">*</span></label>
-                <input
-                    type="date"
-                    id="request_date"
-                    name="request_date"
-                    x-model="formData.request_date"
-                    @input="formData.request_date = $event.target.value"
-                    :value="formData.request_date"
-                    required
-                    :min="new Date().toISOString().split('T')[0]"
-                    aria-required="true"
-                />
+                <div class="date-input-wrapper">
+                    <input
+                        type="date"
+                        id="request_date"
+                        name="request_date"
+                        x-model="formData.request_date"
+                        @input="formData.request_date = $event.target.value"
+                        :value="formData.request_date"
+                        required
+                        :min="new Date().toISOString().split('T')[0]"
+                        aria-required="true"
+                        x-ref="dateInput"
+                    />
+                    <button
+                        type="button"
+                        class="date-picker-button"
+                        @click="openDatePicker()"
+                        aria-label="カレンダーを開く"
+                        tabindex="-1"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <div class="form-group">
                 <label for="start_time">希望時間 <span class="required">*</span></label>
                 <div class="time-input-group">
-                    <input
-                        type="time"
-                        id="start_time"
-                        name="start_time"
-                        x-model="formData.start_time"
-                        required
-                        placeholder="hh:mm"
-                        aria-required="true"
-                    />
-                    <span class="time-separator">～</span>
-                    <input
-                        type="time"
-                        id="end_time"
-                        name="end_time"
-                        x-model="formData.end_time"
-                        required
-                        placeholder="hh:mm"
-                        aria-required="true"
-                    />
+                    <div class="time-input-item">
+                        <label class="time-label">開始時刻</label>
+                        <div class="time-select-group">
+                            <select
+                                x-model="startHour"
+                                @change="updateStartTime()"
+                                class="time-select"
+                                aria-label="開始時刻の時間"
+                            >
+                                <template x-for="h in 24" :key="h">
+                                    <option :value="h - 1" x-text="String(h - 1).padStart(2, '0')"></option>
+                                </template>
+                            </select>
+                            <span class="time-colon">:</span>
+                            <select
+                                x-model="startMinute"
+                                @change="updateStartTime()"
+                                class="time-select"
+                                aria-label="開始時刻の分"
+                            >
+                                <option value="0">00</option>
+                                <option value="15">15</option>
+                                <option value="30">30</option>
+                                <option value="45">45</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="time-input-item">
+                        <label class="time-label">終了時刻</label>
+                        <div class="time-select-group">
+                            <select
+                                x-model="endHour"
+                                @change="updateEndTime()"
+                                class="time-select"
+                                aria-label="終了時刻の時間"
+                            >
+                                <template x-for="h in 24" :key="h">
+                                    <option :value="h - 1" x-text="String(h - 1).padStart(2, '0')"></option>
+                                </template>
+                            </select>
+                            <span class="time-colon">:</span>
+                            <select
+                                x-model="endMinute"
+                                @change="updateEndTime()"
+                                class="time-select"
+                                aria-label="終了時刻の分"
+                            >
+                                <option value="0">00</option>
+                                <option value="15">15</option>
+                                <option value="30">30</option>
+                                <option value="45">45</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <small>「hh:mm」形式で入力してください（例: 14:00～16:00）</small>
+                
+                <!-- Hidden inputs for form submission -->
+                <input type="hidden" name="start_time" :value="formData.start_time" required>
+                <input type="hidden" name="end_time" :value="formData.end_time" required>
+                
+                <small class="time-help-text">時間と分を選択してください。</small>
             </div>
         </div>
 
@@ -241,9 +298,6 @@
 </div>
 @endsection
 
-@push('styles')
-<link rel="stylesheet" href="{{ asset('css/RequestForm.css') }}">
-@endpush
 
 @push('scripts')
 <script>
@@ -279,6 +333,18 @@ function requestForm() {
     const defaultDateTime = getDefaultDateTime();
     console.log('defaultDateTime', defaultDateTime);
 
+    // デフォルト時刻を時間と分に分解
+    const parseTime = (timeStr) => {
+        if (!timeStr || !timeStr.includes(':')) {
+            return { hour: 0, minute: 0 };
+        }
+        const [hour, minute] = timeStr.split(':').map(Number);
+        return { hour: hour || 0, minute: minute || 0 };
+    };
+
+    const defaultStart = parseTime(defaultDateTime.start_time);
+    const defaultEnd = parseTime(defaultDateTime.end_time);
+
     return {
         getDefaultDateTime, // メソッドとして公開
         formData: {
@@ -293,6 +359,22 @@ function requestForm() {
             guide_age: 'none',
             nominated_guide_id: ''
         },
+        // 時間と分のセレクトボックス用
+        startHour: defaultStart.hour,
+        startMinute: defaultStart.minute,
+        endHour: defaultEnd.hour,
+        endMinute: defaultEnd.minute,
+        // 時刻を更新するメソッド
+        updateStartTime() {
+            const hour = String(this.startHour).padStart(2, '0');
+            const minute = String(this.startMinute).padStart(2, '0');
+            this.formData.start_time = `${hour}:${minute}`;
+        },
+        updateEndTime() {
+            const hour = String(this.endHour).padStart(2, '0');
+            const minute = String(this.endMinute).padStart(2, '0');
+            this.formData.end_time = `${hour}:${minute}`;
+        },
         error: '',
         loading: false,
         isVoiceInput: false,
@@ -303,6 +385,26 @@ function requestForm() {
         guidesLoading: false,
         processedResultIndices: new Set(), // 処理済みの結果インデックスを追跡
         interimText: '', // 中間結果を一時保存（表示用）
+        openDatePicker() {
+            // 日付入力フィールドをクリックしてカレンダーを開く
+            const dateInput = this.$refs.dateInput;
+            if (dateInput) {
+                // showPicker()メソッドが利用可能な場合（Chrome等）
+                if (dateInput.showPicker && typeof dateInput.showPicker === 'function') {
+                    try {
+                        dateInput.showPicker();
+                    } catch (err) {
+                        // showPicker()が失敗した場合は通常のクリックを実行
+                        dateInput.focus();
+                        dateInput.click();
+                    }
+                } else {
+                    // showPicker()が利用できない場合は通常のクリックを実行
+                    dateInput.focus();
+                    dateInput.click();
+                }
+            }
+        },
         async init() {
             console.log('init');
             // 依頼作成ページが開かれるたびに、日付フィールドに最新の日付を設定
@@ -310,9 +412,30 @@ function requestForm() {
             console.log('defaultDateTime', defaultDateTime);
             this.formData.request_date = defaultDateTime.request_date;
             console.log('this.formData.request_date', this.formData.request_date);
-            // 時刻も最新の値に設定（必要に応じて）
-            this.formData.start_time = defaultDateTime.start_time;
-            this.formData.end_time = defaultDateTime.end_time;
+            
+            // 時刻を15分刻みに丸める
+            const roundToQuarter = (timeStr) => {
+                const [hour, minute] = timeStr.split(':').map(Number);
+                const roundedMinute = Math.round(minute / 15) * 15;
+                const finalMinute = roundedMinute >= 60 ? 0 : roundedMinute;
+                const finalHour = roundedMinute >= 60 ? hour + 1 : hour;
+                return {
+                    hour: finalHour >= 24 ? 23 : finalHour,
+                    minute: finalMinute
+                };
+            };
+            
+            const startRounded = roundToQuarter(defaultDateTime.start_time);
+            const endRounded = roundToQuarter(defaultDateTime.end_time);
+            
+            this.startHour = startRounded.hour;
+            this.startMinute = startRounded.minute;
+            this.endHour = endRounded.hour;
+            this.endMinute = endRounded.minute;
+            
+            // 時刻を更新
+            this.updateStartTime();
+            this.updateEndTime();
             
             // 音声認識のサポート確認
             if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
