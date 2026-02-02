@@ -1,185 +1,93 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="admin-dashboard" x-data="adminDashboard()" x-init="init()">
-    <div class="admin-dashboard-header">
-        <h1>管理画面</h1>
-        <p class="admin-welcome-message">システム全体の管理と設定を行います</p>
-    </div>
+<div class="admin-dashboard-wrapper" x-data="adminDashboard()" x-init="init(); window.adminDashboard = $data;">
 
-    <!-- タブナビゲーション -->
-    <div class="admin-tabs">
-        <button
-            class="admin-tab"
-            :class="{ active: activeTab === 'dashboard' }"
-            @click="activeTab = 'dashboard'"
-        >
-            ダッシュボード
-        </button>
-        <button
-            class="admin-tab"
-            :class="{ active: activeTab === 'users' }"
-            @click="activeTab = 'users'; if (users.length === 0) fetchUsers()"
-        >
-            ユーザー管理
-        </button>
-        <button
-            class="admin-tab"
-            :class="{ active: activeTab === 'guides' }"
-            @click="activeTab = 'guides'; if (guides.length === 0) fetchGuides()"
-        >
-            ガイド管理
-        </button>
-        <button
-            class="admin-tab"
-            :class="{ active: activeTab === 'announcements' }"
-            @click="activeTab = 'announcements'"
-        >
-            お知らせ管理
-        </button>
-        <button
-            class="admin-tab"
-            :class="{ active: activeTab === 'monthly-limits' }"
-            @click="if (activeTab !== 'monthly-limits') { activeTab = 'monthly-limits'; if (users.length === 0) fetchUsers(); else { fetchAllUserCurrentLimits(); } }"
-        >
-            限度時間管理
-        </button>
-        <button
-            class="admin-tab"
-            :class="{ active: activeTab === 'email-templates' }"
-            @click="activeTab = 'email-templates'; if (emailTemplates.length === 0) fetchEmailTemplates()"
-        >
-            メールテンプレート
-        </button>
-        <button
-            class="admin-tab"
-            :class="{ active: activeTab === 'email-settings' }"
-            @click="activeTab = 'email-settings'; if (emailSettings.length === 0) fetchEmailSettings()"
-        >
-            メール通知設定
-        </button>
-        <button
-            class="admin-tab"
-            :class="{ active: activeTab === 'operation-logs' }"
-            @click="activeTab = 'operation-logs'; if (operationLogs.length === 0) fetchOperationLogs()"
-        >
-            操作ログ
-        </button>
-    </div>
+    <!-- メインコンテンツエリア -->
+    <div class="admin-dashboard-main">
+        <!-- パンくずリスト -->
+        <nav class="admin-breadcrumb" aria-label="パンくずリスト">
+            <ol class="admin-breadcrumb-list">
+                <li class="admin-breadcrumb-item">
+                    <a href="{{ route('home') }}" class="admin-breadcrumb-link">ホーム</a>
+                </li>
+                <li class="admin-breadcrumb-separator" aria-hidden="true">/</li>
+                <li class="admin-breadcrumb-item" aria-current="page">ダッシュボード</li>
+            </ol>
+        </nav>
 
-    <!-- タブコンテンツラッパー -->
-    <div class="admin-tab-content">
+        <div class="admin-dashboard-header">
+            <h1>管理画面</h1>
+            <p class="admin-welcome-message">システム全体の管理と設定を行います</p>
+        </div>
+
+        <!-- タブコンテンツラッパー -->
+        <div class="admin-tab-content">
         <!-- ダッシュボードタブ -->
         <template x-if="activeTab === 'dashboard'">
             <div>
                 <!-- 統計情報セクション -->
                 <template x-if="stats">
-                    <section class="admin-section stats-section">
-                        <div class="section-header">
-                            <h2>
-                                <svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 21H3"></path>
-                                    <path d="M21 21V10"></path>
-                                    <path d="M3 21V10"></path>
-                                    <path d="M7 21V14"></path>
-                                    <path d="M11 21V6"></path>
-                                    <path d="M15 21V10"></path>
-                                    <path d="M19 21V4"></path>
-                                </svg>
-                                統計情報
-                            </h2>
-                        </div>
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <h3>ユーザー</h3>
-                                <div class="stat-content">
-                                    <div class="stat-item">
-                                        <span class="stat-label">総数:</span>
-                                        <span class="stat-value" x-text="stats.users?.total || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">承認済み:</span>
-                                        <span class="stat-value approved" x-text="stats.users?.approved || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">未承認:</span>
-                                        <span class="stat-value pending" x-text="stats.users?.pending || 0"></span>
-                                    </div>
+                    <section class="admin-stats-section">
+                        <div class="admin-stats-grid">
+                            <!-- ユーザー・ガイド関連 -->
+                            <div class="admin-stat-card">
+                                <h3 class="admin-stat-title">登録ユーザー数</h3>
+                                <div class="admin-stat-value" x-text="stats.users?.total || 0"></div>
+                                <div class="admin-stat-subtitle" x-show="stats.users?.pending > 0">
+                                    <span class="admin-stat-badge pending">承認待ち: <span x-text="stats.users?.pending || 0"></span></span>
                                 </div>
                             </div>
-                            <div class="stat-card">
-                                <h3>ガイド</h3>
-                                <div class="stat-content">
-                                    <div class="stat-item">
-                                        <span class="stat-label">総数:</span>
-                                        <span class="stat-value" x-text="stats.guides?.total || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">承認済み:</span>
-                                        <span class="stat-value approved" x-text="stats.guides?.approved || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">未承認:</span>
-                                        <span class="stat-value pending" x-text="stats.guides?.pending || 0"></span>
-                                    </div>
+                            <div class="admin-stat-card">
+                                <h3 class="admin-stat-title">登録ガイド数</h3>
+                                <div class="admin-stat-value" x-text="stats.guides?.total || 0"></div>
+                                <div class="admin-stat-subtitle" x-show="stats.guides?.pending > 0">
+                                    <span class="admin-stat-badge pending">承認待ち: <span x-text="stats.guides?.pending || 0"></span></span>
                                 </div>
                             </div>
-                            <div class="stat-card">
-                                <h3>マッチング</h3>
-                                <div class="stat-content">
-                                    <div class="stat-item">
-                                        <span class="stat-label">総数:</span>
-                                        <span class="stat-value" x-text="stats.matchings?.total || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">マッチング済み:</span>
-                                        <span class="stat-value" x-text="stats.matchings?.matched || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">進行中:</span>
-                                        <span class="stat-value" x-text="stats.matchings?.in_progress || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">完了:</span>
-                                        <span class="stat-value approved" x-text="stats.matchings?.completed || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">キャンセル:</span>
-                                        <span class="stat-value" x-text="stats.matchings?.cancelled || 0"></span>
-                                    </div>
+                            <!-- 依頼関連 -->
+                            <div class="admin-stat-card">
+                                <h3 class="admin-stat-title">総依頼数</h3>
+                                <div class="admin-stat-value" x-text="stats.requests?.total || 0"></div>
+                                <div class="admin-stat-subtitle">
+                                    <span class="admin-stat-badge">稼働中: <span x-text="stats.requests?.in_progress || 0"></span></span>
                                 </div>
                             </div>
-                            <div class="stat-card">
-                                <h3>依頼</h3>
-                                <div class="stat-content">
-                                    <div class="stat-item">
-                                        <span class="stat-label">総数:</span>
-                                        <span class="stat-value" x-text="stats.requests?.total || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">待機中:</span>
-                                        <span class="stat-value pending" x-text="stats.requests?.pending || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">ガイド承諾済み:</span>
-                                        <span class="stat-value" x-text="stats.requests?.guide_accepted || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">マッチング済み:</span>
-                                        <span class="stat-value" x-text="stats.requests?.matched || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">進行中:</span>
-                                        <span class="stat-value" x-text="stats.requests?.in_progress || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">完了:</span>
-                                        <span class="stat-value approved" x-text="stats.requests?.completed || 0"></span>
-                                    </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">キャンセル:</span>
-                                        <span class="stat-value" x-text="stats.requests?.cancelled || 0"></span>
-                                    </div>
+                            <div class="admin-stat-card">
+                                <h3 class="admin-stat-title">応募待ち依頼</h3>
+                                <div class="admin-stat-value" x-text="stats.requests?.pending || 0"></div>
+                                <div class="admin-stat-subtitle" x-show="stats.requests?.guide_accepted > 0">
+                                    <span class="admin-stat-badge">承諾済み: <span x-text="stats.requests?.guide_accepted || 0"></span></span>
+                                </div>
+                            </div>
+                            <!-- マッチング関連 -->
+                            <div class="admin-stat-card">
+                                <h3 class="admin-stat-title">進行中マッチング</h3>
+                                <div class="admin-stat-value" x-text="stats.matchings?.in_progress || 0"></div>
+                                <div class="admin-stat-subtitle" x-show="stats.matchings?.matched > 0">
+                                    <span class="admin-stat-badge">成立済み: <span x-text="stats.matchings?.matched || 0"></span></span>
+                                </div>
+                            </div>
+                            <div class="admin-stat-card">
+                                <h3 class="admin-stat-title">完了マッチング</h3>
+                                <div class="admin-stat-value" x-text="stats.matchings?.completed || 0"></div>
+                                <div class="admin-stat-subtitle">
+                                    <span class="admin-stat-badge">総数: <span x-text="stats.matchings?.total || 0"></span></span>
+                                </div>
+                            </div>
+                            <!-- 報告書関連 -->
+                            <div class="admin-stat-card">
+                                <h3 class="admin-stat-title">承認待ち報告書</h3>
+                                <div class="admin-stat-value" x-text="userApprovedReports?.length || 0"></div>
+                                <div class="admin-stat-subtitle">
+                                    <span class="admin-stat-badge alert">管理者承認待ち</span>
+                                </div>
+                            </div>
+                            <div class="admin-stat-card">
+                                <h3 class="admin-stat-title">提出済み報告書</h3>
+                                <div class="admin-stat-value" x-text="reports?.length || 0"></div>
+                                <div class="admin-stat-subtitle">
+                                    <span class="admin-stat-badge">総報告書数</span>
                                 </div>
                             </div>
                         </div>
@@ -230,8 +138,8 @@
                         </div>
                     </template>
                     <template x-if="acceptances.length > 0">
-                        <div class="table-container">
-                            <table class="admin-table">
+                        <div class="table-container acceptances-table-container">
+                            <table class="admin-table acceptances-table">
                                 <thead>
                                     <tr>
                                         <th>依頼ID</th>
@@ -244,23 +152,38 @@
                                 <tbody>
                                     <template x-for="acc in acceptances" :key="acc.id">
                                         <tr>
-                                            <td x-text="acc.request_id"></td>
-                                            <td x-text="acc.user_name"></td>
-                                            <td x-text="acc.guide_name"></td>
-                                            <td x-text="formatRequestDateTime(acc.request_date, acc.request_time)"></td>
                                             <td>
-                                                <button
-                                                    @click="approveMatching(acc.request_id, acc.guide_id, acc.user_selected)"
-                                                    class="btn-primary btn-sm"
-                                                >
-                                                    承認
-                                                </button>
-                                                <button
-                                                    @click="rejectMatching(acc.request_id, acc.guide_id)"
-                                                    class="btn-secondary btn-sm"
-                                                >
-                                                    却下
-                                                </button>
+                                                <span class="request-id" x-text="acc.request_id"></span>
+                                            </td>
+                                            <td>
+                                                <span class="user-name" x-text="acc.user_name || '—'"></span>
+                                            </td>
+                                            <td>
+                                                <span class="user-name" x-text="acc.guide_name || '—'"></span>
+                                            </td>
+                                            <td>
+                                                <div class="datetime-cell-vertical">
+                                                    <span class="datetime-date" x-text="formatDateOnly(acc.request_date)"></span>
+                                                    <span class="datetime-time" x-text="formatTimeOnly(acc.request_time)" x-show="acc.request_time"></span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <button
+                                                        @click="approveMatching(acc.request_id, acc.guide_id, acc.user_selected)"
+                                                        class="btn-approve"
+                                                        :aria-label="`依頼ID ${acc.request_id}番を承認する`"
+                                                    >
+                                                        承認
+                                                    </button>
+                                                    <button
+                                                        @click="rejectMatching(acc.request_id, acc.guide_id)"
+                                                        class="btn-reject"
+                                                        :aria-label="`依頼ID ${acc.request_id}番を却下する`"
+                                                    >
+                                                        却下
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     </template>
@@ -300,8 +223,8 @@
                         <p>報告書はありません</p>
                     </template>
                     <template x-if="reports.length > 0">
-                        <div class="table-container">
-                            <table class="admin-table">
+                        <div class="table-container acceptances-table-container">
+                            <table class="admin-table acceptances-table">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
@@ -315,10 +238,20 @@
                                 <tbody>
                                     <template x-for="report in reports" :key="report.id">
                                         <tr>
-                                            <td x-text="report.id"></td>
-                                            <td x-text="report.user?.name || '—'"></td>
-                                            <td x-text="report.guide?.name || '—'"></td>
-                                            <td x-text="formatReportDate(report.actual_date) || '-'"></td>
+                                            <td>
+                                                <span class="request-id" x-text="report.id"></span>
+                                            </td>
+                                            <td>
+                                                <span class="user-name" x-text="report.user?.name || '—'"></span>
+                                            </td>
+                                            <td>
+                                                <span class="user-name" x-text="report.guide?.name || '—'"></span>
+                                            </td>
+                                            <td>
+                                                <div class="datetime-cell-vertical">
+                                                    <span class="datetime-date" x-text="formatReportDate(report.actual_date) || '-'"></span>
+                                                </div>
+                                            </td>
                                             <td>
                                                 <span class="status-badge" :class="{
                                                     'status-approved': report.status === 'approved' || report.status === 'admin_approved',
@@ -339,15 +272,15 @@
                                             <td>
                                                 <button
                                                     @click="exportReportCSV(report.id)"
-                                                    class="btn-icon-small"
+                                                    class="download-link"
                                                     :aria-label="'報告書ID ' + report.id + ' をCSV出力'"
-                                                    title="CSV出力"
                                                 >
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                                         <polyline points="7 10 12 15 17 10"></polyline>
                                                         <line x1="12" y1="15" x2="12" y2="3"></line>
                                                     </svg>
+                                                    <span>CSV</span>
                                                 </button>
                                             </td>
                                         </tr>
@@ -382,8 +315,8 @@
                         </div>
                     </template>
                     <template x-if="userApprovedReports.length > 0">
-                        <div class="table-container">
-                            <table class="admin-table">
+                        <div class="table-container acceptances-table-container">
+                            <table class="admin-table acceptances-table">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
@@ -397,18 +330,27 @@
                                 <tbody>
                                     <template x-for="report in userApprovedReports" :key="report.id">
                                         <tr>
-                                            <td x-text="report.id"></td>
-                                            <td x-text="report.user?.name || '—'"></td>
-                                            <td x-text="report.guide?.name || '—'"></td>
-                                            <td x-text="formatReportDate(report.actual_date) || '-'"></td>
+                                            <td>
+                                                <span class="request-id" x-text="report.id"></span>
+                                            </td>
+                                            <td>
+                                                <span class="user-name" x-text="report.user?.name || '—'"></span>
+                                            </td>
+                                            <td>
+                                                <span class="user-name" x-text="report.guide?.name || '—'"></span>
+                                            </td>
+                                            <td>
+                                                <div class="datetime-cell-vertical">
+                                                    <span class="datetime-date" x-text="formatReportDate(report.actual_date) || '-'"></span>
+                                                </div>
+                                            </td>
                                             <td>
                                                 <span class="status-badge status-pending">
                                                     ユーザー承認済み／管理者承認待ち
                                                 </span>
                                             </td>
                                             <td>
-                                                <div class="table-actions">
-                                                    <!-- 管理者承認待ち報告書ではCSV出力ボタンを非表示 -->
+                                                <div class="action-buttons">
                                                     <button
                                                         class="btn-secondary"
                                                         @click="openReportModal(report)"
@@ -416,7 +358,7 @@
                                                         詳細を見る
                                                     </button>
                                                     <button
-                                                        class="btn-primary "
+                                                        class="btn-approve"
                                                         @click="approveReport(report.id)"
                                                     >
                                                         管理者承認
@@ -450,7 +392,7 @@
                 </template>
                 <template x-if="users.length > 0">
                     <div class="table-container">
-                        <table class="admin-table admin-table-scrollable-large">
+                        <table class="admin-table admin-table-scrollable-large users-table">
                             <thead>
                                 <tr>
                                     <th>No</th>
@@ -458,7 +400,6 @@
                                     <th>メールアドレス</th>
                                     <th>電話番号</th>
                                     <th>受給者証番号</th>
-                                    <th>運営コメント</th>
                                     <th>登録日</th>
                                     <th>承認状態</th>
                                     <th>操作</th>
@@ -467,36 +408,29 @@
                             <tbody>
                                 <template x-for="(user, index) in users" :key="user.id">
                                     <tr>
-                                        <td x-text="index + 1"></td>
-                                        <td x-text="user.name"></td>
-                                        <td x-text="user.email"></td>
-                                        <td x-text="user.phone || '-'"></td>
                                         <td>
-                                            <div class="table-inline-field">
-                                                <input
-                                                    type="text"
-                                                    :value="userMeta[user.id] || ''"
-                                                    @input="userMeta[user.id] = $event.target.value"
-                                                    placeholder="受給者証番号"
-                                                />
-                                                <button
-                                                    class="btn-secondary btn-sm"
-                                                    @click="saveUserMeta(user.id)"
-                                                >
-                                                    保存
-                                                </button>
-                                            </div>
+                                            <span class="user-id-number" x-text="index + 1"></span>
+                                        </td>
+                                        <td>
+                                            <span class="user-name-bold" x-text="user.name"></span>
+                                        </td>
+                                        <td>
+                                            <span class="user-email" x-text="user.email"></span>
+                                        </td>
+                                        <td>
+                                            <span class="user-phone" :class="{ 'empty-data': !user.phone || user.phone === '-' }" x-text="user.phone || '-'"></span>
                                         </td>
                                         <td>
                                             <div class="table-inline-field">
                                                 <input
                                                     type="text"
-                                                    :value="userAdminComment[user.id] || ''"
-                                                    @input="userAdminComment[user.id] = $event.target.value"
-                                                    placeholder="運営コメント"
+                                                    class="recipient-number-input"
+                                                    :value="userMeta[user.id] || ''"
+                                                    @input="userMeta[user.id] = $event.target.value"
+                                                    placeholder="受給者証番号"
                                                 />
                                                 <button
-                                                    class="btn-secondary btn-sm"
+                                                    class="btn-save-meta"
                                                     @click="saveUserMeta(user.id)"
                                                 >
                                                     保存
@@ -508,22 +442,33 @@
                                             <span class="status-badge" :class="user.is_allowed ? 'status-approved' : 'status-pending'" x-text="user.is_allowed ? '承認済み' : '未承認'"></span>
                                         </td>
                                         <td>
-                                            <template x-if="!user.is_allowed">
+                                            <div class="user-action-buttons">
                                                 <button
-                                                    @click="approveUser(user.id)"
-                                                    class="btn-primary btn-sm"
+                                                    @click="openUserProfileModal(user.id)"
+                                                    class="btn-detail-user"
+                                                    aria-label="ユーザー詳細を表示"
                                                 >
-                                                    承認
+                                                    詳細
                                                 </button>
-                                            </template>
-                                            <template x-if="user.is_allowed">
-                                                <button
-                                                    @click="rejectUser(user.id)"
-                                                    class="btn-secondary btn-sm"
-                                                >
-                                                    拒否
-                                                </button>
-                                            </template>
+                                                <template x-if="!user.is_allowed">
+                                                    <button
+                                                        @click="approveUser(user.id)"
+                                                        class="btn-approve-user"
+                                                        aria-label="ユーザーを承認"
+                                                    >
+                                                        承認
+                                                    </button>
+                                                </template>
+                                                <template x-if="user.is_allowed">
+                                                    <button
+                                                        @click="rejectUser(user.id)"
+                                                        class="btn-reject-user"
+                                                        aria-label="ユーザーを拒否"
+                                                    >
+                                                        拒否
+                                                    </button>
+                                                </template>
+                                            </div>
                                         </td>
                                     </tr>
                                 </template>
@@ -553,7 +498,8 @@
                 </template>
                 <template x-if="guides.length > 0">
                     <div class="table-container">
-                        <table class="admin-table admin-table-scrollable-large">
+                        <table class="admin-table admin-table-scrollable-large guides-table">
+                            <thead>
                                 <tr>
                                     <th>No</th>
                                     <th>名前</th>
@@ -568,20 +514,29 @@
                             <tbody>
                                 <template x-for="(guide, index) in guides" :key="guide.id">
                                     <tr>
-                                        <td x-text="index + 1"></td>
-                                        <td x-text="guide.name"></td>
-                                        <td x-text="guide.email"></td>
-                                        <td x-text="guide.phone || '-'"></td>
+                                        <td>
+                                            <span class="user-id-number" x-text="index + 1"></span>
+                                        </td>
+                                        <td>
+                                            <span class="user-name-bold" x-text="guide.name"></span>
+                                        </td>
+                                        <td>
+                                            <span class="user-email" x-text="guide.email"></span>
+                                        </td>
+                                        <td>
+                                            <span class="user-phone" :class="{ 'empty-data': !guide.phone || guide.phone === '-' }" x-text="guide.phone || '-'"></span>
+                                        </td>
                                         <td>
                                             <div class="table-inline-field">
                                                 <input
                                                     type="text"
+                                                    class="recipient-number-input"
                                                     :value="guideMeta[guide.id] || ''"
                                                     @input="guideMeta[guide.id] = $event.target.value"
                                                     placeholder="従業員番号"
                                                 />
                                                 <button
-                                                    class="btn-secondary btn-sm"
+                                                    class="btn-save-meta"
                                                     @click="saveGuideMeta(guide.id)"
                                                 >
                                                     保存
@@ -593,22 +548,33 @@
                                             <span class="status-badge" :class="guide.is_allowed ? 'status-approved' : 'status-pending'" x-text="guide.is_allowed ? '承認済み' : '未承認'"></span>
                                         </td>
                                         <td>
-                                            <template x-if="!guide.is_allowed">
+                                            <div class="user-action-buttons">
                                                 <button
-                                                    @click="approveGuide(guide.id)"
-                                                    class="btn-primary btn-sm"
+                                                    @click="openGuideProfileModal(guide.id)"
+                                                    class="btn-detail-user"
+                                                    aria-label="ガイド詳細を表示"
                                                 >
-                                                    承認
+                                                    詳細
                                                 </button>
-                                            </template>
-                                            <template x-if="guide.is_allowed">
-                                                <button
-                                                    @click="rejectGuide(guide.id)"
-                                                    class="btn-secondary btn-sm"
-                                                >
-                                                    拒否
-                                                </button>
-                                            </template>
+                                                <template x-if="!guide.is_allowed">
+                                                    <button
+                                                        @click="approveGuide(guide.id)"
+                                                        class="btn-approve-user"
+                                                        aria-label="ガイドを承認"
+                                                    >
+                                                        承認
+                                                    </button>
+                                                </template>
+                                                <template x-if="guide.is_allowed">
+                                                    <button
+                                                        @click="rejectGuide(guide.id)"
+                                                        class="btn-reject-user"
+                                                        aria-label="ガイドを拒否"
+                                                    >
+                                                        拒否
+                                                    </button>
+                                                </template>
+                                            </div>
                                         </td>
                                     </tr>
                                 </template>
@@ -643,7 +609,7 @@
                 </template>
                 <template x-if="users.length > 0">
                     <div class="table-container">
-                        <table class="admin-table ">
+                        <table class="admin-table monthly-limits-table">
                             <thead>
                                 <tr>
                                     <th>ユーザー名</th>
@@ -657,58 +623,62 @@
                             <tbody>
                                 <template x-for="user in users" :key="user.id">
                                     <tr>
-                                        <td x-text="user.name"></td>
+                                        <td>
+                                            <span class="user-name-bold" x-text="user.name"></span>
+                                        </td>
                                         <td>
                                             <div class="table-inline-field">
                                                 <input
                                                     type="number"
+                                                    class="year-month-input"
                                                     :id="'year-' + user.id"
                                                     min="2000"
                                                     max="2100"
                                                     :value="new Date().getFullYear()"
-                                                    style="width: 80px;"
                                                 />
-                                                <span>年</span>
+                                                <span class="year-month-label">年</span>
                                                 <input
                                                     type="number"
+                                                    class="year-month-input"
                                                     :id="'month-' + user.id"
                                                     min="1"
                                                     max="12"
                                                     :value="new Date().getMonth() + 1"
-                                                    style="width: 60px;"
                                                 />
-                                                <span>月</span>
+                                                <span class="year-month-label">月</span>
                                             </div>
                                         </td>
                                         <td>
                                             <input
                                                 type="number"
+                                                class="limit-hours-input"
                                                 step="0.1"
                                                 min="0"
                                                 :id="'limit-' + user.id"
                                                 placeholder="限度時間"
-                                                style="width: 100px;"
                                             />
                                         </td>
                                         <td>
-                                            <span x-text="getUserUsedHours(user.id) || '0.0'"></span>
+                                            <span class="hours-value" x-text="getUserUsedHours(user.id) || '0.0'"></span>
                                         </td>
                                         <td>
-                                            <span x-text="getUserRemainingHours(user.id) || '0.0'"></span>
+                                            <span class="hours-value" x-text="getUserRemainingHours(user.id) || '0.0'"></span>
                                         </td>
                                         <td>
-                                            <button
-                                                class="btn-primary btn-sm"
-                                                @click="setUserMonthlyLimit(user.id)"
-                                            >
-                                                設定
-                                            </button>
-                                            <button
-                                                class="btn-secondary btn-sm"
-                                                @click="loadUserMonthlyLimits(user.id)"
-                                            >
-                                                履歴
-                                            </button>
+                                            <div class="user-action-buttons">
+                                                <button
+                                                    class="btn-set-limit"
+                                                    @click="setUserMonthlyLimit(user.id)"
+                                                >
+                                                    設定
+                                                </button>
+                                                <button
+                                                    class="btn-detail-user"
+                                                    @click="loadUserMonthlyLimits(user.id)"
+                                                >
+                                                    履歴
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 </template>
@@ -892,7 +862,7 @@
                 </template>
                 <template x-if="operationLogs.length > 0">
                     <div class="table-container">
-                        <table class="admin-table">
+                        <table class="admin-table operation-logs-table">
                             <thead>
                                 <tr>
                                     <th>日時</th>
@@ -906,12 +876,27 @@
                             <tbody>
                                 <template x-for="log in operationLogs" :key="log.id">
                                     <tr>
-                                        <td x-text="formatDateTime(log.created_at)"></td>
-                                        <td x-text="log.admin?.name || '—'"></td>
-                                        <td x-text="getOperationTypeLabel(log.operation_type)"></td>
-                                        <td x-text="getTargetTypeLabel(log.target_type)"></td>
-                                        <td x-text="log.target_id || '—'"></td>
-                                        <td x-text="log.ip_address || '—'"></td>
+                                        <td>
+                                            <div class="datetime-cell-vertical">
+                                                <span class="datetime-date" x-text="formatDateOnly(log.created_at)"></span>
+                                                <span class="datetime-time" x-text="formatTimeOnly(log.created_at)"></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="user-name-bold" x-text="log.admin?.name || '—'"></span>
+                                        </td>
+                                        <td>
+                                            <span class="operation-type" x-text="getOperationTypeLabel(log.operation_type)"></span>
+                                        </td>
+                                        <td>
+                                            <span class="target-type" x-text="getTargetTypeLabel(log.target_type)"></span>
+                                        </td>
+                                        <td>
+                                            <span class="request-id" x-text="log.target_id || '—'"></span>
+                                        </td>
+                                        <td>
+                                            <span class="ip-address" :class="{ 'empty-data': !log.ip_address || log.ip_address === '—' }" x-text="log.ip_address || '—'"></span>
+                                        </td>
                                     </tr>
                                 </template>
                             </tbody>
@@ -926,19 +911,15 @@
         class="modal-backdrop"
         x-show="showReportModal"
         x-cloak
-        style="position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 1100;"
         @click.self="closeReportModal()"
         role="dialog"
         aria-modal="true"
         aria-label="報告書の詳細"
     >
-        <div
-            class="modal-content"
-            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 8px; max-width: 720px; width: 90%; max-height: 80vh; overflow: auto; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);"
-        >
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h2 style="font-size: 1.1rem; font-weight: 600;">報告書の内容確認</h2>
-                <div style="display: flex; gap: 8px; align-items: center;">
+        <div class="modal-content modal-content-sm">
+            <div class="modal-header">
+                <h2>報告書の内容確認</h2>
+                <div>
                     <button
                         type="button"
                         class="btn-secondary btn-sm"
@@ -958,48 +939,530 @@
             </div>
 
             <template x-if="selectedReport">
-                <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; font-size: 0.9rem;">
-                    <div>
-                        <strong>報告書ID</strong><br>
-                        <span x-text="selectedReport.id"></span>
-                    </div>
-                    <div>
-                        <strong>実施日</strong><br>
-                        <span x-text="formatReportDate(selectedReport.actual_date) || '-'"></span>
-                    </div>
-                    <div>
-                        <strong>ユーザー</strong><br>
-                        <span x-text="selectedReport.user?.name || '—'"></span>
-                    </div>
-                    <div>
-                        <strong>ガイド</strong><br>
-                        <span x-text="selectedReport.guide?.name || '—'"></span>
-                    </div>
-                    <div>
-                        <strong>開始時刻</strong><br>
-                        <span x-text="selectedReport.actual_start_time || '-'"></span>
-                    </div>
-                    <div>
-                        <strong>終了時刻</strong><br>
-                        <span x-text="selectedReport.actual_end_time || '-'"></span>
-                    </div>
+                <div class="modal-body">
+                    <div class="modal-grid">
+                        <div class="modal-field">
+                            <strong>報告書ID</strong>
+                            <span x-text="selectedReport.id"></span>
+                        </div>
+                        <div class="modal-field">
+                            <strong>実施日</strong>
+                            <span x-text="formatReportDate(selectedReport.actual_date) || '-'"></span>
+                        </div>
+                        <div class="modal-field">
+                            <strong>ユーザー</strong>
+                            <span x-text="selectedReport.user?.name || '—'"></span>
+                        </div>
+                        <div class="modal-field">
+                            <strong>ガイド</strong>
+                            <span x-text="selectedReport.guide?.name || '—'"></span>
+                        </div>
+                        <div class="modal-field">
+                            <strong>開始時刻</strong>
+                            <span x-text="selectedReport.actual_start_time || '-'"></span>
+                        </div>
+                        <div class="modal-field">
+                            <strong>終了時刻</strong>
+                            <span x-text="selectedReport.actual_end_time || '-'"></span>
+                        </div>
 
-                    <div style="grid-column: 1 / -1; margin-top: 12px;">
-                        <strong>サービス内容</strong>
-                        <div style="border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px; margin-top: 4px; white-space: pre-wrap; background: #fafafa; max-height: 160px; overflow: auto;">
-                            <span x-text="selectedReport.service_content || '未入力'"></span>
+                        <div class="modal-field modal-grid-full modal-field-spaced">
+                            <strong>サービス内容</strong>
+                            <div class="modal-display-box modal-display-box-sm">
+                                <span x-text="selectedReport.service_content || '未入力'"></span>
+                            </div>
+                        </div>
+
+                        <div class="modal-field modal-grid-full modal-field-spaced">
+                            <strong>報告欄（自由記入）</strong>
+                            <div class="modal-display-box modal-display-box-scroll">
+                                <span x-text="selectedReport.report_content || '未入力'"></span>
+                            </div>
+                        </div>
+                </div>
+            </template>
+        </div>
+    </div>
+    <!-- ユーザープロフィール詳細モーダル -->
+    <div
+        class="modal-backdrop"
+        x-show="showUserProfileModal"
+        x-cloak
+        @click.self="closeUserProfileModal()"
+        @keydown.escape.window="closeUserProfileModal()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="user-profile-modal-title"
+    >
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="user-profile-modal-title">ユーザープロフィール</h2>
+                <div>
+                    <button
+                        type="button"
+                        class="btn-secondary btn-sm"
+                        @click="closeUserProfileModal()"
+                        aria-label="モーダルを閉じる"
+                    >
+                        閉じる
+                    </button>
+                </div>
+            </div>
+
+            <template x-if="selectedUserProfile">
+                <div>
+                    <div class="modal-body">
+                        <div class="modal-section">
+                        <h3>基本情報</h3>
+                        <div class="modal-grid">
+                                <div class="modal-field">
+                                    <strong>氏名</strong>
+                                    <template x-if="!editingUserProfile">
+                                        <span x-text="selectedUserProfile.name || '—'"></span>
+                                    </template>
+                                    <template x-if="editingUserProfile">
+                                        <input
+                                            type="text"
+                                            class="modal-input"
+                                            x-model="editingUserProfileData.name"
+                                            aria-label="氏名"
+                                            aria-required="true"
+                                        />
+                                    </template>
+                                </div>
+                                <div>
+                                    <strong>メールアドレス</strong><br>
+                                    <span x-text="selectedUserProfile.email || '—'"></span>
+                                </div>
+                                <div class="modal-field" x-show="selectedUserProfile.phone || editingUserProfile">
+                                    <strong>電話番号</strong>
+                                    <template x-if="!editingUserProfile">
+                                        <span x-text="selectedUserProfile.phone"></span>
+                                    </template>
+                                    <template x-if="editingUserProfile">
+                                        <input
+                                            type="tel"
+                                            class="modal-input"
+                                            x-model="editingUserProfileData.phone"
+                                            aria-label="電話番号"
+                                        />
+                                    </template>
+                                </div>
+                                <div class="modal-field" x-show="selectedUserProfile.address || editingUserProfile">
+                                    <strong>住所</strong>
+                                    <template x-if="!editingUserProfile">
+                                        <span x-text="selectedUserProfile.address"></span>
+                                    </template>
+                                    <template x-if="editingUserProfile">
+                                        <textarea
+                                            class="modal-textarea"
+                                            rows="2"
+                                            placeholder="都道府県、市区町村、番地を入力してください"
+                                            x-model="editingUserProfileData.address"
+                                            aria-label="住所"
+                                            aria-describedby="address-help-user"
+                                        ></textarea>
+                                        <small id="address-help-user" class="modal-help-text">都道府県、市区町村、番地を入力してください</small>
+                                    </template>
+                                </div>
+                                <div class="modal-field" x-show="selectedUserProfile.birth_date">
+                                    <strong>生年月日</strong>
+                                    <span x-text="formatDate(selectedUserProfile.birth_date)"></span>
+                                </div>
+                                <div class="modal-field" x-show="selectedUserProfile.age && selectedUserProfile.age > 0">
+                                    <strong>年齢</strong>
+                                    <span x-text="selectedUserProfile.age + '歳'"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- プロフィール情報 -->
+                        <div class="modal-section">
+                            <h3>プロフィール情報</h3>
+                            <div class="modal-grid">
+                                <div class="modal-field" x-show="selectedUserProfile.contact_method || editingUserProfile">
+                                    <strong>連絡手段</strong>
+                                    <template x-if="!editingUserProfile">
+                                        <span x-text="selectedUserProfile.contact_method"></span>
+                                    </template>
+                                    <template x-if="editingUserProfile">
+                                        <input
+                                            type="text"
+                                            class="modal-input"
+                                            x-model="editingUserProfileData.contact_method"
+                                            aria-label="連絡手段"
+                                        />
+                                    </template>
+                                </div>
+                                <div class="modal-field" x-show="selectedUserProfile.recipient_number || editingUserProfile">
+                                    <strong>受給者証番号</strong>
+                                    <template x-if="!editingUserProfile">
+                                        <span x-text="selectedUserProfile.recipient_number"></span>
+                                    </template>
+                                    <template x-if="editingUserProfile">
+                                        <input
+                                            type="text"
+                                            class="modal-input"
+                                            x-model="editingUserProfileData.recipient_number"
+                                            aria-label="受給者証番号"
+                                        />
+                                    </template>
+                                </div>
+                                <div class="modal-field modal-grid-full" x-show="selectedUserProfile.notes || editingUserProfile">
+                                    <strong>備考</strong>
+                                    <template x-if="!editingUserProfile">
+                                        <div class="modal-display-box" style="min-height: auto;">
+                                            <span x-text="selectedUserProfile.notes"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="editingUserProfile">
+                                        <textarea
+                                            class="modal-textarea"
+                                            rows="4"
+                                            placeholder="備考を入力してください（任意）"
+                                            x-model="editingUserProfileData.notes"
+                                            aria-label="備考（任意）"
+                                            id="notes-user"
+                                        ></textarea>
+                                    </template>
+                                </div>
+                                <div class="modal-field modal-grid-full" x-show="selectedUserProfile.introduction || editingUserProfile">
+                                    <strong>自己紹介</strong>
+                                    <template x-if="!editingUserProfile">
+                                        <div class="modal-display-box" style="min-height: auto;">
+                                            <span x-text="selectedUserProfile.introduction"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="editingUserProfile">
+                                        <textarea
+                                            class="modal-textarea"
+                                            rows="4"
+                                            placeholder="自己紹介を入力してください（任意）"
+                                            x-model="editingUserProfileData.introduction"
+                                            aria-label="自己紹介（任意）"
+                                            id="introduction-user"
+                                        ></textarea>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    </div>
+                </div>
+            </template>
+            
+            <!-- 編集ボタン（閲覧モード時） - templateの外に配置 -->
+            <div 
+                class="modal-edit-button" 
+                x-show="selectedUserProfile && !editingUserProfile"
+                x-init="console.log('編集ボタン要素初期化（ユーザー） - editingUserProfile:', editingUserProfile, 'selectedUserProfile:', selectedUserProfile)"
+            >
+                <button
+                    type="button"
+                    class="btn-primary"
+                    @click="console.log('編集ボタンクリック - editingUserProfile:', editingUserProfile, 'selectedUserProfile:', selectedUserProfile); editUserProfile(selectedUserProfile.id)"
+                    aria-label="プロフィールを編集"
+                >
+                    編集
+                </button>
+            </div>
+            <!-- 編集モード時の保存・キャンセルボタン -->
+            <div class="modal-button-group" x-show="selectedUserProfile && editingUserProfile">
+                <button
+                    type="button"
+                    class="btn-secondary btn-sm modal-cancel-btn"
+                    @click="cancelEditUserProfile()"
+                    aria-label="編集をキャンセル"
+                >
+                    キャンセル
+                </button>
+                <button
+                    type="button"
+                    class="btn-primary btn-sm"
+                    @click="saveUserProfile(selectedUserProfile.id)"
+                    :aria-busy="savingUserProfile"
+                    aria-label="プロフィールを保存する"
+                >
+                    <span x-show="!savingUserProfile">保存する</span>
+                    <span x-show="savingUserProfile">保存中...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- ガイドプロフィール詳細モーダル -->
+    <div
+        class="modal-backdrop"
+        x-show="showGuideProfileModal"
+        x-cloak
+        @click.self="closeGuideProfileModal()"
+        @keydown.escape.window="closeGuideProfileModal()"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="guide-profile-modal-title"
+    >
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="guide-profile-modal-title">ガイドプロフィール</h2>
+                <div>
+                    <button
+                        type="button"
+                        class="btn-secondary btn-sm"
+                        @click.stop="closeGuideProfileModal()"
+                        aria-label="モーダルを閉じる"
+                    >
+                        閉じる
+                    </button>
+                </div>
+            </div>
 
-                    <div style="grid-column: 1 / -1; margin-top: 12px;">
-                        <strong>報告欄（自由記入）</strong>
-                        <div style="border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px; margin-top: 4px; white-space: pre-wrap; background: #fafafa; max-height: 200px; overflow: auto;">
-                            <span x-text="selectedReport.report_content || '未入力'"></span>
+            <template x-if="selectedGuideProfile">
+                <div class="modal-body">
+                    <div class="modal-section">
+                        <h3>基本情報</h3>
+                        <div class="modal-grid">
+                                <div class="modal-field">
+                                    <strong>氏名</strong>
+                                    <template x-if="!editingGuideProfile">
+                                        <span x-text="selectedGuideProfile.name || '—'"></span>
+                                    </template>
+                                    <template x-if="editingGuideProfile">
+                                        <input
+                                            type="text"
+                                            class="modal-input"
+                                            x-model="editingGuideProfileData.name"
+                                            aria-label="氏名"
+                                            aria-required="true"
+                                        />
+                                    </template>
+                                </div>
+                                <div class="modal-field">
+                                    <strong>メールアドレス</strong>
+                                    <span x-text="selectedGuideProfile.email || '—'"></span>
+                                </div>
+                                <div class="modal-field" x-show="selectedGuideProfile.phone || editingGuideProfile">
+                                    <strong>電話番号</strong>
+                                    <template x-if="!editingGuideProfile">
+                                        <span x-text="selectedGuideProfile.phone"></span>
+                                    </template>
+                                    <template x-if="editingGuideProfile">
+                                        <input
+                                            type="tel"
+                                            class="modal-input"
+                                            x-model="editingGuideProfileData.phone"
+                                            aria-label="電話番号"
+                                        />
+                                    </template>
+                                </div>
+                                <div class="modal-field" x-show="selectedGuideProfile.address || editingGuideProfile">
+                                    <strong>住所</strong>
+                                    <template x-if="!editingGuideProfile">
+                                        <span x-text="selectedGuideProfile.address"></span>
+                                    </template>
+                                    <template x-if="editingGuideProfile">
+                                        <textarea
+                                            class="modal-textarea"
+                                            rows="2"
+                                            placeholder="都道府県、市区町村、番地を入力してください"
+                                            x-model="editingGuideProfileData.address"
+                                            aria-label="住所"
+                                            aria-describedby="address-help-guide"
+                                        ></textarea>
+                                        <small id="address-help-guide" class="modal-help-text">都道府県、市区町村、番地を入力してください</small>
+                                    </template>
+                                </div>
+                                <div class="modal-field" x-show="selectedGuideProfile.birth_date">
+                                    <strong>生年月日</strong>
+                                    <span x-text="formatDate(selectedGuideProfile.birth_date)"></span>
+                                </div>
+                                <div class="modal-field" x-show="selectedGuideProfile.age && selectedGuideProfile.age > 0">
+                                    <strong>年齢</strong>
+                                    <span x-text="selectedGuideProfile.age + '歳'"></span>
+                                </div>
+                                <div class="modal-field modal-field-compact" x-show="selectedGuideProfile.employee_number || editingGuideProfile">
+                                    <strong>従業員番号 <span class="modal-label-optional">（任意）</span></strong>
+                                    <template x-if="!editingGuideProfile">
+                                        <span x-text="selectedGuideProfile.employee_number"></span>
+                                    </template>
+                                    <template x-if="editingGuideProfile">
+                                        <input
+                                            type="text"
+                                            class="modal-input"
+                                            x-model="editingGuideProfileData.employee_number"
+                                            placeholder="従業員番号を入力してください（任意）"
+                                            aria-label="従業員番号（任意）"
+                                        />
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- プロフィール情報 -->
+                        <div class="modal-section">
+                            <h3>プロフィール情報</h3>
+                            <div class="modal-grid">
+                                <div class="modal-field modal-grid-full" x-show="selectedGuideProfile.introduction || editingGuideProfile">
+                                    <strong>自己紹介</strong>
+                                    <template x-if="!editingGuideProfile">
+                                        <div class="modal-display-box" style="min-height: auto;">
+                                            <span x-text="selectedGuideProfile.introduction"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="editingGuideProfile">
+                                        <textarea
+                                            class="modal-textarea"
+                                            rows="4"
+                                            placeholder="自己紹介を入力してください（任意）"
+                                            x-model="editingGuideProfileData.introduction"
+                                            aria-label="自己紹介（任意）"
+                                            id="introduction-guide"
+                                        ></textarea>
+                                    </template>
+                                </div>
+                                <div class="modal-field modal-grid-full" x-show="(selectedGuideProfile.available_areas && selectedGuideProfile.available_areas.length > 0) || editingGuideProfile">
+                                    <strong>対応可能エリア</strong>
+                                    <small class="modal-help-text modal-help-text-before">対応可能な都道府県を選択してください（複数選択可）</small>
+                                    <template x-if="!editingGuideProfile">
+                                        <div class="modal-display-box" style="min-height: auto;">
+                                            <span x-text="selectedGuideProfile.available_areas.join(', ')"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="editingGuideProfile">
+                                        <div class="modal-checkbox-grid modal-checkbox-grid-scroll">
+                                            <template x-for="area in ['北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県', '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県', '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県', '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県', '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県']" :key="area">
+                                                <label class="modal-checkbox-label" :for="'area-' + area">
+                                                    <input
+                                                        type="checkbox"
+                                                        :id="'area-' + area"
+                                                        :value="area"
+                                                        x-model="editingGuideProfileData.available_areas"
+                                                        :aria-label="area"
+                                                    />
+                                                    <span x-text="area"></span>
+                                                </label>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div class="modal-field" x-show="(selectedGuideProfile.available_days && selectedGuideProfile.available_days.length > 0) || editingGuideProfile">
+                                    <strong>対応可能日</strong>
+                                    <small class="modal-help-text modal-help-text-before">対応可能な日を選択してください（複数選択可）</small>
+                                    <template x-if="!editingGuideProfile">
+                                        <div class="modal-display-box" style="min-height: auto;">
+                                            <span x-text="selectedGuideProfile.available_days.join(', ')"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="editingGuideProfile">
+                                        <div class="modal-checkbox-horizontal">
+                                            <template x-for="day in ['平日', '土日', '祝日']" :key="day">
+                                                <label class="modal-checkbox-label" :for="'day-' + day">
+                                                    <input
+                                                        type="checkbox"
+                                                        :id="'day-' + day"
+                                                        :value="day"
+                                                        x-model="editingGuideProfileData.available_days"
+                                                        :aria-label="day"
+                                                    />
+                                                    <span x-text="day"></span>
+                                                </label>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div class="modal-field" x-show="(selectedGuideProfile.available_times && selectedGuideProfile.available_times.length > 0) || editingGuideProfile">
+                                    <strong>対応可能時間帯</strong>
+                                    <small class="modal-help-text modal-help-text-before">対応可能な時間帯を選択してください（複数選択可）</small>
+                                    <template x-if="!editingGuideProfile">
+                                        <div class="modal-display-box" style="min-height: auto;">
+                                            <span x-text="selectedGuideProfile.available_times.join(', ')"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="editingGuideProfile">
+                                        <div class="modal-checkbox-horizontal">
+                                            <template x-for="time in ['午前', '午後', '夜間']" :key="time">
+                                                <label class="modal-checkbox-label" :for="'time-' + time">
+                                                    <input
+                                                        type="checkbox"
+                                                        :id="'time-' + time"
+                                                        :value="time"
+                                                        x-model="editingGuideProfileData.available_times"
+                                                        :aria-label="time"
+                                                    />
+                                                    <span x-text="time"></span>
+                                                </label>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 運営用情報 -->
+                        <div class="modal-section" x-show="selectedGuideProfile.admin_comment || editingGuideProfile">
+                            <h3>運営用情報</h3>
+                            <div class="modal-grid">
+                                <div class="modal-field modal-grid-full" x-show="selectedGuideProfile.admin_comment || editingGuideProfile">
+                                    <strong>運営コメント</strong>
+                                    <small class="modal-help-text modal-help-text-before">運営側からのメモ（ガイドには表示されません）</small>
+                                    <template x-if="!editingGuideProfile">
+                                        <div class="modal-display-box" style="min-height: auto;">
+                                            <span x-text="selectedGuideProfile.admin_comment"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="editingGuideProfile">
+                                        <textarea
+                                            class="modal-textarea"
+                                            rows="4"
+                                            placeholder="運営側からのメモを入力してください（ガイドには表示されません）"
+                                            x-model="editingGuideProfileData.admin_comment"
+                                            aria-label="運営コメント"
+                                            aria-describedby="admin-comment-help-guide"
+                                        ></textarea>
+                                        <small id="admin-comment-help-guide" class="modal-help-text">運営側からのメモ（ガイドには表示されません）</small>
+                                    </template>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </template>
+            
+            <!-- 編集ボタン（閲覧モード時） - templateの外に配置 -->
+            <div 
+                class="modal-edit-button" 
+                x-show="selectedGuideProfile && !editingGuideProfile"
+                x-init="console.log('編集ボタン要素初期化 - editingGuideProfile:', editingGuideProfile, 'selectedGuideProfile:', selectedGuideProfile)"
+            >
+                <button
+                    type="button"
+                    class="btn-primary"
+                    @click="console.log('編集ボタンクリック - editingGuideProfile:', editingGuideProfile, 'selectedGuideProfile:', selectedGuideProfile); editGuideProfile(selectedGuideProfile.id)"
+                    aria-label="プロフィールを編集"
+                >
+                    編集
+                </button>
+            </div>
+            <!-- 編集モード時の保存・キャンセルボタン -->
+            <div class="modal-button-group" x-show="selectedGuideProfile && editingGuideProfile">
+                <button
+                    type="button"
+                    class="btn-secondary btn-sm modal-cancel-btn"
+                    @click="cancelEditGuideProfile()"
+                    aria-label="編集をキャンセル"
+                >
+                    キャンセル
+                </button>
+                <button
+                    type="button"
+                    class="btn-primary btn-sm"
+                    @click="saveGuideProfile(selectedGuideProfile.id)"
+                    :aria-busy="savingGuideProfile"
+                    aria-label="プロフィールを保存する"
+                >
+                    <span x-show="!savingGuideProfile">保存する</span>
+                    <span x-show="savingGuideProfile">保存中...</span>
+                </button>
+            </div>
         </div>
+    </div>
     </div>
 </div>
 @endsection
@@ -1019,6 +1482,16 @@ function adminDashboard() {
         userApprovedReports: [], // ユーザー承認済み（管理者承認待ち）報告書
         selectedReport: null,    // 詳細表示用
         showReportModal: false,
+        selectedUserProfile: null,    // ユーザープロフィール詳細表示用
+        showUserProfileModal: false,
+        editingUserProfile: false,
+        editingUserProfileData: {},
+        savingUserProfile: false,
+        selectedGuideProfile: null,    // ガイドプロフィール詳細表示用
+        showGuideProfileModal: false,
+        editingGuideProfile: false,
+        editingGuideProfileData: {},
+        savingGuideProfile: false,
         users: [],
         guides: [],
         stats: null,
@@ -1174,7 +1647,6 @@ function adminDashboard() {
                 // メタデータを初期化
                 this.users.forEach(u => {
                     this.userMeta[u.id] = u.recipient_number || '';
-                    this.userAdminComment[u.id] = u.admin_comment || '';
                 });
                 
                 // 限度時間タブ用に、現在月の限度時間/使用時間/残時間も取得（順次処理でレート制限を回避）
@@ -1367,13 +1839,13 @@ function adminDashboard() {
                     method: 'PUT',
                     body: JSON.stringify({
                         recipient_number: this.userMeta[userId] || null,
-                        admin_comment: this.userAdminComment[userId] || null
+                        admin_comment: null
                     })
                 });
-                alert('受給者証番号/コメントを更新しました');
+                alert('受給者証番号を更新しました');
                 await this.fetchUsers();
             } catch (error) {
-                alert('受給者証番号/コメントの更新に失敗しました');
+                alert('受給者証番号の更新に失敗しました');
                 console.error(error);
             }
         },
@@ -1391,6 +1863,168 @@ function adminDashboard() {
             } catch (error) {
                 alert('従業員番号の更新に失敗しました');
                 console.error(error);
+            }
+        },
+
+        async openUserProfileModal(userId) {
+            try {
+                const user = this.users.find(u => u.id === userId);
+                if (!user) {
+                    alert('ユーザーが見つかりません');
+                    return;
+                }
+                this.selectedUserProfile = { ...user };
+                this.showUserProfileModal = true;
+                this.editingUserProfile = false;
+            } catch (error) {
+                console.error('ユーザープロフィール取得エラー:', error);
+                alert('ユーザープロフィールの取得に失敗しました');
+            }
+        },
+
+        closeUserProfileModal() {
+            this.showUserProfileModal = false;
+            this.selectedUserProfile = null;
+            this.editingUserProfile = false;
+            this.editingUserProfileData = {};
+        },
+
+        editUserProfile(userId) {
+            if (!this.selectedUserProfile || this.selectedUserProfile.id !== userId) {
+                return;
+            }
+            this.editingUserProfile = true;
+            this.editingUserProfileData = {
+                name: this.selectedUserProfile.name || '',
+                phone: this.selectedUserProfile.phone || '',
+                address: this.selectedUserProfile.address || '',
+                contact_method: this.selectedUserProfile.contact_method || '',
+                notes: this.selectedUserProfile.notes || '',
+                introduction: this.selectedUserProfile.introduction || '',
+                recipient_number: this.selectedUserProfile.recipient_number || '',
+            };
+        },
+
+        cancelEditUserProfile() {
+            this.editingUserProfile = false;
+            this.editingUserProfileData = {};
+        },
+
+        async saveUserProfile(userId) {
+            if (!this.editingUserProfileData) {
+                return;
+            }
+            this.savingUserProfile = true;
+            try {
+                await this.apiFetch(`/api/admin/users/${userId}/profile`, {
+                    method: 'PUT',
+                    body: JSON.stringify(this.editingUserProfileData)
+                });
+                alert('プロフィールを更新しました');
+                await this.fetchUsers();
+                // 更新後のデータを再取得してモーダルを更新
+                const user = this.users.find(u => u.id === userId);
+                if (user) {
+                    this.selectedUserProfile = { ...user };
+                }
+                this.editingUserProfile = false;
+                this.editingUserProfileData = {};
+            } catch (error) {
+                console.error('プロフィール更新エラー:', error);
+                alert('プロフィールの更新に失敗しました: ' + (error.message || '不明なエラー'));
+            } finally {
+                this.savingUserProfile = false;
+            }
+        },
+
+        async openGuideProfileModal(guideId) {
+            try {
+                const guide = this.guides.find(g => g.id === guideId);
+                if (!guide) {
+                    alert('ガイドが見つかりません');
+                    return;
+                }
+                this.selectedGuideProfile = { ...guide };
+                this.showGuideProfileModal = true;
+                this.editingGuideProfile = false;
+                console.log('openGuideProfileModal - editingGuideProfile:', this.editingGuideProfile);
+                console.log('openGuideProfileModal - selectedGuideProfile:', this.selectedGuideProfile);
+            } catch (error) {
+                console.error('ガイドプロフィール取得エラー:', error);
+                alert('ガイドプロフィールの取得に失敗しました');
+            }
+        },
+
+        closeGuideProfileModal() {
+            console.log('closeGuideProfileModal - editingGuideProfile:', this.editingGuideProfile);
+            this.showGuideProfileModal = false;
+            this.selectedGuideProfile = null;
+            this.editingGuideProfile = false;
+            this.editingGuideProfileData = {};
+        },
+
+        editGuideProfile(guideId) {
+            console.log('editGuideProfile - before:', {
+                editingGuideProfile: this.editingGuideProfile,
+                selectedGuideProfile: this.selectedGuideProfile,
+                guideId: guideId
+            });
+            if (!this.selectedGuideProfile || this.selectedGuideProfile.id !== guideId) {
+                console.log('editGuideProfile - early return');
+                return;
+            }
+            this.editingGuideProfile = true;
+            console.log('editGuideProfile - after setting to true:', this.editingGuideProfile);
+            this.editingGuideProfileData = {
+                name: this.selectedGuideProfile.name || '',
+                phone: this.selectedGuideProfile.phone || '',
+                address: this.selectedGuideProfile.address || '',
+                introduction: this.selectedGuideProfile.introduction || '',
+                available_areas: Array.isArray(this.selectedGuideProfile.available_areas) 
+                    ? [...this.selectedGuideProfile.available_areas] 
+                    : [],
+                available_days: Array.isArray(this.selectedGuideProfile.available_days) 
+                    ? [...this.selectedGuideProfile.available_days] 
+                    : [],
+                available_times: Array.isArray(this.selectedGuideProfile.available_times) 
+                    ? [...this.selectedGuideProfile.available_times] 
+                    : [],
+                employee_number: this.selectedGuideProfile.employee_number || '',
+                admin_comment: this.selectedGuideProfile.admin_comment || '',
+            };
+        },
+
+        cancelEditGuideProfile() {
+            console.log('cancelEditGuideProfile - before:', this.editingGuideProfile);
+            this.editingGuideProfile = false;
+            this.editingGuideProfileData = {};
+            console.log('cancelEditGuideProfile - after:', this.editingGuideProfile);
+        },
+
+        async saveGuideProfile(guideId) {
+            if (!this.editingGuideProfileData) {
+                return;
+            }
+            this.savingGuideProfile = true;
+            try {
+                await this.apiFetch(`/api/admin/guides/${guideId}/profile`, {
+                    method: 'PUT',
+                    body: JSON.stringify(this.editingGuideProfileData)
+                });
+                alert('プロフィールを更新しました');
+                await this.fetchGuides();
+                // 更新後のデータを再取得してモーダルを更新
+                const guide = this.guides.find(g => g.id === guideId);
+                if (guide) {
+                    this.selectedGuideProfile = { ...guide };
+                }
+                this.editingGuideProfile = false;
+                this.editingGuideProfileData = {};
+            } catch (error) {
+                console.error('プロフィール更新エラー:', error);
+                alert('プロフィールの更新に失敗しました: ' + (error.message || '不明なエラー'));
+            } finally {
+                this.savingGuideProfile = false;
             }
         },
 
@@ -1704,6 +2338,71 @@ function adminDashboard() {
             }
             
             return `${year}/${month}/${day}${timeDisplay ? ' ' + timeDisplay : ''}`;
+        },
+        
+        formatDateOnly(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}.${month}.${day}`;
+        },
+        
+        formatTimeOnly(timeStr) {
+            if (!timeStr) return '';
+            
+            // 日時文字列の場合（ISO形式など）
+            if (timeStr.includes('T') || timeStr.includes(' ')) {
+                const date = new Date(timeStr);
+                if (isNaN(date.getTime())) return '';
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+            
+            // 時間文字列の場合（HH:MM形式）
+            const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})/);
+            if (timeMatch) {
+                const hours = parseInt(timeMatch[1], 10);
+                const minutes = timeMatch[2];
+                return `${String(hours).padStart(2, '0')}:${minutes}`;
+            }
+            return '';
+        },
+        
+        formatRelativeTime(dateStr, timeStr) {
+            if (!dateStr) return '';
+            
+            try {
+                // 日付と時刻を結合してDateオブジェクトを作成
+                let dateTimeStr = dateStr;
+                if (timeStr) {
+                    const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})/);
+                    if (timeMatch) {
+                        dateTimeStr = `${dateStr}T${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}:00`;
+                    }
+                }
+                
+                const targetDate = new Date(dateTimeStr);
+                const now = new Date();
+                const diffMs = now - targetDate;
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                
+                if (diffDays > 0) {
+                    return `${diffDays}日前`;
+                } else if (diffHours > 0) {
+                    return `${diffHours}時間前`;
+                } else if (diffMinutes > 0) {
+                    return `${diffMinutes}分前`;
+                } else {
+                    return 'たった今';
+                }
+            } catch (e) {
+                return '';
+            }
         },
         formatReportDate(dateStr) {
             if (!dateStr) return '';

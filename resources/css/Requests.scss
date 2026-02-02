@@ -2,14 +2,54 @@
 .requests-container {
   max-width: 1000px;
   margin: 0 auto;
-}
 
-.requests-container h1 {
-  font-size: 32px;
-  font-weight: 400;
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-lg);
-  letter-spacing: 0;
+  h1 {
+    font-size: 32px;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    letter-spacing: 0;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+
+    h1 {
+      margin-bottom: 0;
+    }
+  }
+
+  .btn-primary-icon {
+    font-weight: 700; // font-bold
+    font-size: 14px; // text-sm
+    height: 36px;
+    padding: 0 16px; // px-4
+    border-radius: 6px; // rounded-md
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  @media (max-width: 768px) {
+    padding: 0 var(--spacing-md);
+
+    h1 {
+      font-size: 24px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 0 var(--spacing-sm);
+
+    h1 {
+      font-size: 20px;
+    }
+  }
 }
 
 .info-text {
@@ -55,6 +95,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+
+  @media (max-width: 768px) {
+    gap: var(--spacing-md);
+  }
 }
 
 .request-card {
@@ -64,12 +108,20 @@
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
   transition: all var(--transition-base);
-}
 
-.request-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--border-color);
-  transform: translateY(-1px);
+  &:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-color);
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--spacing-lg);
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--spacing-md);
+  }
 }
 
 .request-header {
@@ -79,15 +131,21 @@
   margin-bottom: var(--spacing-md);
   flex-wrap: wrap;
   gap: var(--spacing-md);
-}
 
-.request-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--text-primary);
-  letter-spacing: 0;
-  flex: 1;
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700; // font-bold（他の管理テーブルと統一）
+    color: #0f172a; // text-slate-900
+    letter-spacing: 0;
+    flex: 1;
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
 }
 
 .status-badge-wrapper {
@@ -176,13 +234,13 @@
 
 .request-details {
   margin-bottom: var(--spacing-md);
-}
 
-.request-details p {
-  margin: var(--spacing-xs) 0;
-  color: var(--text-secondary);
-  font-size: 14px;
-  line-height: 1.5;
+  p {
+    margin: var(--spacing-xs) 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+  }
 }
 
 .request-actions {
@@ -192,35 +250,91 @@
   margin-top: var(--spacing-md);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--border-color);
-}
 
-.request-actions > button,
-.request-actions > a.btn-primary,
-.request-actions > div {
-  flex: 1;
-  min-width: 140px;
-}
+  > button,
+  > a.btn-primary,
+  > div {
+    flex: 1;
+    min-width: 140px;
+  }
 
-.request-actions button,
-.request-actions a.btn-primary {
-  width: 100%;
-  justify-content: center;
-  padding: 0.625rem 1.5rem;
-  min-height: 36px;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.25px;
-  display: inline-flex;
-  align-items: center;
-  transition: all var(--transition-base);
-}
+  button,
+  a.btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 0 16px; // px-4
+    min-height: 36px;
+    height: 36px;
+    border-radius: 6px; // rounded-md
+    font-size: 14px; // text-sm
+    font-weight: 700; // font-bold
+    letter-spacing: 0.25px;
+    display: inline-flex;
+    align-items: center;
+    transition: all var(--transition-base);
+  }
 
-// divでラップされている場合の調整
-.request-actions > div {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
+  // divでラップされている場合の調整
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  button:disabled,
+  .btn-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  // 辞退ボタン（拒否ボタンと同じスタイル）
+  .btn-danger {
+    background-color: #ffffff; // bg-white
+    color: #ef4444; // text-red-500（警告の赤）
+    border: 1px solid #fecaca; // border border-red-200
+    height: 32px; // h-8
+    padding: 0 12px; // px-3
+    border-radius: 6px; // rounded-md
+    font-size: 14px; // text-sm
+    font-weight: 700; // font-bold
+    cursor: pointer;
+    transition: all var(--transition-base); // transition-all
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover:not(:disabled) {
+      background-color: #fef2f2; // hover:bg-red-50
+      border-color: #fca5a5; // border-red-300
+    }
+    
+    &:active:not(:disabled) {
+      background-color: #fee2e2; // bg-red-100
+      transform: translateY(1px);
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    &:focus-visible {
+      outline: 2px solid #ef4444;
+      outline-offset: 2px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+
+    button {
+      width: 100%;
+      min-width: auto;
+    }
+  }
 }
 
 .chat-availability-info {
@@ -245,13 +359,6 @@
   line-height: 1.4;
 }
 
-.request-actions button:disabled,
-.request-actions .btn-disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
 .empty-state {
   text-align: center;
   padding: var(--spacing-2xl);
@@ -259,12 +366,20 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
-}
 
-.empty-state p {
-  margin-bottom: var(--spacing-md);
-  color: var(--text-secondary);
-  font-size: 14px;
+  p {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+
+  .btn-primary {
+    font-weight: 700; // font-bold
+    font-size: 14px; // text-sm
+    height: 36px;
+    padding: 0 16px; // px-4
+    border-radius: 6px; // rounded-md
+  }
 }
 
 // 応募ガイドパネル
@@ -325,6 +440,11 @@
 
   .btn-primary {
     min-width: auto;
+    font-weight: 700; // font-bold
+    font-size: 14px; // text-sm
+    height: 36px;
+    padding: 0 16px; // px-4
+    border-radius: 6px; // rounded-md
   }
 }
 
@@ -343,56 +463,8 @@
   }
 }
 
-// レスポンシブ対応 
-@media (max-width: 768px) {
-  .requests-container {
-    padding: 0 var(--spacing-md);
-  }
-
-  .requests-container h1 {
-    font-size: 24px;
-  }
-
-  .request-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-md);
-  }
-
-  .request-actions {
-    width: 100%;
-    flex-direction: column;
-    gap: var(--spacing-sm);
-  }
-
-  .request-actions button {
-    width: 100%;
-    min-width: auto;
-  }
-
-  .requests-list {
-    gap: var(--spacing-md);
-  }
-
-  .request-card {
-    padding: var(--spacing-lg);
-  }
-}
-
-@media (max-width: 480px) {
-  .requests-container {
-    padding: 0 var(--spacing-sm);
-  }
-
-  .requests-container h1 {
-    font-size: 20px;
-  }
-
-  .request-card {
-    padding: var(--spacing-md);
-  }
-
-  .request-meta {
+.request-meta {
+  @media (max-width: 480px) {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--spacing-xs);

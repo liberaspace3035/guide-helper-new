@@ -9,19 +9,15 @@
   gap: var(--spacing-sm);
   pointer-events: none;
   max-width: 400px;
-}
 
-.toast-container > * {
-  pointer-events: auto;
-}
+  > * {
+    pointer-events: auto;
+  }
 
-// レスポンシブ対応 
-@media (max-width: 768px) {
-  .toast-container {
+  @media (max-width: 768px) {
     top: 70px;
     right: var(--spacing-md);
     left: var(--spacing-md);
     max-width: none;
   }
 }
-

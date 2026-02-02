@@ -169,6 +169,14 @@
   background-color: var(--primary-color) !important;
   color: var(--text-on-primary);
   border-color: var(--primary-color);
+  font-weight: 700; // font-bold（他の管理画面と統一）
+  font-size: 14px; // text-sm（他の管理画面と統一）
+  height: 36px; // 他の管理画面と統一
+  padding: 0 16px; // px-4（他の管理画面と統一）
+  border-radius: 6px; // rounded-md（他の管理画面と統一）
+  display: flex; // フレックスボックスで中央揃え
+  align-items: center; // 垂直方向の中央揃え
+  justify-content: center; // 水平方向の中央揃え
   
   &:hover:not(:disabled) {
     background-color: var(--primary-hover);

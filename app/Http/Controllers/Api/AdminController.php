@@ -338,6 +338,43 @@ class AdminController extends Controller
         return response()->json(['message' => 'ユーザー情報を更新しました']);
     }
 
+    public function updateUserProfile(Request $request, int $id)
+    {
+        $request->validate([
+            'name' => 'sometimes|required|string|max:100',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string',
+            'contact_method' => 'nullable|string|max:50',
+            'notes' => 'nullable|string',
+            'introduction' => 'nullable|string',
+            'recipient_number' => 'nullable|string',
+            'admin_comment' => 'nullable|string',
+        ]);
+
+        try {
+            $this->adminService->updateUserProfile($id, $request->only([
+                'name',
+                'phone',
+                'address',
+                'contact_method',
+                'notes',
+                'introduction',
+                'recipient_number',
+                'admin_comment',
+            ]));
+
+            return response()->json(['message' => 'ユーザープロフィールを更新しました']);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'ユーザーが見つかりません'], 404);
+        } catch (\Exception $e) {
+            \Log::error('AdminController::updateUserProfile error: ' . $e->getMessage(), [
+                'user_id' => $id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
     public function updateGuideProfileExtra(Request $request, int $id)
     {
         $request->validate([
@@ -350,6 +387,45 @@ class AdminController extends Controller
         );
 
         return response()->json(['message' => 'ガイド情報を更新しました']);
+    }
+
+    public function updateGuideProfile(Request $request, int $id)
+    {
+        $request->validate([
+            'name' => 'sometimes|required|string|max:100',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string',
+            'introduction' => 'nullable|string',
+            'available_areas' => 'nullable|array',
+            'available_days' => 'nullable|array',
+            'available_times' => 'nullable|array',
+            'employee_number' => 'nullable|string',
+            'admin_comment' => 'nullable|string',
+        ]);
+
+        try {
+            $this->adminService->updateGuideProfile($id, $request->only([
+                'name',
+                'phone',
+                'address',
+                'introduction',
+                'available_areas',
+                'available_days',
+                'available_times',
+                'employee_number',
+                'admin_comment',
+            ]));
+
+            return response()->json(['message' => 'ガイドプロフィールを更新しました']);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'ガイドが見つかりません'], 404);
+        } catch (\Exception $e) {
+            \Log::error('AdminController::updateGuideProfile error: ' . $e->getMessage(), [
+                'guide_id' => $id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     public function approveUser(Request $request, int $id)

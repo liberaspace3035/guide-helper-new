@@ -115,7 +115,7 @@ class DashboardService
         $matchings = Matching::where('user_id', $userId)
             ->whereIn('status', ['matched', 'in_progress'])
             ->whereNull('report_completed_at') // 管理者承認済みのマッチングを除外
-            ->with(['guide:id,name', 'request:id,request_type,request_date,request_time,masked_address'])
+            ->with(['guide:id,name', 'request:id,request_type,request_date,request_time,start_time,end_time,masked_address,service_content,meeting_place'])
             ->orderBy('matched_at', 'desc')
             ->get();
         
@@ -132,6 +132,10 @@ class DashboardService
                     'masked_address' => $matching->request->masked_address ?? '',
                     'request_date' => $matching->request->request_date ?? '',
                     'request_time' => $matching->request->request_time ?? '',
+                    'start_time' => $matching->request->start_time ?? '',
+                    'end_time' => $matching->request->end_time ?? '',
+                    'service_content' => $matching->request->service_content ?? '',
+                    'meeting_place' => $matching->request->meeting_place ?? '',
                     'guide_name' => $matching->guide->name ?? '',
                     'status' => $matching->status,
                     'report_completed_at' => $matching->report_completed_at ? ($matching->report_completed_at instanceof \Carbon\Carbon ? $matching->report_completed_at->toIso8601String() : $matching->report_completed_at) : null,
@@ -146,7 +150,7 @@ class DashboardService
         $matchings = Matching::where('guide_id', $guideId)
             ->whereIn('status', ['matched', 'in_progress'])
             ->whereNull('report_completed_at') // 管理者承認済みのマッチングを除外
-            ->with(['user:id,name', 'request:id,request_type,request_date,request_time,masked_address'])
+            ->with(['user:id,name', 'request:id,request_type,request_date,request_time,start_time,end_time,masked_address,service_content,meeting_place'])
             ->orderBy('matched_at', 'desc')
             ->get();
         
@@ -163,6 +167,10 @@ class DashboardService
                     'masked_address' => $matching->request->masked_address ?? '',
                     'request_date' => $matching->request->request_date ?? '',
                     'request_time' => $matching->request->request_time ?? '',
+                    'start_time' => $matching->request->start_time ?? '',
+                    'end_time' => $matching->request->end_time ?? '',
+                    'service_content' => $matching->request->service_content ?? '',
+                    'meeting_place' => $matching->request->meeting_place ?? '',
                     'user_name' => $matching->user->name ?? '',
                     'status' => $matching->status,
                     'report_completed_at' => $matching->report_completed_at ? ($matching->report_completed_at instanceof \Carbon\Carbon ? $matching->report_completed_at->toIso8601String() : $matching->report_completed_at) : null,

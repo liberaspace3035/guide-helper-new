@@ -41,7 +41,20 @@ class AuthController extends Controller
             'address' => 'required|string',
             'phone' => 'required|string|regex:/^[\d\-\+\(\)\s]+$/',
             'gender' => 'required|in:male,female,other,prefer_not_to_say',
-            'birth_date' => 'required|date',
+            'birth_date' => [
+                'required',
+                'date',
+                'before:today',
+                function ($attribute, $value, $fail) {
+                    $age = Carbon::parse($value)->age;
+                    if ($age < 18) {
+                        $fail('年齢は18歳以上である必要があります。');
+                    }
+                    if ($age > 120) {
+                        $fail('年齢は120歳以下である必要があります。');
+                    }
+                },
+            ],
             'role' => 'required|in:user,guide',
         ];
 
@@ -67,7 +80,9 @@ class AuthController extends Controller
             ]);
         }
 
-        $validator = Validator::make($request->all(), $rules);
+        $validator = Validator::make($request->all(), $rules, [
+            'birth_date.before' => '生年月日は今日より前の日付にしてください。',
+        ]);
 
         if ($validator->fails()) {
             // APIリクエストの場合はJSONレスポンス

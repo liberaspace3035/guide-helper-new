@@ -112,9 +112,13 @@
                         'ERR_NETWORK_CHANGED',
                         'ERR_NAME_NOT_RESOLVED',
                         'Failed to fetch',
+                        '取得に失敗しました',
                         'NetworkError',
+                        'ネットワークエラー',
                         'Network request failed',
-                        'TypeError: Failed to fetch'
+                        'ネットワークリクエストに失敗しました',
+                        'TypeError: Failed to fetch',
+                        'TypeError: 取得に失敗しました'
                     ];
                     
                     return networkErrorPatterns.some(pattern => 
@@ -319,14 +323,95 @@
                             </li>
                         @endif
                         @if(auth()->user()->isAdmin())
-                            <li>
-                                <a href="{{ route('admin.dashboard') }}" :aria-current="window.location.pathname === '/admin' ? 'page' : undefined">
+                            <li x-data="{ adminMenuOpen: window.location.pathname.startsWith('/admin') }">
+                                <button @click="adminMenuOpen = !adminMenuOpen" class="nav-item-button" :class="{ active: window.location.pathname.startsWith('/admin') }">
                                     <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="12" cy="12" r="3"></circle>
                                         <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
                                     </svg>
                                     <span>管理画面</span>
-                                </a>
+                                    <svg class="nav-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :class="{ 'rotate-90': adminMenuOpen }">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                </button>
+                                <ul class="nav-submenu" x-show="adminMenuOpen" x-transition>
+                                    <li>
+                                        <a href="{{ route('admin.dashboard') }}" :class="{ active: window.location.pathname === '/admin' && window.adminDashboard && window.adminDashboard.activeTab === 'dashboard' }" @click.prevent="if (window.adminDashboard) { window.adminDashboard.activeTab = 'dashboard'; } else { window.location.href = '{{ route('admin.dashboard') }}'; }">
+                                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="3" y="3" width="7" height="7"></rect>
+                                                <rect x="14" y="3" width="7" height="7"></rect>
+                                                <rect x="14" y="14" width="7" height="7"></rect>
+                                                <rect x="3" y="14" width="7" height="7"></rect>
+                                            </svg>
+                                            <span>ダッシュボード</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('admin.dashboard') }}" :class="{ active: window.location.pathname === '/admin' && window.adminDashboard && window.adminDashboard.activeTab === 'users' }" @click.prevent="if (window.adminDashboard) { window.adminDashboard.activeTab = 'users'; if (window.adminDashboard.users.length === 0) window.adminDashboard.fetchUsers(); } else { window.location.href = '{{ route('admin.dashboard') }}'; }">
+                                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="9" cy="7" r="4"></circle>
+                                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                            </svg>
+                                            <span>ユーザー管理</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('admin.dashboard') }}" :class="{ active: window.location.pathname === '/admin' && window.adminDashboard && window.adminDashboard.activeTab === 'guides' }" @click.prevent="if (window.adminDashboard) { window.adminDashboard.activeTab = 'guides'; if (window.adminDashboard.guides.length === 0) window.adminDashboard.fetchGuides(); } else { window.location.href = '{{ route('admin.dashboard') }}'; }">
+                                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="12" cy="7" r="4"></circle>
+                                            </svg>
+                                            <span>ガイド管理</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('admin.dashboard') }}" :class="{ active: window.location.pathname === '/admin' && window.adminDashboard && window.adminDashboard.activeTab === 'announcements' }" @click.prevent="if (window.adminDashboard) { window.adminDashboard.activeTab = 'announcements'; } else { window.location.href = '{{ route('admin.dashboard') }}'; }">
+                                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                            </svg>
+                                            <span>お知らせ管理</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('admin.dashboard') }}" :class="{ active: window.location.pathname === '/admin' && window.adminDashboard && window.adminDashboard.activeTab === 'monthly-limits' }" @click.prevent="if (window.adminDashboard) { if (window.adminDashboard.activeTab !== 'monthly-limits') { window.adminDashboard.activeTab = 'monthly-limits'; if (window.adminDashboard.users.length === 0) window.adminDashboard.fetchUsers(); else window.adminDashboard.fetchAllUserCurrentLimits(); } } else { window.location.href = '{{ route('admin.dashboard') }}'; }">
+                                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <polyline points="12 6 12 12 16 14"></polyline>
+                                            </svg>
+                                            <span>限度時間管理</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('admin.dashboard') }}" :class="{ active: window.location.pathname === '/admin' && window.adminDashboard && window.adminDashboard.activeTab === 'email-templates' }" @click.prevent="if (window.adminDashboard) { window.adminDashboard.activeTab = 'email-templates'; if (window.adminDashboard.emailTemplates.length === 0) window.adminDashboard.fetchEmailTemplates(); } else { window.location.href = '{{ route('admin.dashboard') }}'; }">
+                                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                                <polyline points="22,6 12,13 2,6"></polyline>
+                                            </svg>
+                                            <span>メールテンプレート</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('admin.dashboard') }}" :class="{ active: window.location.pathname === '/admin' && window.adminDashboard && window.adminDashboard.activeTab === 'email-settings' }" @click.prevent="if (window.adminDashboard) { window.adminDashboard.activeTab = 'email-settings'; if (window.adminDashboard.emailSettings.length === 0) window.adminDashboard.fetchEmailSettings(); } else { window.location.href = '{{ route('admin.dashboard') }}'; }">
+                                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                            </svg>
+                                            <span>メール通知設定</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('admin.dashboard') }}" :class="{ active: window.location.pathname === '/admin' && window.adminDashboard && window.adminDashboard.activeTab === 'operation-logs' }" @click.prevent="if (window.adminDashboard) { window.adminDashboard.activeTab = 'operation-logs'; if (window.adminDashboard.operationLogs.length === 0) window.adminDashboard.fetchOperationLogs(); } else { window.location.href = '{{ route('admin.dashboard') }}'; }">
+                                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="9 11 12 14 22 4"></polyline>
+                                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                            </svg>
+                                            <span>操作ログ</span>
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
                         @endif
                         <li>
@@ -396,7 +481,37 @@
                     @endauth
                 </div>
             </header>
-            <main class="main-content" role="main">
+            <main class="main-content @if(request()->is('admin*')) admin-main-content @endif" role="main">
+                {{-- 全ページ共通のフラッシュメッセージ表示 --}}
+                @if(session('success'))
+                    <div class="flash-message flash-success" role="alert" aria-live="polite" aria-atomic="true">
+                        <svg class="flash-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                @endif
+                @if(session('error'))
+                    <div class="flash-message flash-error" role="alert" aria-live="assertive" aria-atomic="true">
+                        <svg class="flash-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                        <span>{{ session('error') }}</span>
+                    </div>
+                @endif
+                @if(session('status'))
+                    <div class="flash-message flash-info" role="alert" aria-live="polite" aria-atomic="true">
+                        <svg class="flash-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <span>{{ session('status') }}</span>
+                    </div>
+                @endif
                 @yield('content')
             </main>
             <footer class="footer" role="contentinfo">

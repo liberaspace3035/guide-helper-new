@@ -22,6 +22,12 @@
                 <p><strong>タイプ:</strong> <span x-text="getRequestTypeLabel(matching.request_type)"></span></p>
                 <p><strong>場所:</strong> <span x-text="matching.masked_address"></span></p>
                 <p><strong>日時:</strong> <span x-text="formatRequestDateTime(matching.request_date, matching.start_time, matching.end_time)"></span></p>
+                <template x-if="matching.service_content">
+                    <p><strong>サービス内容:</strong> <span x-text="matching.service_content"></span></p>
+                </template>
+                <template x-if="matching.request_type === 'outing' && matching.meeting_place">
+                    <p><strong>待ち合わせ場所:</strong> <span x-text="matching.meeting_place"></span></p>
+                </template>
             </div>
             <div class="matching-participants">
                 @if(auth()->user()->isUser())

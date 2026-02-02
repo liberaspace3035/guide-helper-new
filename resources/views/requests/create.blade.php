@@ -13,7 +13,7 @@
         @endif
 
         <div class="form-group">
-            <label for="request_type">依頼タイプ <span class="required">*</span></label>
+            <label for="request_type">依頼タイプ <span class="required" aria-label="必須項目">*</span></label>
             <select
                 id="request_type"
                 name="request_type"
@@ -182,7 +182,7 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label for="request_date">希望日 <span class="required">*</span></label>
+                <label for="request_date">希望日 <span class="required" aria-label="必須項目">*</span></label>
                 <div class="date-input-wrapper">
                     <input
                         type="date"
@@ -194,6 +194,7 @@
                         required
                         :min="new Date().toISOString().split('T')[0]"
                         aria-required="true"
+                        aria-describedby="date-picker-help"
                         x-ref="dateInput"
                     />
                     <button
@@ -201,7 +202,8 @@
                         class="date-picker-button"
                         @click="openDatePicker()"
                         aria-label="カレンダーを開く"
-                        tabindex="-1"
+                        aria-describedby="date-picker-help"
+                        tabindex="0"
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -211,30 +213,35 @@
                         </svg>
                     </button>
                 </div>
+                <small id="date-picker-help" class="form-help-text">カレンダーアイコンをクリックするか、キーボードで日付を入力してください</small>
             </div>
 
             <div class="form-group">
-                <label for="start_time">希望時間 <span class="required">*</span></label>
+                <label for="start_time">希望時間 <span class="required" aria-label="必須項目">*</span></label>
                 <div class="time-input-group">
                     <div class="time-input-item">
-                        <label class="time-label">開始時刻</label>
-                        <div class="time-select-group">
+                        <label class="time-label" for="start_hour">開始時刻</label>
+                        <div class="time-select-group" role="group" aria-label="開始時刻の入力">
                             <select
+                                id="start_hour"
                                 x-model="startHour"
                                 @change="updateStartTime()"
                                 class="time-select"
                                 aria-label="開始時刻の時間"
+                                aria-required="true"
                             >
                                 <template x-for="h in 24" :key="h">
                                     <option :value="h - 1" x-text="String(h - 1).padStart(2, '0')"></option>
                                 </template>
                             </select>
-                            <span class="time-colon">:</span>
+                            <span class="time-colon" aria-hidden="true">:</span>
                             <select
+                                id="start_minute"
                                 x-model="startMinute"
                                 @change="updateStartTime()"
                                 class="time-select"
                                 aria-label="開始時刻の分"
+                                aria-required="true"
                             >
                                 <option value="0">00</option>
                                 <option value="15">15</option>
@@ -244,24 +251,28 @@
                         </div>
                     </div>
                     <div class="time-input-item">
-                        <label class="time-label">終了時刻</label>
-                        <div class="time-select-group">
+                        <label class="time-label" for="end_hour">終了時刻</label>
+                        <div class="time-select-group" role="group" aria-label="終了時刻の入力">
                             <select
+                                id="end_hour"
                                 x-model="endHour"
                                 @change="updateEndTime()"
                                 class="time-select"
                                 aria-label="終了時刻の時間"
+                                aria-required="true"
                             >
                                 <template x-for="h in 24" :key="h">
                                     <option :value="h - 1" x-text="String(h - 1).padStart(2, '0')"></option>
                                 </template>
                             </select>
-                            <span class="time-colon">:</span>
+                            <span class="time-colon" aria-hidden="true">:</span>
                             <select
+                                id="end_minute"
                                 x-model="endMinute"
                                 @change="updateEndTime()"
                                 class="time-select"
                                 aria-label="終了時刻の分"
+                                aria-required="true"
                             >
                                 <option value="0">00</option>
                                 <option value="15">15</option>
@@ -276,7 +287,7 @@
                 <input type="hidden" name="start_time" :value="formData.start_time" required>
                 <input type="hidden" name="end_time" :value="formData.end_time" required>
                 
-                <small class="time-help-text">時間と分を選択してください。</small>
+                <small class="time-help-text">時間と分を選択してください（15分単位）。</small>
             </div>
         </div>
 
@@ -285,10 +296,14 @@
                 type="submit"
                 class="btn-primary"
                 :disabled="loading"
+                :aria-busy="loading"
                 aria-label="依頼を送信"
             >
                 <span x-show="!loading">依頼を送信</span>
-                <span x-show="loading">送信中...</span>
+                <span x-show="loading" aria-live="polite">
+                    <span class="sr-only">送信中</span>
+                    送信中...
+                </span>
             </button>
             <a href="{{ route('requests.index') }}" class="btn-secondary" aria-label="キャンセル">
                 キャンセル

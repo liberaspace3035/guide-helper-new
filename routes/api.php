@@ -73,8 +73,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/matchings/reject', [\App\Http\Controllers\Api\AdminController::class, 'rejectMatching']);
         Route::get('/users', [\App\Http\Controllers\Api\AdminController::class, 'users']);
         Route::get('/guides', [\App\Http\Controllers\Api\AdminController::class, 'guides']);
-            Route::put('/users/{id}/profile-extra', [\App\Http\Controllers\Api\AdminController::class, 'updateUserProfileExtra']);
-            Route::put('/guides/{id}/profile-extra', [\App\Http\Controllers\Api\AdminController::class, 'updateGuideProfileExtra']);
+        Route::put('/users/{id}/profile-extra', [\App\Http\Controllers\Api\AdminController::class, 'updateUserProfileExtra']);
+        Route::put('/guides/{id}/profile-extra', [\App\Http\Controllers\Api\AdminController::class, 'updateGuideProfileExtra']);
+        Route::put('/users/{id}/profile', [\App\Http\Controllers\Api\AdminController::class, 'updateUserProfile']);
+        Route::put('/guides/{id}/profile', [\App\Http\Controllers\Api\AdminController::class, 'updateGuideProfile']);
         Route::put('/users/{id}/approve', [\App\Http\Controllers\Api\AdminController::class, 'approveUser']);
         Route::put('/users/{id}/reject', [\App\Http\Controllers\Api\AdminController::class, 'rejectUser']);
         Route::put('/users/{id}/monthly-limit', [\App\Http\Controllers\Api\AdminController::class, 'setUserMonthlyLimit']);

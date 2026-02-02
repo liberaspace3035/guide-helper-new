@@ -8,8 +8,8 @@
     </p>
 
     <template x-if="loading">
-        <div class="loading-container">
-            <div class="loading-spinner"></div>
+        <div class="loading-container" aria-busy="true" aria-live="polite">
+            <div class="loading-spinner" aria-hidden="true"></div>
             <p>読み込み中...</p>
         </div>
     </template>
@@ -39,8 +39,11 @@
                     </div>
                     <div class="request-details">
                         <p><strong>場所:</strong> <span x-text="request.masked_address"></span></p>
-                        <p><strong>日時:</strong> <span x-text="formatRequestDateTime(request.request_date, request.request_time)"></span></p>
+                        <p><strong>日時:</strong> <span x-text="formatRequestDateTime(request.request_date, request.start_time, request.end_time)"></span></p>
                         <p><strong>内容:</strong> <span x-text="request.service_content"></span></p>
+                        <template x-if="request.request_type === 'outing' && request.meeting_place">
+                            <p><strong>待ち合わせ場所:</strong> <span x-text="request.meeting_place"></span></p>
+                        </template>
                         <p><strong>作成日:</strong> <span x-text="formatDate(request.created_at)"></span></p>
                     </div>
                     <div class="request-actions">
@@ -164,9 +167,13 @@ function guideRequestsData() {
                 'ERR_NETWORK_CHANGED',
                 'ERR_NAME_NOT_RESOLVED',
                 'Failed to fetch',
+                '取得に失敗しました',
                 'NetworkError',
+                'ネットワークエラー',
                 'Network request failed',
-                'TypeError: Failed to fetch'
+                'ネットワークリクエストに失敗しました',
+                'TypeError: Failed to fetch',
+                'TypeError: 取得に失敗しました'
             ];
             
             return networkErrorPatterns.some(pattern => 
@@ -350,7 +357,7 @@ function guideRequestsData() {
             const date = new Date(dateStr);
             return date.toLocaleString('ja-JP');
         },
-        formatRequestDateTime(dateStr, timeStr) {
+        formatRequestDateTime(dateStr, startTimeStr, endTimeStr) {
             if (!dateStr) return '';
             
             // 日付を年/月/日にフォーマット
@@ -359,19 +366,34 @@ function guideRequestsData() {
             const month = date.getMonth() + 1;
             const day = date.getDate();
             
-            // 時間をフォーマット（秒を除く）
-            let timeDisplay = '';
-            if (timeStr) {
+            const dateDisplay = `${year}/${month}/${day}`;
+            
+            // 開始時間と終了時間をフォーマット
+            const formatTime = (timeStr) => {
+                if (!timeStr) return null;
                 // "HH:MM:SS" または "HH:MM" 形式から "HH:MM" を抽出
                 const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})/);
                 if (timeMatch) {
                     const hours = parseInt(timeMatch[1], 10);
                     const minutes = timeMatch[2];
-                    timeDisplay = `${String(hours).padStart(2, '0')}:${minutes}`;
+                    return `${String(hours).padStart(2, '0')}:${minutes}`;
                 }
-            }
+                return null;
+            };
             
-            return `${year}/${month}/${day}${timeDisplay ? ' ' + timeDisplay : ''}`;
+            const startTime = formatTime(startTimeStr);
+            const endTime = formatTime(endTimeStr);
+            
+            // 開始時間と終了時間の両方がある場合
+            if (startTime && endTime) {
+                return `${dateDisplay} ${startTime} - ${endTime}`;
+            }
+            // 開始時間のみある場合
+            if (startTime) {
+                return `${dateDisplay} ${startTime}`;
+            }
+            // どちらもない場合は日付のみ
+            return dateDisplay;
         }
     }
 }

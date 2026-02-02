@@ -18,6 +18,7 @@ class GuideProfile extends Model
         'available_days',
         'available_times',
         'employee_number',
+        'admin_comment',
         'application_reason',
         'goal',
         'qualifications',

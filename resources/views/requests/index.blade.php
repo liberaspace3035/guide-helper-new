@@ -10,21 +10,12 @@
     </div>
 
     <template x-if="loading">
-        <div class="loading-container">
-            <div class="loading-spinner"></div>
+        <div class="loading-container" aria-busy="true" aria-live="polite">
+            <div class="loading-spinner" aria-hidden="true"></div>
             <p>読み込み中...</p>
         </div>
     </template>
 
-    @if(session('success'))
-        <div class="success-message" role="alert" aria-live="polite">
-            <svg class="success-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-            {{ session('success') }}
-        </div>
-    @endif
 
     <template x-if="error">
         <div class="error-message" x-text="error"></div>
@@ -56,6 +47,9 @@
                         <p><strong>場所:</strong> <span x-text="request.masked_address"></span></p>
                         <p><strong>日時:</strong> <span x-text="formatRequestDateTime(request.request_date, request.start_time, request.end_time)"></span></p>
                         <p><strong>内容:</strong> <span x-text="request.service_content"></span></p>
+                        <template x-if="request.request_type === 'outing' && request.meeting_place">
+                            <p><strong>待ち合わせ場所:</strong> <span x-text="request.meeting_place"></span></p>
+                        </template>
                         <p><strong>作成日:</strong> <span x-text="formatDate(request.created_at)"></span></p>
                     </div>
                     <div class="request-actions">
@@ -80,6 +74,7 @@
                                     :class="{ 'btn-disabled': isApplicantsEmpty(request.id) }"
                                     :disabled="isApplicantsEmpty(request.id)"
                                     @click="fetchApplicants(request.id)"
+                                    aria-label="応募ガイド一覧を表示"
                                 >
                                     応募ガイドを表示
                                 </button>
@@ -101,8 +96,8 @@
                     <template x-if="expandedRequestId == request.id">
                         <div class="applicants-panel">
                             <template x-if="applicantsLoading[request.id]">
-                                <div class="loading-inline">
-                                    <div class="loading-spinner small"></div>
+                                <div class="loading-inline" aria-busy="true" aria-live="polite">
+                                    <div class="loading-spinner small" aria-hidden="true"></div>
                                     <span>応募ガイドを読み込み中...</span>
                                 </div>
                             </template>
@@ -137,10 +132,12 @@
                                                                 type="button"
                                                                 class="btn-primary btn-sm"
                                                                 :disabled="!!selecting[request.id]"
+                                                                :aria-busy="!!selecting[request.id]"
                                                                 @click="handleSelectGuide(request.id, guide.guide_id)"
+                                                                aria-label="このガイドを選択する"
                                                             >
                                                                 <span x-show="!selecting[request.id]">このガイドを選択</span>
-                                                                <span x-show="selecting[request.id]">選択中...</span>
+                                                                <span x-show="selecting[request.id]" aria-live="polite">選択中...</span>
                                                             </button>
                                                         </template>
                                                     </div>
@@ -158,6 +155,45 @@
                 </div>
             </template>
         </div>
+        
+        {{-- ページネーション --}}
+        @if($requests->hasPages())
+        <div class="pagination-wrapper" role="navigation" aria-label="ページネーション">
+            <div class="pagination">
+                @if($requests->onFirstPage())
+                    <span class="pagination-link disabled" aria-disabled="true" aria-label="前のページ">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </span>
+                @else
+                    <a href="{{ $requests->previousPageUrl() }}" class="pagination-link" aria-label="前のページ">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </a>
+                @endif
+                
+                <span class="pagination-info" aria-live="polite">
+                    ページ {{ $requests->currentPage() }} / {{ $requests->lastPage() }}
+                </span>
+                
+                @if($requests->hasMorePages())
+                    <a href="{{ $requests->nextPageUrl() }}" class="pagination-link" aria-label="次のページ">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                @else
+                    <span class="pagination-link disabled" aria-disabled="true" aria-label="次のページ">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </span>
+                @endif
+            </div>
+        </div>
+        @endif
     </template>
 </div>
 @endsection
@@ -207,7 +243,7 @@ function requestsData() {
                 }
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTPエラー: ステータス ${response.status}`);
                 }
                 
                 const data = await response.json();

@@ -2,14 +2,30 @@
 .profile-container {
   max-width: 800px;
   margin: 0 auto;
-}
 
-.profile-container h1 {
-  font-size: 32px;
-  font-weight: 400;
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-xl);
-  letter-spacing: 0;
+  h1 {
+    font-size: 32px;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xl);
+    letter-spacing: 0;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0 var(--spacing-md);
+
+    h1 {
+      font-size: 24px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 0 var(--spacing-sm);
+
+    h1 {
+      font-size: 20px;
+    }
+  }
 }
 
 .profile-form {
@@ -18,17 +34,25 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
+
+  @media (max-width: 768px) {
+    padding: var(--spacing-lg);
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--spacing-md);
+  }
 }
 
 .form-group {
   margin-bottom: var(--spacing-lg);
-}
 
-.form-group label {
-  margin-bottom: var(--spacing-xs);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
+  label {
+    margin-bottom: var(--spacing-xs);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
 }
 
 .readonly-label {
@@ -43,6 +67,12 @@
   flex-wrap: wrap;
   gap: var(--spacing-md);
   margin-top: var(--spacing-sm);
+
+  @media (max-width: 768px) {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--spacing-sm);
+  }
 }
 
 .checkbox-label {
@@ -55,16 +85,16 @@
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-md);
   transition: background-color var(--transition-fast);
-}
 
-.checkbox-label:hover {
-  background-color: var(--surface-hover);
-}
+  &:hover {
+    background-color: var(--surface-hover);
+  }
 
-.checkbox-label input[type="checkbox"] {
-  width: auto;
-  margin: 0;
-  cursor: pointer;
+  input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+  }
 }
 
 .form-help-text {
@@ -108,11 +138,24 @@
   justify-content: flex-end;
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--border-color);
-}
 
-.form-actions .btn-primary,
-.form-actions .btn-secondary {
-  min-width: 120px;
+  .btn-primary,
+  .btn-secondary {
+    min-width: 120px;
+    font-weight: 700; // font-bold
+    font-size: 14px; // text-sm
+    height: 36px;
+    padding: 0 16px; // px-4
+    border-radius: 6px; // rounded-md
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column-reverse;
+
+    button {
+      width: 100%;
+    }
+  }
 }
 
 .loading-inline {
@@ -131,70 +174,27 @@
 
 .stats-list {
   margin-top: var(--spacing-sm);
-}
 
-.stats-list p {
-  margin-bottom: var(--spacing-sm);
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
-.stats-list ul {
-  list-style: none;
-  padding: 0;
-  margin: var(--spacing-sm) 0 0 0;
-}
-
-.stats-list li {
-  padding: var(--spacing-xs) 0;
-  font-size: 14px;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-light);
-}
-
-.stats-list li:last-child {
-  border-bottom: none;
-}
-
-// レスポンシブ対応 
-@media (max-width: 768px) {
-  .profile-container {
-    padding: 0 var(--spacing-md);
+  p {
+    margin-bottom: var(--spacing-sm);
+    font-size: 14px;
+    color: var(--text-primary);
   }
 
-  .profile-container h1 {
-    font-size: 24px;
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: var(--spacing-sm) 0 0 0;
   }
 
-  .profile-form {
-    padding: var(--spacing-lg);
-  }
+  li {
+    padding: var(--spacing-xs) 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-light);
 
-  .checkbox-group {
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: var(--spacing-sm);
-  }
-
-  .form-actions {
-    flex-direction: column-reverse;
-  }
-
-  .form-actions button {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .profile-container {
-    padding: 0 var(--spacing-sm);
-  }
-
-  .profile-container h1 {
-    font-size: 20px;
-  }
-
-  .profile-form {
-    padding: var(--spacing-md);
+    &:last-child {
+      border-bottom: none;
+    }
   }
 }

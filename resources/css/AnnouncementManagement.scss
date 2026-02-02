@@ -97,31 +97,42 @@
 }
 
 .announcements-table thead {
-  background-color: var(--background-color);
+  background-color: #f8fafc; // bg-slate-50
+  
+  tr {
+    th {
+      background-color: #f8fafc; // bg-slate-50
+      color: #94a3b8; // text-slate-400
+      font-weight: 700; // font-bold
+      text-transform: uppercase; // uppercase
+      letter-spacing: 0.1em; // tracking-widest
+      font-size: 12px; // text-xs
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-bottom: 2px solid var(--border-color);
+    }
+  }
 }
 
-.announcements-table th {
-  padding: var(--spacing-md);
-  text-align: left;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  border-bottom: 2px solid var(--border-color);
-}
-
-.announcements-table td {
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-light);
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.announcements-table tbody tr:hover {
-  background-color: var(--surface-hover);
-}
-
-.announcements-table tbody tr:last-child td {
-  border-bottom: none;
+.announcements-table tbody {
+  tr {
+    min-height: 64px; // h-16以上
+    transition: background-color var(--transition-fast);
+    
+    &:hover {
+      background-color: rgba(59, 130, 246, 0.03); // hover:bg-blue-50/30
+    }
+    
+    td {
+      padding: 16px var(--spacing-lg); // 十分な高さを確保
+      vertical-align: middle;
+      border-bottom: 1px solid var(--border-light);
+    }
+    
+    &:last-child td {
+      border-bottom: none;
+      text-align: center;
+    }
+  }
 }
 
 .title-cell {
@@ -134,14 +145,33 @@
   gap: var(--spacing-xs);
 }
 
-.title-content strong {
-  color: var(--text-primary);
-  font-weight: 500;
+.announcement-title-bold {
+  color: #0f172a; // text-slate-900
+  font-weight: 700; // font-bold
+  font-size: 15px; // 少し大きめ
 }
 
 .content-preview {
   font-size: 12px;
   color: var(--text-tertiary);
+}
+
+// 日時表示（縦並び）
+.datetime-cell-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.datetime-date {
+  color: #0f172a; // text-slate-900
+  font-size: 14px; // text-sm
+  font-weight: 500; // font-medium
+}
+
+.datetime-time {
+  color: #64748b; // text-slate-500
+  font-size: 12px; // text-xs
 }
 
 .target-badge {
@@ -169,25 +199,106 @@
 
 .action-buttons {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: 8px; // gap-2
+  align-items: center;
 }
 
-.btn-sm {
-  padding: 0.375rem 0.75rem;
-  font-size: 13px;
-  transition: all var(--transition-fast);
+// 編集ボタン
+.btn-edit-announcement {
+  background-color: #f1f5f9; // bg-slate-100（控えめなグレー）
+  color: #475569; // text-slate-600
+  height: 32px; // h-8
+  padding: 0 12px; // px-3
+  border-radius: 6px; // rounded-md
+  font-size: 14px; // text-sm
+  font-weight: 700; // font-bold
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-base); // transition-all
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   
   &:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background-color: #e2e8f0; // hover:bg-slate-200
   }
   
   &:active:not(:disabled) {
-    transform: translateY(0);
+    transform: translateY(1px);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  &:focus-visible {
+    outline: 2px solid #475569;
+    outline-offset: 2px;
   }
 }
 
-// btn-dangerはindex.scssで定義されているため、ここでは削除
+// 削除ボタン
+.btn-delete-announcement {
+  background-color: #ffffff; // bg-white
+  color: #ef4444; // text-red-500（警告の赤）
+  border: 1px solid #fecaca; // border border-red-200
+  height: 32px; // h-8
+  padding: 0 12px; // px-3
+  border-radius: 6px; // rounded-md
+  font-size: 14px; // text-sm
+  font-weight: 700; // font-bold
+  cursor: pointer;
+  transition: all var(--transition-base); // transition-all
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover:not(:disabled) {
+    background-color: #fef2f2; // hover:bg-red-50
+    border-color: #fca5a5; // border-red-300
+  }
+  
+  &:active:not(:disabled) {
+    background-color: #fee2e2; // bg-red-100
+    transform: translateY(1px);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  &:focus-visible {
+    outline: 2px solid #ef4444;
+    outline-offset: 2px;
+  }
+}
+
+// 作成者名のスタイル
+.announcement-creator-name {
+  color: #0f172a; // text-slate-900
+  font-weight: 600; // font-semibold
+  font-size: 14px;
+}
+
+// フォームアクションボタン
+.btn-form-action {
+  font-weight: 700; // font-bold
+  font-size: 14px; // text-sm
+  height: 36px; // 少し大きめ
+  padding: 0 16px; // px-4
+  border-radius: 6px; // rounded-md
+}
+
+// 新規お知らせボタン
+.btn-new-announcement {
+  font-weight: 700; // font-bold
+  font-size: 14px; // text-sm
+  padding: 0 16px; // px-4
+  height: 36px; // 少し大きめ
+  border-radius: 6px; // rounded-md
+}
 
 .empty-message {
   text-align: center;

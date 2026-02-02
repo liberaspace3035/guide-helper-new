@@ -377,6 +377,7 @@
                                 <th scope="col">ガイド</th>
                                 <th scope="col">日時</th>
                                 <th scope="col">場所</th>
+                                <th scope="col">内容</th>
                                 <th scope="col">操作</th>
                             </tr>
                         </thead>
@@ -391,8 +392,18 @@
                                     </td>
                                     <td x-text="matching.request_type" class="text-center"></td>
                                     <td x-text="matching.guide_name" class="text-center"></td>
-                                    <td x-text="formatRequestDateTime(matching.request_date, matching.request_time)" class="text-center"></td>
-                                    <td x-text="matching.masked_address" class="text-center"></td>
+                                    <td x-text="formatRequestDateTime(matching.request_date, matching.start_time, matching.end_time)" class="text-center"></td>
+                                    <td class="text-center">
+                                        <span x-text="matching.masked_address"></span>
+                                        <template x-if="matching.request_type === 'outing' && matching.meeting_place">
+                                            <div class="text-secondary" style="font-size: 12px; margin-top: 4px;">
+                                                待ち合わせ: <span x-text="matching.meeting_place"></span>
+                                            </div>
+                                        </template>
+                                    </td>
+                                    <td class="text-center">
+                                        <span x-text="matching.service_content || '—'" style="font-size: 13px;"></span>
+                                    </td>
                                     <td class="table-actions text-center">
                                         <div class="action-buttons">
                                             <a :href="`{{ url('/chat') }}/${matching.id}`" class="action-btn action-btn-chat" :aria-label="`チャット: ${matching.guide_name}`" :title="`${matching.guide_name}さんとチャット`">
@@ -653,8 +664,28 @@
                                             <line x1="8" y1="2" x2="8" y2="6"></line>
                                             <line x1="3" y1="10" x2="21" y2="10"></line>
                                         </svg>
-                                        <span x-text="formatRequestDateTime(matching.request_date, matching.request_time)"></span>
+                                        <span x-text="formatRequestDateTime(matching.request_date, matching.start_time, matching.end_time)"></span>
                                     </p>
+                                    <template x-if="matching.service_content">
+                                        <p>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            </svg>
+                                            内容: <span x-text="matching.service_content"></span>
+                                        </p>
+                                    </template>
+                                    <template x-if="matching.request_type === 'outing' && matching.meeting_place">
+                                        <p>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                                <circle cx="12" cy="10" r="3"></circle>
+                                            </svg>
+                                            待ち合わせ: <span x-text="matching.meeting_place"></span>
+                                        </p>
+                                    </template>
                                 </div>
                             </div>
                             <div class="matching-actions">
@@ -766,7 +797,7 @@ function dashboardData() {
             
             return `${year}/${month}/${day}`;
         },
-        formatRequestDateTime(dateStr, timeStr) {
+        formatRequestDateTime(dateStr, startTimeStr, endTimeStr) {
             if (!dateStr) return '';
             
             // 日付を年/月/日にフォーマット
@@ -775,19 +806,34 @@ function dashboardData() {
             const month = date.getMonth() + 1;
             const day = date.getDate();
             
-            // 時間をフォーマット（秒を除く）
-            let timeDisplay = '';
-            if (timeStr) {
+            const dateDisplay = `${year}/${month}/${day}`;
+            
+            // 開始時間と終了時間をフォーマット
+            const formatTime = (timeStr) => {
+                if (!timeStr) return null;
                 // "HH:MM:SS" または "HH:MM" 形式から "HH:MM" を抽出
                 const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})/);
                 if (timeMatch) {
                     const hours = parseInt(timeMatch[1], 10);
                     const minutes = timeMatch[2];
-                    timeDisplay = `${String(hours).padStart(2, '0')}:${minutes}`;
+                    return `${String(hours).padStart(2, '0')}:${minutes}`;
                 }
-            }
+                return null;
+            };
             
-            return `${year}/${month}/${day}${timeDisplay ? ' ' + timeDisplay : ''}`;
+            const startTime = formatTime(startTimeStr);
+            const endTime = formatTime(endTimeStr);
+            
+            // 開始時間と終了時間の両方がある場合
+            if (startTime && endTime) {
+                return `${dateDisplay} ${startTime} - ${endTime}`;
+            }
+            // 開始時間のみある場合
+            if (startTime) {
+                return `${dateDisplay} ${startTime}`;
+            }
+            // どちらもない場合は日付のみ
+            return dateDisplay;
         },
         getPendingReportsTitle() {
             const hasRevisionRequested = this.pendingReports.some(r => r.status === 'revision_requested');

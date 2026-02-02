@@ -239,8 +239,16 @@ class RequestService
     public function getUserRequests(int $userId)
     {
         return Request::where('user_id', $userId)
+            ->with([
+                'matching' => function($query) {
+                    $query->select('id', 'request_id', 'guide_id', 'status', 'matched_at')
+                          ->whereNull('report_completed_at'); // 完了済みを除外
+                },
+                'matching.guide:id,name',
+                'matching.guide.guideProfile:id,user_id,introduction'
+            ])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(15);
     }
 
     public function getAvailableRequestsForGuide(int $guideId)

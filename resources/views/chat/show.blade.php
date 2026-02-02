@@ -47,8 +47,28 @@
                                     <line x1="8" y1="2" x2="8" y2="6"></line>
                                     <line x1="3" y1="10" x2="21" y2="10"></line>
                                 </svg>
-                                <span x-text="matchingInfo.request_type"></span>
+                                <span x-text="formatRequestDateTime(matchingInfo.request_date, matchingInfo.start_time, matchingInfo.end_time)"></span>
                             </p>
+                            <template x-if="matchingInfo.service_content">
+                                <p class="chat-subtitle">
+                                    <svg class="chat-detail-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    </svg>
+                                    <span x-text="matchingInfo.service_content"></span>
+                                </p>
+                            </template>
+                            <template x-if="matchingInfo.request_type === 'outing' && matchingInfo.meeting_place">
+                                <p class="chat-subtitle">
+                                    <svg class="chat-detail-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    待ち合わせ: <span x-text="matchingInfo.meeting_place"></span>
+                                </p>
+                            </template>
                         </div>
                     </template>
                 </div>
@@ -407,9 +427,13 @@ function chatData() {
             const networkErrorPatterns = [
                 'ERR_NETWORK_CHANGED',
                 'Failed to fetch',
+                '取得に失敗しました',
                 'NetworkError',
+                'ネットワークエラー',
                 'Network request failed',
-                'TypeError: Failed to fetch'
+                'ネットワークリクエストに失敗しました',
+                'TypeError: Failed to fetch',
+                'TypeError: 取得に失敗しました'
             ];
             
             return networkErrorPatterns.some(pattern => 
@@ -543,6 +567,44 @@ function chatData() {
             const isOwn = msgSenderId === currentUserId;
 
             return isOwn;
+        },
+        formatRequestDateTime(dateStr, startTimeStr, endTimeStr) {
+            if (!dateStr) return '';
+            
+            // 日付を年/月/日にフォーマット
+            const date = new Date(dateStr);
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            const dateDisplay = `${year}/${month}/${day}`;
+            
+            // 開始時間と終了時間をフォーマット
+            const formatTime = (timeStr) => {
+                if (!timeStr) return null;
+                // "HH:MM:SS" または "HH:MM" 形式から "HH:MM" を抽出
+                const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})/);
+                if (timeMatch) {
+                    const hours = parseInt(timeMatch[1], 10);
+                    const minutes = timeMatch[2];
+                    return `${String(hours).padStart(2, '0')}:${minutes}`;
+                }
+                return null;
+            };
+            
+            const startTime = formatTime(startTimeStr);
+            const endTime = formatTime(endTimeStr);
+            
+            // 開始時間と終了時間の両方がある場合
+            if (startTime && endTime) {
+                return `${dateDisplay} ${startTime} - ${endTime}`;
+            }
+            // 開始時間のみある場合
+            if (startTime) {
+                return `${dateDisplay} ${startTime}`;
+            }
+            // どちらもない場合は日付のみ
+            return dateDisplay;
         },
         formatTime(dateString) {
             if (!dateString) return '';

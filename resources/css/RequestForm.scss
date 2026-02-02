@@ -3,14 +3,22 @@
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
-}
 
-.request-form-container h1 {
-  font-size: 32px;
-  font-weight: 400;
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-xl);
-  letter-spacing: 0;
+  h1 {
+    font-size: 32px;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xl);
+    letter-spacing: 0;
+  }
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+
+    h1 {
+      font-size: 24px;
+    }
+  }
 }
 
 .request-form {
@@ -23,15 +31,43 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--spacing-xl);
   align-items: start;
+
+  .form-row {
+    grid-column: 1 / -1;
+  }
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--spacing-lg);
+    grid-template-columns: 1fr;
+  }
+
+  @media (max-width: 480px) {
+    padding: var(--spacing-md);
+  }
 }
 
 .form-group {
   margin-bottom: var(--spacing-lg);
-}
 
-// 全幅のフィールド（2列にまたがる） 
-.form-group.full-width {
-  grid-column: 1 / -1;
+  &.full-width {
+    grid-column: 1 / -1;
+
+    @media (max-width: 1024px) {
+      grid-column: 1;
+    }
+  }
+
+  label {
+    margin-bottom: var(--spacing-xs);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
 }
 
 .section-subtitle {
@@ -43,23 +79,15 @@
   padding-bottom: var(--spacing-xs);
 }
 
-.form-group label {
-  margin-bottom: var(--spacing-xs);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
 .form-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
-}
 
-// 2列レイアウト内のform-rowは全幅 
-.request-form .form-row {
-  grid-column: 1 / -1;
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .voice-input-section {
@@ -68,10 +96,10 @@
 
 .textarea-with-voice {
   position: relative;
-}
 
-.textarea-with-voice textarea {
-  padding-right: 50px;
+  textarea {
+    padding-right: 50px;
+  }
 }
 
 .voice-input-btn {
@@ -89,24 +117,24 @@
   color: var(--text-secondary);
   transition: all var(--transition-base);
   z-index: 1;
-}
 
-.voice-input-btn:hover:not(:disabled) {
-  background-color: var(--primary-color);
-  color: var(--text-on-primary);
-  border-color: var(--primary-color);
-}
+  &:hover:not(:disabled) {
+    background-color: var(--primary-color);
+    color: var(--text-on-primary);
+    border-color: var(--primary-color);
+  }
 
-.voice-input-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 
-.voice-input-btn.recording {
-  background-color: var(--error-color);
-  color: var(--text-on-primary);
-  border-color: var(--error-color);
-  animation: pulse 1.5s ease-in-out infinite;
+  &.recording {
+    background-color: var(--error-color);
+    color: var(--text-on-primary);
+    border-color: var(--error-color);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
 }
 
 @keyframes pulse {
@@ -140,6 +168,14 @@
   display: flex;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
 }
 
 .btn-voice {
@@ -151,16 +187,16 @@
   border-radius: var(--radius-md);
   transition: all var(--transition-base);
   box-shadow: var(--shadow-sm);
-}
 
-.btn-voice:hover:not(:disabled) {
-  background-color: var(--primary-hover);
-  box-shadow: var(--shadow-md);
-}
+  &:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+    box-shadow: var(--shadow-md);
+  }
 
-.btn-voice:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 .btn-voice-stop {
@@ -172,11 +208,11 @@
   border-radius: var(--radius-md);
   transition: all var(--transition-base);
   box-shadow: var(--shadow-sm);
-}
 
-.btn-voice-stop:hover {
-  background-color: #d33b2c;
-  box-shadow: var(--shadow-md);
+  &:hover {
+    background-color: #d33b2c;
+    box-shadow: var(--shadow-md);
+  }
 }
 
 .form-actions {
@@ -186,15 +222,23 @@
   justify-content: flex-end;
   padding-top: var(--spacing-lg);
   border-top: 1px solid var(--border-color);
-}
 
-.form-actions.full-width {
-  grid-column: 1 / -1;
-}
+  &.full-width {
+    grid-column: 1 / -1;
+  }
 
-.form-actions .btn-primary,
-.form-actions .btn-secondary {
-  min-width: 120px;
+  .btn-primary,
+  .btn-secondary {
+    min-width: 120px;
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column-reverse;
+
+    button {
+      width: 100%;
+    }
+  }
 }
 
 .error-message {
@@ -205,10 +249,10 @@
   margin-bottom: var(--spacing-lg);
   border-left: 4px solid var(--error-color);
   font-size: 14px;
-}
 
-.error-message.full-width {
-  grid-column: 1 / -1;
+  &.full-width {
+    grid-column: 1 / -1;
+  }
 }
 
 // 日付入力ラッパー
@@ -259,6 +303,11 @@
   align-items: flex-end;
   gap: var(--spacing-md);
   flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .time-input-item {
@@ -267,6 +316,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+
+  @media (max-width: 768px) {
+    min-width: 100%;
+  }
 }
 
 .time-label {
@@ -330,6 +383,12 @@
   margin-bottom: var(--spacing-xs);
   align-self: flex-end;
   padding-bottom: calc(var(--spacing-sm) + 2px);
+
+  @media (max-width: 768px) {
+    align-self: center;
+    margin: var(--spacing-xs) 0;
+    padding-bottom: 0;
+  }
 }
 
 .time-help-text {
@@ -338,72 +397,4 @@
   color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.4;
-}
-
-// レスポンシブ対応 
-@media (max-width: 1024px) {
-  .request-form {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
-  }
-
-  .form-group.full-width {
-    grid-column: 1;
-  }
-}
-
-@media (max-width: 768px) {
-  .request-form-container {
-    max-width: 100%;
-  }
-
-  .request-form-container h1 {
-    font-size: 24px;
-  }
-
-  .request-form {
-    padding: var(--spacing-lg);
-    grid-template-columns: 1fr;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .time-input-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .time-input-item {
-    min-width: 100%;
-  }
-
-  .time-separator {
-    align-self: center;
-    margin: var(--spacing-xs) 0;
-    padding-bottom: 0;
-  }
-
-  .form-actions {
-    flex-direction: column-reverse;
-  }
-
-  .form-actions button {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .request-form {
-    padding: var(--spacing-md);
-  }
-
-  .voice-controls {
-    flex-direction: column;
-  }
-
-  .voice-controls button {
-    width: 100%;
-  }
 }

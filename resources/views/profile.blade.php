@@ -8,11 +8,6 @@
         @method('PUT')
         
         <div x-show="message" :class="message.includes('失敗') ? 'error-message' : 'success-message'" class="message" role="alert" x-text="message"></div>
-        @if(session('success'))
-            <div class="success-message" role="alert">
-                {{ session('success') }}
-            </div>
-        @endif
         @if($errors->any())
             <div class="error-message" role="alert">
                 {{ $errors->first() }}
@@ -221,20 +216,6 @@
                     aria-readonly="true"
                 />
             </div>
-            @if(!$user->isAdmin())
-                <div class="form-group">
-                    <label>運営側からのコメント（閲覧のみ）</label>
-                    <p class="form-help-text">管理者が記入するコメント欄です。ガイドの方は閲覧のみ可能です。運営からの連絡事項や注意事項などが記載される場合があります。</p>
-                    <textarea
-                        value="{{ $user->guideProfile->admin_comment ?? '' }}"
-                        readOnly
-                        disabled
-                        aria-readonly="true"
-                        rows="3"
-                        class="readonly-textarea"
-                    >{{ $user->guideProfile->admin_comment ?? '' }}</textarea>
-                </div>
-            @endif
         @endif
 
         <div class="form-actions">

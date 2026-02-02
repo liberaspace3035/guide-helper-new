@@ -215,6 +215,8 @@ class MatchingService
                     'request_time' => $matching->request->request_time ?? '',
                     'start_time' => $matching->request->start_time ?? null,
                     'end_time' => $matching->request->end_time ?? null,
+                    'service_content' => $matching->request->service_content ?? null,
+                    'meeting_place' => $matching->request->meeting_place ?? null,
                 ];
             })
             ->values()

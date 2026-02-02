@@ -409,11 +409,15 @@ class AdminService
                     'email' => $user->email,
                     'name' => $user->name,
                     'phone' => $user->phone,
+                    'address' => $user->address,
+                    'birth_date' => $user->birth_date,
+                    'age' => $user->age,
                     'role' => $user->role,
                     'is_allowed' => $user->is_allowed,
                     'created_at' => $user->created_at,
                     'contact_method' => $user->userProfile->contact_method ?? null,
                     'notes' => $user->userProfile->notes ?? null,
+                    'introduction' => $user->userProfile->introduction ?? null,
                     'recipient_number' => $user->userProfile->recipient_number ?? null,
                     'admin_comment' => $user->userProfile->admin_comment ?? null,
                 ];
@@ -424,7 +428,7 @@ class AdminService
     public function getAllGuides(): array
     {
         $guides = User::where('role', 'guide')
-            ->with('guideProfile:id,user_id,introduction,available_areas,available_days,available_times,employee_number')
+            ->with('guideProfile:id,user_id,introduction,available_areas,available_days,available_times,employee_number,admin_comment')
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -440,6 +444,9 @@ class AdminService
                     'email' => $guide->email,
                     'name' => $guide->name,
                     'phone' => $guide->phone,
+                    'address' => $guide->address,
+                    'birth_date' => $guide->birth_date,
+                    'age' => $guide->age,
                     'role' => $guide->role,
                     'is_allowed' => $guide->is_allowed,
                     'created_at' => $guide->created_at,
@@ -448,6 +455,7 @@ class AdminService
                     'available_days' => $profile->available_days ?? [],
                     'available_times' => $profile->available_times ?? [],
                     'employee_number' => $profile->employee_number ?? null,
+                    'admin_comment' => $profile->admin_comment ?? null,
                 ];
             })
             ->toArray();
@@ -466,6 +474,51 @@ class AdminService
         );
     }
 
+    public function updateUserProfile(int $userId, array $data): void
+    {
+        $user = User::where('id', $userId)->where('role', 'user')->firstOrFail();
+        
+        // 基本情報の更新
+        $userData = [];
+        if (isset($data['name'])) {
+            $userData['name'] = $data['name'];
+        }
+        if (isset($data['phone'])) {
+            $userData['phone'] = $data['phone'];
+        }
+        if (isset($data['address'])) {
+            $userData['address'] = $data['address'];
+        }
+        if (!empty($userData)) {
+            $user->update($userData);
+        }
+        
+        // プロフィール情報の更新
+        $profileData = [];
+        if (isset($data['contact_method'])) {
+            $profileData['contact_method'] = $data['contact_method'];
+        }
+        if (isset($data['notes'])) {
+            $profileData['notes'] = $data['notes'];
+        }
+        if (isset($data['introduction'])) {
+            $profileData['introduction'] = $data['introduction'];
+        }
+        if (isset($data['recipient_number'])) {
+            $profileData['recipient_number'] = $data['recipient_number'];
+        }
+        if (isset($data['admin_comment'])) {
+            $profileData['admin_comment'] = $data['admin_comment'];
+        }
+        
+        if (!empty($profileData)) {
+            UserProfile::updateOrCreate(
+                ['user_id' => $userId],
+                $profileData
+            );
+        }
+    }
+
     public function updateGuideProfileExtra(int $guideId, ?string $employeeNumber): void
     {
         $guide = User::where('id', $guideId)->where('role', 'guide')->firstOrFail();
@@ -474,6 +527,54 @@ class AdminService
             ['user_id' => $guideId],
             ['employee_number' => $employeeNumber]
         );
+    }
+
+    public function updateGuideProfile(int $guideId, array $data): void
+    {
+        $guide = User::where('id', $guideId)->where('role', 'guide')->firstOrFail();
+        
+        // 基本情報の更新
+        $userData = [];
+        if (isset($data['name'])) {
+            $userData['name'] = $data['name'];
+        }
+        if (isset($data['phone'])) {
+            $userData['phone'] = $data['phone'];
+        }
+        if (isset($data['address'])) {
+            $userData['address'] = $data['address'];
+        }
+        if (!empty($userData)) {
+            $guide->update($userData);
+        }
+        
+        // プロフィール情報の更新
+        $profileData = [];
+        if (isset($data['introduction'])) {
+            $profileData['introduction'] = $data['introduction'];
+        }
+        if (isset($data['available_areas'])) {
+            $profileData['available_areas'] = $data['available_areas'];
+        }
+        if (isset($data['available_days'])) {
+            $profileData['available_days'] = $data['available_days'];
+        }
+        if (isset($data['available_times'])) {
+            $profileData['available_times'] = $data['available_times'];
+        }
+        if (isset($data['employee_number'])) {
+            $profileData['employee_number'] = $data['employee_number'];
+        }
+        if (isset($data['admin_comment'])) {
+            $profileData['admin_comment'] = $data['admin_comment'];
+        }
+        
+        if (!empty($profileData)) {
+            GuideProfile::updateOrCreate(
+                ['user_id' => $guideId],
+                $profileData
+            );
+        }
     }
 
     public function approveUser(int $userId): void

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Validator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -78,6 +79,35 @@ class AppServiceProvider extends ServiceProvider
             // ただし、SameSite=noneの場合はsecure=trueが必須
             config(['session.same_site' => 'none']);
         }
+
+        // バリデーションメッセージの日本語化（:todayなどの特殊値を置換）
+        Validator::replacer('before', function ($message, $attribute, $rule, $parameters) {
+            if (!empty($parameters) && $parameters[0] === 'today') {
+                return str_replace(':date', '今日', $message);
+            }
+            return $message;
+        });
+
+        Validator::replacer('before_or_equal', function ($message, $attribute, $rule, $parameters) {
+            if (!empty($parameters) && $parameters[0] === 'today') {
+                return str_replace(':date', '今日', $message);
+            }
+            return $message;
+        });
+
+        Validator::replacer('after', function ($message, $attribute, $rule, $parameters) {
+            if (!empty($parameters) && $parameters[0] === 'today') {
+                return str_replace(':date', '今日', $message);
+            }
+            return $message;
+        });
+
+        Validator::replacer('after_or_equal', function ($message, $attribute, $rule, $parameters) {
+            if (!empty($parameters) && $parameters[0] === 'today') {
+                return str_replace(':date', '今日', $message);
+            }
+            return $message;
+        });
     }
 }
 
