@@ -959,7 +959,7 @@
   min-width: 100px; // 日本語2文字が横並びになる最小幅（承認ボタンと同じサイズ）
   height: 36px; // h-9（全く同じサイズ）
   font-size: 14px; // text-sm
-  font-weight: 500;
+  font-weight: 700; // font-bold（太字に変更）
   cursor: pointer;
   transition: all var(--transition-base);
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); // shadow-sm
