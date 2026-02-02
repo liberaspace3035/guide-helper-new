@@ -151,6 +151,7 @@
 .status-badge-wrapper {
   display: flex;
   align-items: center;
+  justify-content: center; // 中央揃え
 }
 
 .status-badge {
@@ -165,6 +166,12 @@
   white-space: nowrap;
   transition: all var(--transition-base);
   line-height: 1;
+  
+  @media (max-width: 480px) {
+    font-size: 11px; // SP時は少し小さく
+    padding: 0.25rem 0.5rem; // SP時はパディングを調整
+    gap: 0.25rem; // アイコンとの間隔を調整
+  }
 }
 
 .status-icon {

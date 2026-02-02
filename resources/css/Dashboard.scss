@@ -285,30 +285,32 @@
 
 .admin-table th:nth-child(5),
 .admin-table td:nth-child(5) {
-  min-width: 120px; // ステータス列
+  width: 215px; // ステータス列の幅を広げる（長いテキストに対応）
   white-space: normal; // ステータスバッジの改行を許可
-}
-
-// ステータス列のバッジで改行を許可
-.admin-table td:nth-child(5) .status-badge {
-  white-space: normal;
-  word-break: keep-all;
-  line-height: 1.4;
+  text-align: center !important; // 中央揃え（テーブルレイアウトを保ちつつ、確実に中央揃え）
+  
+  .status-badge {
+    white-space: normal;
+    word-break: keep-all;
+    line-height: 1.4;
+    display: inline-block !important; // インラインブロックで中央揃えが効くように
+    text-align: center; // バッジ内のテキストも中央揃え
+    width: auto; // 幅を自動にして中央揃えが効くように
+    max-width: 300px; // はみ出しを防ぐ
+    box-sizing: border-box; // パディングを含めた幅計算
+    margin: 0 auto; // 中央揃えを確実に
+  }
 }
 
 .admin-table th:nth-child(6),
 .admin-table td:nth-child(6) {
-  min-width: 140px; // 個別報告書ダウンロード列
+  width: 150px; // 個別報告書ダウンロード列
   white-space: normal; // この列は改行可能
 }
 
 // 特定の列は改行可能にする（必要に応じて）
 .admin-table td:nth-child(4) {
   white-space: normal; // 日付は改行可能
-}
-
-.admin-table td:nth-child(5) {
-  white-space: normal; // ステータスバッジは改行可能
 }
 
 .table-inline-field {
@@ -816,6 +818,7 @@
         font-size: 12px;
         padding: var(--spacing-md) var(--spacing-lg);
         border-bottom: 2px solid var(--border-color);
+        text-align: center !important; // 中央揃えを強制
       }
     }
   }
@@ -831,6 +834,23 @@
       td {
         padding: 24px var(--spacing-lg); // py-6相当（上下パディングを広げる）
         vertical-align: middle; // align-middleを徹底
+        text-align: center !important; // 中央揃えを強制
+        
+        // ステータス列（5列目）のスタイル
+        &:nth-child(5) {
+          min-width: 180px !important; // ステータス列の幅を広げる
+        }
+        
+        // ステータスバッジを中央揃え
+        &:nth-child(5) .status-badge {
+          display: inline-block !important;
+          text-align: center;
+          margin: 0 auto; // 中央揃え
+          max-width: 100%; // はみ出しを防ぐ
+          box-sizing: border-box; // パディングを含めた幅計算
+          word-wrap: break-word; // 長い単語を折り返す
+          overflow-wrap: break-word; // 長い単語を折り返す
+        }
       }
     }
   }
@@ -1030,6 +1050,15 @@
   border-radius: 0.25rem;
   font-size: 0.875rem;
   font-weight: 700; // font-bold（可読性を最大化）
+  box-sizing: border-box; // パディングを含めた幅計算
+  max-width: 100%; // はみ出しを防ぐ
+  word-wrap: break-word; // 長い単語を折り返す
+  overflow-wrap: break-word; // 長い単語を折り返す
+  
+  @media (max-width: 480px) {
+    font-size: 0.75rem; // 12px（SP時は少し小さく）
+    padding: 0.2rem 0.5rem; // SP時はパディングを調整
+  }
 }
 
 // 報告書一覧専用のステータスバッジスタイル

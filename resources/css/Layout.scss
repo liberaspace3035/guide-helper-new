@@ -487,10 +487,6 @@
   font-size: 14px;
   color: var(--text-primary);
   white-space: nowrap;
-
-  @media (max-width: 768px) {
-    display: none;
-  }
 }
 
 // ユーザーアバター 
