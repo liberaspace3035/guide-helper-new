@@ -259,6 +259,7 @@
                                     id="interview_date_1"
                                     name="interview_date_1"
                                     x-model="formData.interview_date_1"
+                                    :min="minInterviewDate"
                                     required
                                     aria-required="true"
                                 />
@@ -270,6 +271,7 @@
                                     id="interview_date_2"
                                     name="interview_date_2"
                                     x-model="formData.interview_date_2"
+                                    :min="minInterviewDate"
                                 />
                             </div>
                             <div class="form-group form-group-third">
@@ -279,6 +281,7 @@
                                     id="interview_date_3"
                                     name="interview_date_3"
                                     x-model="formData.interview_date_3"
+                                    :min="minInterviewDate"
                                 />
                             </div>
                         </div>
@@ -401,6 +404,7 @@
                                                 :id="`qual_date_${index}`"
                                                 :name="`qualifications[${index}][obtained_date]`"
                                                 x-model="qual.obtained_date"
+                                                :max="maxQualificationDate"
                                                 required
                                                 aria-required="true"
                                             />
@@ -500,6 +504,24 @@ function registerForm() {
         },
         error: '',
         loading: false,
+        // 面談日の最小値（今日以降）
+        get minInterviewDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        },
+        // 資格取得日の最大値（今日以前）
+        get maxQualificationDate() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        },
         addQualification() {
             if (this.formData.qualifications.length < 3) {
                 this.formData.qualifications.push({ name: '', obtained_date: '' });
