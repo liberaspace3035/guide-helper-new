@@ -59,6 +59,46 @@
             return response.json();
         };
         
+        // ログアウトフォームの419エラーハンドリング
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutForm = document.getElementById('logout-form');
+            if (logoutForm) {
+                logoutForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    try {
+                        const formData = new FormData(this);
+                        const response = await fetch(this.action, {
+                            method: 'POST',
+                            body: formData,
+                            credentials: 'include',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                            }
+                        });
+                        
+                        // 419エラーのハンドリング（既存のhandleApiResponse関数を使用）
+                        const shouldContinue = await window.handleApiResponse(response);
+                        if (!shouldContinue) {
+                            return; // handleApiResponseがページを再読み込みするため、ここで終了
+                        }
+                        
+                        // 成功時はリダイレクト（サーバーからのリダイレクトに従う）
+                        if (response.ok || response.redirected) {
+                            window.location.href = '/';
+                        } else {
+                            // その他のエラー時は通常のフォーム送信にフォールバック
+                            this.submit();
+                        }
+                    } catch (error) {
+                        console.error('ログアウトエラー:', error);
+                        // エラー時は通常のフォーム送信にフォールバック
+                        this.submit();
+                    }
+                });
+            }
+        });
+        
         function headerMenu() {
             return {
                 unreadCount: 0,
@@ -425,7 +465,7 @@
                         </li>
                         <li class="nav-divider"></li>
                         <li>
-                            <form method="POST" action="{{ route('logout') }}">
+                            <form method="POST" action="{{ route('logout') }}" id="logout-form">
                                 @csrf
                                 <button type="submit" class="btn-logout" aria-label="ログアウト">
                                     <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
