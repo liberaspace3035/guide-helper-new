@@ -286,10 +286,34 @@ small {
   flex-shrink: 0;
   position: sticky;
   bottom: 0;
-  background-color: var(--surface-color);
   padding-top: var(--spacing-sm);
   padding-bottom: var(--spacing-xs);
   z-index: 10;
+}
+
+// 登録ボタンのスタイル（他の管理画面と統一）
+.btn-primary {
+  font-weight: 700; // font-bold（他の管理画面と統一）
+  font-size: 14px; // text-sm（他の管理画面と統一）
+  height: 36px; // 他の管理画面と統一
+  padding: 0 16px; // px-4（他の管理画面と統一）
+  border-radius: 6px; // rounded-md（他の管理画面と統一）
+  display: flex; // テキストを中央揃えにするため
+  align-items: center; // テキストを中央揃えにするため
+  justify-content: center; // テキストを中央揃えにするため
+  background-color: var(--primary-color) !important; // 背景色を明示的に設定
+  color: var(--text-on-primary) !important; // テキスト色を明示的に設定
+  border-color: var(--primary-color) !important; // ボーダー色を明示的に設定
+  
+  &:hover:not(:disabled) {
+    background-color: var(--primary-hover) !important;
+    color: var(--text-on-primary) !important;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 .error-message {
