@@ -6,20 +6,35 @@
     <section class="hero-section" aria-label="メインセクション">
         <img src="{{ asset('images/logo.png') }}" alt="One Step ロゴ" class="hero-logo" />
         
+        <!-- アニメーション背景グラデーション -->
+        <div class="hero-gradient-bg" aria-hidden="true">
+            <div class="hero-gradient-layer hero-gradient-1"></div>
+            <div class="hero-gradient-layer hero-gradient-2"></div>
+            <div class="hero-gradient-layer hero-gradient-3"></div>
+        </div>
+        
+        <!-- アニメーションするドットパターン -->
+        <div class="hero-dot-pattern" aria-hidden="true"></div>
+        
+        <!-- 光のエフェクト -->
+        <div class="hero-glow-effect hero-glow-1" aria-hidden="true"></div>
+        <div class="hero-glow-effect hero-glow-2" aria-hidden="true"></div>
+        
         <!-- 波形SVG背景（2層レイヤー） -->
         <div class="hero-wave-bg" aria-hidden="true">
             <svg viewBox="0 0 1200 120" preserveAspectRatio="none" class="wave-svg wave-layer-1">
-                <path d="M0,60 Q300,20 600,60 T1200,60 L1200,120 L0,120 Z" fill="#EBF8FF" class="wave-path"/>
+                <path d="M0,60 Q300,20 600,60 T1200,60 L1200,120 L0,120 Z" fill="rgba(255, 255, 255, 0.1)" class="wave-path"/>
             </svg>
             <svg viewBox="0 0 1200 120" preserveAspectRatio="none" class="wave-svg wave-layer-2">
-                <path d="M0,70 Q400,30 800,70 T1200,70 L1200,120 L0,120 Z" fill="#DBEAFE" class="wave-path"/>
+                <path d="M0,70 Q400,30 800,70 T1200,70 L1200,120 L0,120 Z" fill="rgba(255, 255, 255, 0.05)" class="wave-path"/>
             </svg>
         </div>
         
         <div class="hero-content">
             <div class="hero-text-area">
+                <p class="hero-catchphrase">スマホでかんたん</p>
                 <h1 class="hero-main-title">
-                    <span class="hero-title-line">スマホで</span><span class="hero-title-nowrap">かんたん</span><span class="hero-keyword">同行援護</span>
+                    <span class="hero-keyword">同行援護</span>
                 </h1>
                 <p class="hero-subtitle">
                     視覚障害がある方の『行きたい』を、専門のガイドがサポート。One Stepならもっと気軽に、もっと便利に。

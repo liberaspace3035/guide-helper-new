@@ -25,7 +25,7 @@ html {
 // ヒーローセクション
 // ============================================
 .hero-section {
-  background-color: #f8faff; // 目に優しい薄い青
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 25%, #4338ca 50%, #6366f1 75%, #818cf8 100%);
   color: $slate-900;
   padding: calc(var(--spacing-2xl) * 1.5) var(--spacing-lg); // 上下余白を1.5倍に
   min-height: 100vh;
@@ -36,6 +36,125 @@ html {
   
   @media (min-width: 768px) {
     padding: calc(var(--spacing-2xl) * 1.5) var(--spacing-xl);
+  }
+}
+
+// アニメーション背景グラデーション
+.hero-gradient-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.hero-gradient-layer {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.6;
+  animation: gradient-float 20s ease-in-out infinite;
+}
+
+.hero-gradient-1 {
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.8) 0%, transparent 70%);
+  top: -50%;
+  left: -50%;
+  animation-delay: 0s;
+}
+
+.hero-gradient-2 {
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, transparent 70%);
+  top: 30%;
+  right: -50%;
+  animation-delay: 7s;
+  animation-duration: 25s;
+}
+
+.hero-gradient-3 {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.7) 0%, transparent 70%);
+  bottom: -30%;
+  left: 20%;
+  animation-delay: 14s;
+  animation-duration: 30s;
+}
+
+@keyframes gradient-float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(10%, -10%) scale(1.1);
+  }
+  66% {
+    transform: translate(-10%, 10%) scale(0.9);
+  }
+}
+
+// アニメーションするドットパターン
+.hero-dot-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: 0 0;
+  animation: dot-move 20s linear infinite;
+  opacity: 0.4;
+}
+
+@keyframes dot-move {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 40px 40px;
+  }
+}
+
+// 光のエフェクト
+.hero-glow-effect {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  z-index: 1;
+  pointer-events: none;
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+.hero-glow-1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  top: 10%;
+  right: 10%;
+  animation-delay: 0s;
+}
+
+.hero-glow-2 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.2) 0%, transparent 70%);
+  bottom: 20%;
+  left: 15%;
+  animation-delay: 2s;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.2);
   }
 }
 
@@ -117,7 +236,7 @@ html {
   left: 0;
   width: 100%;
   height: 120px;
-  z-index: 1;
+  z-index: 2;
   overflow: hidden; // はみ出しを隠す
   
   .wave-svg {
@@ -167,13 +286,12 @@ html {
 
 // ヒーローコンテンツ
 .hero-content {
-  max-width: 1200px;
+  max-width: 80rem; // max-w-7xl
   margin: 0 auto;
-  padding-top: calc(140px * 1.5); // 上下余白を1.5倍に
-  padding-bottom: calc(var(--spacing-2xl) * 1.5);
+  padding: calc(140px * 1.5) 2rem calc(var(--spacing-2xl) * 1.5); // px-8
   box-sizing: border-box;
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2xl);
@@ -187,10 +305,14 @@ html {
   
   @media (max-width: 768px) {
     padding-top: calc(100px * 1.5);
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
   
   @media (max-width: 480px) {
     padding-top: calc(90px * 1.5);
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 
@@ -198,48 +320,99 @@ html {
 .hero-text-area {
   flex: 1;
   text-align: center; // デフォルトで中央揃え
+  position: relative;
+  animation: fadeInUp 0.8s ease-out;
   
   @media (min-width: 1024px) {
     text-align: left; // デスクトップのみ左揃え
   }
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// キャッチコピー「スマホでかんたん」
+.hero-catchphrase {
+  font-size: 1.25rem; // text-xl
+  font-weight: 500; // font-medium
+  letter-spacing: 0.05em; // tracking-wide
+  margin-bottom: 0.5rem; // mb-2
+  color: rgba(219, 234, 254, 1); // text-blue-100
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  
+  @media (max-width: 480px) {
+    font-size: 1.125rem;
+  }
+}
+
 .hero-main-title {
-  font-size: 40px;
-  font-weight: 900; // font-black（最も太いウェイト）
-  line-height: 1.2;
-  margin-top: var(--spacing-xl);
+  font-size: 3rem; // text-5xl
+  font-weight: 900; // font-black
+  line-height: 1.1; // leading-tight
+  margin-top: 0;
   margin-bottom: var(--spacing-2xl);
-  color: #ffffff; // 純白
+  color: #ffffff; // text-white
   letter-spacing: -0.02em;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
   
   @media (min-width: 768px) {
-    font-size: 72px;
-    margin-top: var(--spacing-2xl);
-    margin-bottom: calc(var(--spacing-2xl) * 1.5);
+    font-size: 3.75rem; // md:text-6xl
   }
   
   @media (max-width: 480px) {
-    font-size: 36px;
+    font-size: 2.5rem;
   }
 }
 
-.hero-title-line {
-  display: inline-block;
-  white-space: nowrap; // 改行を禁止
-}
-
-.hero-title-nowrap {
-  white-space: nowrap; // 「かんたん」が途切れないように
-}
-
 .hero-keyword {
-  color: #FDE047; // 鮮やかなイエローのみ（青色を廃止）
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
-  white-space: nowrap; // 改行を禁止
+  color: #ffffff; // text-white
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  
+  // 背後に薄い黄色のマーカー（アニメーション付き）
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: 0.2em;
+    left: 0;
+    right: 0;
+    height: 0.4em;
+    background: linear-gradient(90deg, rgba(250, 204, 21, 0.3), rgba(250, 204, 21, 0.2), rgba(250, 204, 21, 0.3));
+    z-index: -1;
+    border-radius: 2px;
+    animation: marker-shine 3s ease-in-out infinite;
+  }
+  
+  // 一文字目を少しデザイン化（オプション）
+  &::first-letter {
+    font-size: 1.1em;
+    letter-spacing: -0.05em;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+@keyframes marker-shine {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scaleX(1.05);
+  }
 }
 
 .hero-subtitle {
@@ -267,13 +440,13 @@ html {
 }
 
 .btn-hero-primary {
-  background-color: #ffffff; // 完全に白（100%不透明）
-  color: #172554; // 文字を濃紺（青を廃止）
-  font-weight: 700;
-  padding: 1rem 3rem;
-  border-radius: 9999px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); // shadow-2xl（物理的に浮いている）
-  transition: all var(--transition-base);
+  background-color: #ffffff; // bg-white
+  color: #2563eb; // text-blue-600
+  font-weight: 700; // font-bold
+  padding: 1rem 2rem; // px-8 py-4
+  border-radius: 9999px; // rounded-full
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 0 rgba(37, 99, 235, 0.4); // shadow-xl + glow
+  transition: all var(--transition-base); // transition-transform
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -281,32 +454,52 @@ html {
   min-height: 48px;
   font-size: 16px;
   border: none;
+  position: relative;
+  overflow: hidden;
+  
+  // ホバー時の光るエフェクト
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
   
   &:hover {
-    background-color: #ffffff; // 完全に白のまま
-    transform: scale(0.95);
-    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.05); // hover:scale-105
     text-decoration: none;
-    color: #172554;
+    color: #2563eb;
+    box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15), 0 15px 15px -5px rgba(0, 0, 0, 0.06), 0 0 20px rgba(37, 99, 235, 0.3);
+    
+    &::before {
+      width: 300px;
+      height: 300px;
+    }
   }
   
   &:active {
-    transform: scale(0.93);
+    transform: scale(1.02);
   }
   
   @media (max-width: 767px) {
     width: 100%;
-    padding: 1rem 2rem;
+    padding: 1rem 1.5rem;
   }
 }
 
 .btn-hero-secondary {
-  background-color: transparent; // 透明背景
+  background-color: transparent;
   color: #ffffff; // text-white
-  font-weight: 700;
-  padding: 1rem 3rem; // py-4 px-12
-  border-radius: 9999px; // rounded-full（カプセル型）
-  border: 2px solid rgba(255, 255, 255, 0.8); // border-2 border-white/80
+  font-weight: 700; // font-bold
+  padding: 1rem 2rem; // px-8 py-4
+  border-radius: 9999px; // rounded-full
+  border: 2px solid rgba(255, 255, 255, 0.5); // border-2 border-white/50
   transition: all var(--transition-base);
   text-decoration: none;
   display: inline-flex;
@@ -314,17 +507,37 @@ html {
   justify-content: center;
   min-height: 48px;
   font-size: 16px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  
+  // ホバー時の光るエフェクト
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+  }
   
   &:hover {
     background-color: rgba(255, 255, 255, 0.1); // hover:bg-white/10
-    border-color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     color: #ffffff;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    
+    &::before {
+      left: 100%;
+    }
   }
   
   @media (max-width: 767px) {
     width: 100%;
-    padding: 1rem 2rem;
+    padding: 1rem 1.5rem;
   }
 }
 
@@ -336,9 +549,21 @@ html {
   display: flex;
   align-items: center;
   justify-content: center; // 中央寄せ
+  animation: fadeInRight 0.8s ease-out 0.2s both;
   
   @media (min-width: 768px) {
     min-height: 400px;
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -347,6 +572,7 @@ html {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%); // 中央寄せ
+  opacity: 0.8; // opacity-80
   width: 80%;
   max-width: 400px;
   height: 80%;
@@ -371,6 +597,7 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0.8; // opacity-80
 }
 
 .hero-floating {
