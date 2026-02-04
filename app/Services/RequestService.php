@@ -216,9 +216,34 @@ class RequestService
         foreach ($guides as $guide) {
             if (!$guide->guideProfile) continue;
 
-            $availableAreas = json_decode($guide->guideProfile->available_areas ?? '[]', true) ?? [];
-            $availableDays = json_decode($guide->guideProfile->available_days ?? '[]', true) ?? [];
-            $availableTimes = json_decode($guide->guideProfile->available_times ?? '[]', true) ?? [];
+            // GuideProfileモデルで'array'としてキャストされているため、通常は既に配列として取得される
+            // ただし、念のため文字列の場合はjson_decode()を呼ぶ
+            $availableAreas = $guide->guideProfile->available_areas;
+            $availableDays = $guide->guideProfile->available_days;
+            $availableTimes = $guide->guideProfile->available_times;
+            
+            // 配列でない場合の処理
+            if (!is_array($availableAreas)) {
+                if (is_string($availableAreas)) {
+                    $availableAreas = json_decode($availableAreas, true) ?? [];
+                } else {
+                    $availableAreas = [];
+                }
+            }
+            if (!is_array($availableDays)) {
+                if (is_string($availableDays)) {
+                    $availableDays = json_decode($availableDays, true) ?? [];
+                } else {
+                    $availableDays = [];
+                }
+            }
+            if (!is_array($availableTimes)) {
+                if (is_string($availableTimes)) {
+                    $availableTimes = json_decode($availableTimes, true) ?? [];
+                } else {
+                    $availableTimes = [];
+                }
+            }
 
             // 条件チェック（簡易版）
             $matches = true;
