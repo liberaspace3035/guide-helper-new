@@ -437,6 +437,17 @@ html {
   @media (min-width: 1024px) {
     flex-direction: row;
   }
+  
+  // ヒーローセクションのボタンは大きく表示
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    height: 48px !important;
+    padding: 0 24px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+    min-height: 48px !important;
+  }
 }
 
 .btn-hero-primary {
