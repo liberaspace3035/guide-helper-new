@@ -157,11 +157,10 @@ class AuthController extends Controller
             ]);
         }
 
-        // セッション認証でログイン
-        auth()->login($user);
-        
         // APIリクエストの場合はJSONレスポンスを返す
         if ($request->expectsJson() || $request->is('api/*')) {
+            // APIリクエストの場合はログインしてJSONレスポンスを返す
+            auth()->login($user);
             return response()->json([
                 'message' => 'ユーザー登録が完了しました。審査完了後、運営からご連絡いたします。',
                 'user' => [
@@ -173,6 +172,7 @@ class AuthController extends Controller
             ], 201);
         }
 
+        // Webリクエストの場合はログインせずにログインページにリダイレクト
         return redirect()->route('login')
             ->with('success', 'ユーザー登録が完了しました。審査完了後、運営からご連絡いたします。');
     }

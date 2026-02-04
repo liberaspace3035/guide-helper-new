@@ -118,10 +118,12 @@
             <p class="forgot-password-link">
                 <a href="{{ route('password.request') }}">パスワードを忘れた方</a>
             </p>
+            @if(!session('success'))
             <p class="register-link">
                 アカウントをお持ちでない方は
                 <a href="{{ route('register') }}">こちらから登録</a>
             </p>
+            @endif
         </div>
     </div>
 </div>
