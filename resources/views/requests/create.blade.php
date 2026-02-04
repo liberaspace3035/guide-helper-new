@@ -20,10 +20,14 @@
                 x-model="formData.request_type"
                 required
                 aria-required="true"
+                class="@if($errors->has('request_type')) is-invalid @endif"
             >
                 <option value="outing">外出</option>
                 <option value="home">自宅</option>
             </select>
+            @if($errors->has('request_type'))
+                <div class="field-error" role="alert">{{ $errors->first('request_type') }}</div>
+            @endif
         </div>
 
         <div class="form-group">
@@ -53,6 +57,7 @@
                         required
                         placeholder="例: 東京都渋谷区青山１－１－１"
                         aria-required="true"
+                        class="@if($errors->has('destination_address')) is-invalid @endif"
                     />
                     <small>詳細な住所を入力してください（ガイドには大まかな地域のみ表示されます）</small>
                 </div>
@@ -66,11 +71,24 @@
                         required
                         placeholder="例: 渋谷駅ハチ公前"
                         aria-required="true"
+                        class="@if($errors->has('meeting_place')) is-invalid @endif"
                     />
                     <small>ガイドとの待ち合わせ場所を入力してください</small>
                 </div>
             </div>
         </template>
+        
+        {{-- エラーメッセージはtemplateの外に配置 --}}
+        @if($errors->has('destination_address'))
+            <div class="form-group" x-show="formData.request_type === 'outing'">
+                <div class="field-error" role="alert">{{ $errors->first('destination_address') }}</div>
+            </div>
+        @endif
+        @if($errors->has('meeting_place'))
+            <div class="form-group" x-show="formData.request_type === 'outing'">
+                <div class="field-error" role="alert">{{ $errors->first('meeting_place') }}</div>
+            </div>
+        @endif
 
         <template x-if="formData.request_type === 'home'">
             <div>
@@ -84,6 +102,7 @@
                         required
                         placeholder="例: 東京都渋谷区青山１－１－１"
                         aria-required="true"
+                        class="@if($errors->has('destination_address')) is-invalid @endif"
                     />
                     <small>詳細な住所を入力してください（ガイドには大まかな地域のみ表示されます）</small>
                 </div>
@@ -97,11 +116,24 @@
                         required
                         placeholder="例: 玄関前"
                         aria-required="true"
+                        class="@if($errors->has('meeting_place')) is-invalid @endif"
                     />
                     <small>ガイドとの集合場所を入力してください</small>
                 </div>
             </div>
         </template>
+        
+        {{-- エラーメッセージはtemplateの外に配置（自宅タイプ用） --}}
+        @if($errors->has('destination_address'))
+            <div class="form-group" x-show="formData.request_type === 'home'">
+                <div class="field-error" role="alert">{{ $errors->first('destination_address') }}</div>
+            </div>
+        @endif
+        @if($errors->has('meeting_place'))
+            <div class="form-group" x-show="formData.request_type === 'home'">
+                <div class="field-error" role="alert">{{ $errors->first('meeting_place') }}</div>
+            </div>
+        @endif
 
         <div class="form-group full-width">
             <label for="service_content">サービス内容 <span class="required">*</span></label>
@@ -114,6 +146,7 @@
                     rows="4"
                     placeholder="『買い物』『代筆』など、具体的なサービス内容を記載してください"
                     aria-required="true"
+                    class="@if($errors->has('service_content')) is-invalid @endif"
                 ></textarea>
                 <button
                     type="button"
@@ -145,6 +178,9 @@
                     <span>音声認識中...</span>
                 </div>
             </template>
+            @if($errors->has('service_content'))
+                <div class="field-error" role="alert">{{ $errors->first('service_content') }}</div>
+            @endif
         </div>
 
         <div class="form-group full-width">
@@ -196,6 +232,7 @@
                         aria-required="true"
                         aria-describedby="date-picker-help"
                         x-ref="dateInput"
+                        class="@if($errors->has('request_date')) is-invalid @endif"
                     />
                     <button
                         type="button"
@@ -214,6 +251,9 @@
                     </button>
                 </div>
                 <small id="date-picker-help" class="form-help-text">カレンダーアイコンをクリックするか、キーボードで日付を入力してください</small>
+                @if($errors->has('request_date'))
+                    <div class="field-error" role="alert">{{ $errors->first('request_date') }}</div>
+                @endif
             </div>
 
             <div class="form-group">
@@ -288,6 +328,12 @@
                 <input type="hidden" name="end_time" :value="formData.end_time" required>
                 
                 <small class="time-help-text">時間と分を選択してください（15分単位）。</small>
+                @if($errors->has('start_time'))
+                    <div class="field-error" role="alert">{{ $errors->first('start_time') }}</div>
+                @endif
+                @if($errors->has('end_time'))
+                    <div class="field-error" role="alert">{{ $errors->first('end_time') }}</div>
+                @endif
             </div>
         </div>
 
@@ -658,13 +704,17 @@ function requestForm() {
             }
 
             // バリデーションを通過したら送信
+            console.log('クライアントサイドバリデーション通過、フォーム送信開始');
+            console.log('フォームデータ:', this.formData);
             this.loading = true;
             
             // フォーム要素を取得して送信
             const form = this.$refs.requestForm || event.target.closest('form');
             if (form) {
+                console.log('フォーム要素が見つかりました、送信します');
                 // 少し遅延を入れて、ローディング状態がUIに反映されるようにする
                 setTimeout(() => {
+                    console.log('form.submit()を実行します');
                     form.submit();
                 }, 100);
             } else {

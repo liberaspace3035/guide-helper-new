@@ -44,9 +44,30 @@ class RequestController extends Controller
             'end_time' => 'required|date_format:H:i',
             'guide_gender' => 'nullable|in:none,male,female',
             'guide_age' => 'nullable|in:none,20s,30s,40s,50s,60s',
+        ], [
+            'request_type.required' => '依頼タイプを選択してください',
+            'request_type.in' => '依頼タイプが不正です',
+            'destination_address.required' => '目的地（場所）を入力してください',
+            'destination_address.string' => '目的地（場所）は文字列で入力してください',
+            'meeting_place.required_if' => '待ち合わせ場所（集合場所）を入力してください',
+            'meeting_place.string' => '待ち合わせ場所（集合場所）は文字列で入力してください',
+            'service_content.required' => 'サービス内容を入力してください',
+            'service_content.string' => 'サービス内容は文字列で入力してください',
+            'request_date.required' => '希望日を選択してください',
+            'request_date.date' => '希望日の形式が不正です',
+            'start_time.required' => '開始時刻を選択してください',
+            'start_time.date_format' => '開始時刻の形式が不正です',
+            'end_time.required' => '終了時刻を選択してください',
+            'end_time.date_format' => '終了時刻の形式が不正です',
+            'guide_gender.in' => '希望するガイドの性別が不正です',
+            'guide_age.in' => '希望するガイドの年代が不正です',
         ]);
 
         if ($validator->fails()) {
+            \Log::info('依頼作成バリデーションエラー', [
+                'errors' => $validator->errors()->all(),
+                'input' => $request->all()
+            ]);
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();

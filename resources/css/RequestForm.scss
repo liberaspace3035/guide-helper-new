@@ -255,6 +255,25 @@
   }
 }
 
+// フィールドエラーメッセージ
+.field-error {
+  color: var(--error-color);
+  font-size: 13px;
+  margin-top: var(--spacing-xs);
+  display: block;
+  line-height: 1.4;
+}
+
+// バリデーションエラーがあるフィールドのスタイル
+.is-invalid {
+  border-color: var(--error-color) !important;
+  
+  &:focus {
+    border-color: var(--error-color) !important;
+    box-shadow: 0 0 0 3px rgba(234, 67, 53, 0.1) !important;
+  }
+}
+
 // 日付入力ラッパー
 .date-input-wrapper {
   position: relative;
