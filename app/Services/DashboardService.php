@@ -150,7 +150,7 @@ class DashboardService
         $matchings = Matching::where('guide_id', $guideId)
             ->whereIn('status', ['matched', 'in_progress'])
             ->whereNull('report_completed_at') // 管理者承認済みのマッチングを除外
-            ->with(['user:id,name', 'request:id,request_type,request_date,request_time,start_time,end_time,masked_address,service_content,meeting_place'])
+            ->with(['user:id,name', 'request:id,request_type,request_date,request_time,start_time,end_time,masked_address,service_content,meeting_place', 'report:id,matching_id,status'])
             ->orderBy('matched_at', 'desc')
             ->get();
         
@@ -158,9 +158,11 @@ class DashboardService
         $matchings->each(function ($matching) {
             $matching->user;
             $matching->request;
+            $matching->report;
         });
         
         return $matchings->map(function($matching) {
+                $report = $matching->report;
                 return [
                     'id' => (int) $matching->id,
                     'request_type' => $matching->request->request_type ?? '',
@@ -174,6 +176,9 @@ class DashboardService
                     'user_name' => $matching->user->name ?? '',
                     'status' => $matching->status,
                     'report_completed_at' => $matching->report_completed_at ? ($matching->report_completed_at instanceof \Carbon\Carbon ? $matching->report_completed_at->toIso8601String() : $matching->report_completed_at) : null,
+                    'has_report' => $report !== null,
+                    'report_id' => $report ? (int) $report->id : null,
+                    'report_status' => $report ? $report->status : null,
                 ];
             })
             ->toArray();
