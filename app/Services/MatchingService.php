@@ -10,15 +10,18 @@ use App\Models\Notification;
 use App\Models\AdminSetting;
 use App\Models\User;
 use App\Services\EmailNotificationService;
+use App\Services\MaskAddressService;
 use Illuminate\Support\Facades\DB;
 
 class MatchingService
 {
     protected $emailService;
+    protected $maskAddressService;
 
-    public function __construct(EmailNotificationService $emailService)
+    public function __construct(EmailNotificationService $emailService, MaskAddressService $maskAddressService)
     {
         $this->emailService = $emailService;
+        $this->maskAddressService = $maskAddressService;
     }
 
     public function acceptRequest(int $requestId, int $guideId): array
@@ -40,6 +43,44 @@ class MatchingService
 
         // 依頼の存在確認
         $request = Request::findOrFail($requestId);
+
+        // ガイドの対応範囲チェック
+        $guideProfile = $guide->guideProfile;
+        if ($guideProfile) {
+            $availableAreas = $guideProfile->available_areas;
+            
+            // 配列でない場合の処理
+            if (!is_array($availableAreas)) {
+                if (is_string($availableAreas)) {
+                    $availableAreas = json_decode($availableAreas, true) ?? [];
+                } else {
+                    $availableAreas = [];
+                }
+            }
+            
+            // 対応範囲が設定されている場合のみチェック
+            if (!empty($availableAreas)) {
+                // 依頼の都道府県を取得（prefectureカラムがあればそれを使用、なければ住所から抽出）
+                $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
+                
+                \Log::info('ガイドの対応範囲チェック', [
+                    'guide_id' => $guideId,
+                    'request_id' => $requestId,
+                    'request_prefecture' => $request->prefecture,
+                    'request_address' => $request->destination_address,
+                    'extracted_prefecture' => $requestPrefecture,
+                    'available_areas' => $availableAreas,
+                    'is_in_area' => $requestPrefecture ? in_array($requestPrefecture, $availableAreas, true) : null,
+                ]);
+                
+                if ($requestPrefecture) {
+                    // ガイドの対応範囲に依頼の都道府県が含まれているかチェック（完全一致）
+                    if (!in_array($requestPrefecture, $availableAreas, true)) {
+                        throw new \Exception('この依頼の場所は、あなたの対応範囲外です。対応範囲: ' . implode(', ', $availableAreas));
+                    }
+                }
+            }
+        }
 
         // 既に承諾済みかチェック
         $existingAcceptance = GuideAcceptance::where('request_id', $requestId)

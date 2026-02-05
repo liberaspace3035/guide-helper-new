@@ -34,8 +34,19 @@ class RequestController extends Controller
 
     public function store(Request $request)
     {
+        $prefectures = [
+            '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+            '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+            '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県',
+            '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県',
+            '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+            '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県',
+            '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'
+        ];
+        
         $validator = Validator::make($request->all(), [
             'request_type' => 'required|in:outing,home',
+            'prefecture' => 'required|string|in:' . implode(',', $prefectures),
             'destination_address' => 'required|string',
             'meeting_place' => 'required_if:request_type,outing|nullable|string',
             'service_content' => 'required|string',
@@ -47,8 +58,10 @@ class RequestController extends Controller
         ], [
             'request_type.required' => '依頼タイプを選択してください',
             'request_type.in' => '依頼タイプが不正です',
-            'destination_address.required' => '目的地（場所）を入力してください',
-            'destination_address.string' => '目的地（場所）は文字列で入力してください',
+            'prefecture.required' => '都道府県を選択してください',
+            'prefecture.in' => '都道府県が不正です',
+            'destination_address.required' => '市区町村・番地を入力してください',
+            'destination_address.string' => '市区町村・番地は文字列で入力してください',
             'meeting_place.required_if' => '待ち合わせ場所（集合場所）を入力してください',
             'meeting_place.string' => '待ち合わせ場所（集合場所）は文字列で入力してください',
             'service_content.required' => 'サービス内容を入力してください',

@@ -73,8 +73,13 @@ class RequestService
             }
         }
 
+        // 都道府県と市区町村・番地を結合してdestination_addressを作成
+        $prefecture = $data['prefecture'] ?? '';
+        $cityAddress = $data['destination_address'] ?? '';
+        $fullAddress = $prefecture . $cityAddress;
+        
         // 住所マスキング
-        $maskedAddress = $this->maskAddressService->maskAddress($data['destination_address']);
+        $maskedAddress = $this->maskAddressService->maskAddress($fullAddress);
 
         // 日付形式の正規化（DATE型用）
         $requestDate = $data['request_date'] ?? null;
@@ -148,7 +153,8 @@ class RequestService
             'user_id' => $userId,
             'nominated_guide_id' => $data['nominated_guide_id'] ?? null,
             'request_type' => $data['request_type'],
-            'destination_address' => $data['destination_address'],
+            'prefecture' => $prefecture,
+            'destination_address' => $fullAddress,
             'meeting_place' => $data['meeting_place'] ?? null,
             'masked_address' => $maskedAddress,
             'service_content' => $data['service_content'],
@@ -245,9 +251,24 @@ class RequestService
                 }
             }
 
-            // 条件チェック（簡易版）
+            // 条件チェック
             $matches = true;
-            // 実際の条件チェックは後で実装
+            
+            // 対応範囲のチェック
+            if (!empty($availableAreas)) {
+                // 依頼の都道府県を取得（prefectureカラムがあればそれを使用、なければ住所から抽出）
+                $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
+                
+                if ($requestPrefecture) {
+                    // ガイドの対応範囲に依頼の都道府県が含まれているかチェック（完全一致）
+                    if (!in_array($requestPrefecture, $availableAreas, true)) {
+                        $matches = false;
+                    }
+                }
+            }
+            
+            // 日付・時間帯のチェック（将来実装予定）
+            // 現時点では対応範囲のみチェック
 
             if ($matches) {
                 Notification::create([
@@ -278,6 +299,35 @@ class RequestService
 
     public function getAvailableRequestsForGuide(int $guideId)
     {
+        // ガイド情報を取得
+        $guide = User::findOrFail($guideId);
+        $guideProfile = $guide->guideProfile;
+        
+        // ガイドの対応範囲を取得
+        $availableAreas = [];
+        if ($guideProfile) {
+            $availableAreas = $guideProfile->available_areas;
+            // 配列でない場合の処理
+            if (!is_array($availableAreas)) {
+                if (is_string($availableAreas)) {
+                    $availableAreas = json_decode($availableAreas, true) ?? [];
+                } else {
+                    $availableAreas = [];
+                }
+            }
+        }
+        
+        // デバッグログ：ガイド情報と対応範囲を確認
+        \Log::info('ガイドの依頼一覧取得（詳細デバッグ）', [
+            'guide_id' => $guideId,
+            'guide_email' => $guide->email,
+            'guide_profile_exists' => $guideProfile !== null,
+            'available_areas_raw' => $guideProfile ? $guideProfile->getRawOriginal('available_areas') : null,
+            'available_areas_parsed' => $availableAreas,
+            'available_areas_type' => gettype($availableAreas),
+            'available_areas_count' => is_array($availableAreas) ? count($availableAreas) : 'not_array',
+        ]);
+        
         // ガイドが応募済みの依頼IDを取得（ステータス情報も含む）
         $acceptances = GuideAcceptance::where('guide_id', $guideId)
             ->whereIn('status', ['pending', 'matched', 'declined'])
@@ -299,8 +349,52 @@ class RequestService
         $autoMatching = AdminSetting::where('setting_key', 'auto_matching')
             ->value('setting_value') === 'true';
         
-        // 各依頼に応募済み情報を追加
-        return $requests->map(function ($request) use ($guideId, $acceptances, $autoMatching) {
+        // 各依頼に応募済み情報を追加し、対応範囲外の依頼を除外
+        $filteredRequests = $requests->filter(function ($request) use ($availableAreas, $guideId) {
+            // 指名ガイドの場合は対応範囲チェックをスキップ
+            if ($request->nominated_guide_id == $guideId) {
+                return true;
+            }
+            
+            // 対応範囲が設定されていない場合はすべて表示
+            if (empty($availableAreas)) {
+                return true;
+            }
+            
+            // 依頼の都道府県を取得（prefectureカラムがあればそれを使用、なければ住所から抽出）
+            $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
+            
+            if (!$requestPrefecture) {
+                // 都道府県が取得できない場合は表示（安全側に倒す）
+                // 古いデータでprefectureカラムがnullの場合も表示
+                return true;
+            }
+            
+            // ガイドの対応範囲に依頼の都道府県が含まれているかチェック（完全一致）
+            $isInArea = in_array($requestPrefecture, $availableAreas, true);
+            
+            \Log::info('ガイドの依頼一覧フィルタリング（詳細）', [
+                'request_id' => $request->id,
+                'guide_id' => $guideId,
+                'request_prefecture_column' => $request->prefecture,
+                'request_destination_address' => $request->destination_address,
+                'extracted_prefecture' => $requestPrefecture,
+                'available_areas' => $availableAreas,
+                'is_in_array' => $isInArea,
+                'will_include' => $isInArea,
+            ]);
+            
+            return $isInArea;
+        });
+        
+        \Log::info('フィルタリング結果', [
+            'guide_id' => $guideId,
+            'total_before_filter' => $requests->count(),
+            'total_after_filter' => $filteredRequests->count(),
+            'filtered_request_ids' => $filteredRequests->pluck('id')->toArray(),
+        ]);
+        
+        return $filteredRequests->map(function ($request) use ($guideId, $acceptances, $autoMatching) {
             $hasApplied = isset($acceptances[$request->id]);
             $acceptanceStatus = $acceptances[$request->id] ?? null;
             
@@ -319,7 +413,7 @@ class RequestService
             
             // オブジェクトとして返すために stdClass に変換
             return (object) $requestArray;
-        });
+        })->values(); // インデックスをリセットしてJSONシリアライズを確実にする
     }
 }
 

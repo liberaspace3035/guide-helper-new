@@ -112,20 +112,25 @@ class RequestController extends Controller
         
         $requests = $this->requestService->getAvailableRequestsForGuide($guide->id);
         
-        // request_typeを日本語に変換（stdClassオブジェクトのプロパティを更新）
-        $requests = $requests->map(function ($request) {
+        // request_typeを日本語に変換して配列に変換
+        $requestsArray = $requests->map(function ($request) {
             $requestTypeMap = [
                 'outing' => '外出',
                 'home' => '自宅',
             ];
-            // stdClassオブジェクトのプロパティを更新
-            if (isset($request->request_type)) {
-                $request->request_type = $requestTypeMap[$request->request_type] ?? $request->request_type;
+            
+            // stdClassオブジェクトを配列に変換
+            $requestArray = (array) $request;
+            
+            // request_typeを日本語に変換
+            if (isset($requestArray['request_type'])) {
+                $requestArray['request_type'] = $requestTypeMap[$requestArray['request_type']] ?? $requestArray['request_type'];
             }
-            return $request;
-        });
+            
+            return $requestArray;
+        })->values()->toArray();
         
-        return response()->json(['requests' => $requests]);
+        return response()->json(['requests' => $requestsArray]);
     }
 
     public function applicants($id)

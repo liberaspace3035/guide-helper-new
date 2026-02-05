@@ -15,6 +15,7 @@ class Request extends Model
         'user_id',
         'nominated_guide_id',
         'request_type',
+        'prefecture',
         'destination_address',
         'masked_address',
         'meeting_place',
