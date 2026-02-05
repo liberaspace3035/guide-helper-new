@@ -6,14 +6,17 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\UserMonthlyLimitService;
+use App\Services\DashboardService;
 
 class UserController extends Controller
 {
     protected $limitService;
+    protected $dashboardService;
 
-    public function __construct(UserMonthlyLimitService $limitService)
+    public function __construct(UserMonthlyLimitService $limitService, DashboardService $dashboardService)
     {
         $this->limitService = $limitService;
+        $this->dashboardService = $dashboardService;
     }
 
     /**
@@ -110,6 +113,140 @@ class UserController extends Controller
             ]);
             return response()->json(['error' => '月次限度時間一覧の取得中にエラーが発生しました'], 500);
         }
+    }
+
+    /**
+     * 利用時間統計を取得（月別）
+     */
+    public function getUsageStats(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            
+            if (!$user) {
+                return response()->json(['error' => '認証が必要です'], 401);
+            }
+            
+            $year = $request->input('year', now()->year);
+            $month = $request->input('month', now()->month);
+            
+            // DashboardServiceのメソッドを使用して統計を取得
+            // ただし、DashboardServiceは現在の月を取得するので、リフレクションまたは新しいメソッドが必要
+            // 一時的に、直接クエリを実行する方法を使用
+            
+            if ($user->role === 'user') {
+                $stats = $this->getUserUsageStatsForMonth($user->id, $year, $month);
+            } elseif ($user->role === 'guide') {
+                $stats = $this->getGuideUsageStatsForMonth($user->id, $year, $month);
+            } else {
+                return response()->json(['error' => 'この機能はユーザーまたはガイドのみ利用可能です'], 403);
+            }
+            
+            return response()->json([
+                'current_month' => $stats
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('UserController::getUsageStats error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => '利用時間統計の取得中にエラーが発生しました'], 500);
+        }
+    }
+
+    protected function getUserUsageStatsForMonth(int $userId, int $year, int $month): array
+    {
+        $currentMonthStats = \App\Models\Report::where('reports.user_id', $userId)
+            ->whereIn('reports.status', ['admin_approved', 'approved'])
+            ->whereNotNull('reports.actual_date')
+            ->whereNotNull('reports.actual_start_time')
+            ->whereNotNull('reports.actual_end_time')
+            ->whereRaw("EXTRACT(YEAR FROM reports.actual_date) = ?", [$year])
+            ->whereRaw("EXTRACT(MONTH FROM reports.actual_date) = ?", [$month])
+            ->join('requests', 'reports.request_id', '=', 'requests.id')
+            ->selectRaw('requests.request_type')
+            ->selectRaw("SUM(EXTRACT(EPOCH FROM ((reports.actual_date || ' ' || reports.actual_end_time)::timestamp - (reports.actual_date || ' ' || reports.actual_start_time)::timestamp)) / 60) as total_minutes")
+            ->groupBy('requests.request_type')
+            ->get();
+
+        $currentMonthTotal = \App\Models\Report::where('user_id', $userId)
+            ->whereIn('status', ['admin_approved', 'approved'])
+            ->whereNotNull('actual_date')
+            ->whereNotNull('actual_start_time')
+            ->whereNotNull('actual_end_time')
+            ->whereRaw("EXTRACT(YEAR FROM actual_date) = ?", [$year])
+            ->whereRaw("EXTRACT(MONTH FROM actual_date) = ?", [$month])
+            ->selectRaw("SUM(EXTRACT(EPOCH FROM ((actual_date || ' ' || actual_end_time)::timestamp - (actual_date || ' ' || actual_start_time)::timestamp)) / 60) as total_minutes")
+            ->first();
+
+        $typeStats = [
+            '外出' => 0,
+            '自宅' => 0
+        ];
+
+        foreach ($currentMonthStats as $stat) {
+            $requestType = $stat->request_type;
+            if ($requestType === 'outing') {
+                $typeStats['外出'] = round($stat->total_minutes / 60 * 10) / 10;
+            } elseif ($requestType === 'home') {
+                $typeStats['自宅'] = round($stat->total_minutes / 60 * 10) / 10;
+            }
+        }
+
+        $totalMinutes = $currentMonthTotal->total_minutes ?? 0;
+
+        return [
+            'total_minutes' => $totalMinutes,
+            'total_hours' => round($totalMinutes / 60 * 10) / 10,
+            'by_type' => $typeStats
+        ];
+    }
+
+    protected function getGuideUsageStatsForMonth(int $guideId, int $year, int $month): array
+    {
+        $currentMonthStats = \App\Models\Report::where('reports.guide_id', $guideId)
+            ->whereIn('reports.status', ['admin_approved', 'approved'])
+            ->whereNotNull('reports.actual_date')
+            ->whereNotNull('reports.actual_start_time')
+            ->whereNotNull('reports.actual_end_time')
+            ->whereRaw("EXTRACT(YEAR FROM reports.actual_date) = ?", [$year])
+            ->whereRaw("EXTRACT(MONTH FROM reports.actual_date) = ?", [$month])
+            ->join('requests', 'reports.request_id', '=', 'requests.id')
+            ->selectRaw('requests.request_type')
+            ->selectRaw("SUM(EXTRACT(EPOCH FROM ((reports.actual_date || ' ' || reports.actual_end_time)::timestamp - (reports.actual_date || ' ' || reports.actual_start_time)::timestamp)) / 60) as total_minutes")
+            ->groupBy('requests.request_type')
+            ->get();
+
+        $currentMonthTotal = \App\Models\Report::where('guide_id', $guideId)
+            ->whereIn('status', ['admin_approved', 'approved'])
+            ->whereNotNull('actual_date')
+            ->whereNotNull('actual_start_time')
+            ->whereNotNull('actual_end_time')
+            ->whereRaw("EXTRACT(YEAR FROM actual_date) = ?", [$year])
+            ->whereRaw("EXTRACT(MONTH FROM actual_date) = ?", [$month])
+            ->selectRaw("SUM(EXTRACT(EPOCH FROM ((actual_date || ' ' || actual_end_time)::timestamp - (actual_date || ' ' || actual_start_time)::timestamp)) / 60) as total_minutes")
+            ->first();
+
+        $typeStats = [
+            '外出' => 0,
+            '自宅' => 0
+        ];
+
+        foreach ($currentMonthStats as $stat) {
+            $requestType = $stat->request_type;
+            if ($requestType === 'outing') {
+                $typeStats['外出'] = round($stat->total_minutes / 60 * 10) / 10;
+            } elseif ($requestType === 'home') {
+                $typeStats['自宅'] = round($stat->total_minutes / 60 * 10) / 10;
+            }
+        }
+
+        $totalMinutes = $currentMonthTotal->total_minutes ?? 0;
+
+        return [
+            'total_minutes' => $totalMinutes,
+            'total_hours' => round($totalMinutes / 60 * 10) / 10,
+            'by_type' => $typeStats
+        ];
     }
 }
 

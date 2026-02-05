@@ -30,9 +30,10 @@ class RequestController extends Controller
             ->pluck('request_id')
             ->toArray();
         
-        // 完了したマッチングに関連する依頼を除外
+        // 完了したマッチングに関連する依頼とキャンセルされた依頼を除外
         $requests = RequestModel::where('requests.user_id', $user->id)
             ->whereNotIn('requests.id', $completedMatchingRequestIds)
+            ->where('requests.status', '!=', 'cancelled') // キャンセルされた依頼を除外
             ->orderBy('requests.created_at', 'desc')
             ->get();
         
@@ -316,10 +317,38 @@ class RequestController extends Controller
                     'gender' => $guide->gender,
                     'age' => $age,
                     'introduction' => $guide->guideProfile->introduction ?? null,
-                ];
-            });
-
+            ];
+        });
+        
         return response()->json(['guides' => $guides]);
+    }
+
+    /**
+     * 依頼をキャンセル
+     */
+    public function cancel(Request $request, $id)
+    {
+        try {
+            $user = Auth::user();
+            
+            if (!$user) {
+                return response()->json(['error' => '認証が必要です'], 401);
+            }
+
+            $requestModel = $this->requestService->cancelRequest($id, $user->id);
+            
+            return response()->json([
+                'message' => '依頼をキャンセルしました',
+                'request' => $requestModel,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('RequestController::cancel - エラー', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_id' => $id,
+            ]);
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }
 

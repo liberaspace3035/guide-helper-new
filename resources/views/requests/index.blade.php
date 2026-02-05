@@ -91,6 +91,17 @@
                                 </div>
                             </div>
                         </template>
+                        <!-- キャンセルボタン: マッチング成立していない依頼のみ表示 -->
+                        <template x-if="canCancelRequest(request)">
+                            <button
+                                type="button"
+                                class="btn-danger"
+                                @click="handleCancelRequest(request.id)"
+                                aria-label="依頼をキャンセル"
+                            >
+                                依頼をキャンセル
+                            </button>
+                        </template>
                     </div>
 
                     <template x-if="expandedRequestId == request.id">
@@ -458,6 +469,52 @@ function requestsData() {
                 return true;
             }
             return false;
+        },
+        canCancelRequest(request) {
+            // マッチング成立済み（matched または in_progress）の場合はキャンセル不可
+            if (request.status === 'matched' || request.status === 'in_progress') {
+                return false;
+            }
+            // 既にキャンセル済みの場合はキャンセル不可
+            if (request.status === 'cancelled') {
+                return false;
+            }
+            // マッチングが存在する場合はキャンセル不可
+            if (this.matchedGuideMap[request.id]?.matching_id) {
+                return false;
+            }
+            return true;
+        },
+        async handleCancelRequest(requestId) {
+            if (!confirm('この依頼をキャンセルしますか？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/requests/${requestId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(data.message || '依頼をキャンセルしました');
+                    // 依頼一覧を再取得
+                    await this.fetchRequests();
+                } else {
+                    const errorData = await response.json().catch(() => ({ error: '依頼のキャンセルに失敗しました' }));
+                    alert(errorData.error || '依頼のキャンセルに失敗しました');
+                }
+            } catch (err) {
+                console.error('依頼キャンセルエラー:', err);
+                alert('依頼のキャンセルに失敗しました');
+            }
         }
     }
 }

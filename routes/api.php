@@ -27,6 +27,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/requests/{id}/applicants', [RequestController::class, 'applicants']);
     Route::get('/requests/matched-guides/all', [RequestController::class, 'matchedGuides']);
     Route::post('/requests/{id}/select-guide', [RequestController::class, 'selectGuide']);
+    Route::post('/requests/{id}/cancel', [RequestController::class, 'cancel']);
     Route::get('/guides/available', [RequestController::class, 'availableGuides']); // 指名用ガイド一覧
     
     // マッチング関連
@@ -47,6 +48,9 @@ Route::middleware(['auth'])->group(function () {
     // ユーザー自身の月次限度時間関連
     Route::get('/users/me/monthly-limit', [\App\Http\Controllers\Api\UserController::class, 'getMyMonthlyLimit']);
     Route::get('/users/me/monthly-limits', [\App\Http\Controllers\Api\UserController::class, 'getMyMonthlyLimits']);
+    
+    // 利用時間統計（月別）
+    Route::get('/reports/usage-stats', [\App\Http\Controllers\Api\UserController::class, 'getUsageStats']);
     
     // ユーザー統計（管理者のみ）
     Route::get('/users/stats', [\App\Http\Controllers\Api\AdminController::class, 'userStats'])->middleware('role:admin');

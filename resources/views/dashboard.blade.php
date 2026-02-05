@@ -255,7 +255,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <template x-for="m in usageStats.monthly" :key="m.month">
+                                                <template x-for="m in getFilteredMonthlyStats()" :key="m.month">
                                                     <tr>
                                                         <td x-text="m.month"></td>
                                                         <td x-text="(m.total_hours || Math.round((m.total_minutes || 0) / 60 * 10) / 10) + ' 時間'"></td>
@@ -789,6 +789,8 @@ function dashboardData() {
             else this.greeting = 'こんばんは';
             // 月次限度時間を取得
             this.fetchMonthlyLimit();
+            // 選択された月の統計を取得（初期表示時は現在の月）
+            this.fetchMonthStats(this.selectedMonth);
         },
         formatDate(dateStr) {
             if (!dateStr) return '';
@@ -899,6 +901,15 @@ function dashboardData() {
             }
             return options;
         },
+        getFilteredMonthlyStats() {
+            if (!this.usageStats?.monthly || !this.selectedMonth) {
+                return this.usageStats?.monthly || [];
+            }
+            // 選択された月のデータのみをフィルタリング
+            const [selectedYear, selectedMonth] = this.selectedMonth.split('-');
+            const selectedMonthStr = `${selectedYear}-${selectedMonth.padStart(2, '0')}`;
+            return this.usageStats.monthly.filter(m => m.month === selectedMonthStr);
+        },
         async apiFetch(url, options = {}) {
             const response = await fetch(url, {
                 ...options,
@@ -942,6 +953,7 @@ function dashboardData() {
                 const [year, month] = monthString.split('-');
                 const data = await this.apiFetch(`/api/reports/usage-stats?year=${year}&month=${month}`);
                 this.selectedMonthStats = data.current_month;
+                console.log('月別統計取得成功:', { monthString, selectedMonthStats: this.selectedMonthStats });
             } catch (error) {
                 if (error.message !== '認証エラー') {
                     console.error('月別統計取得エラー:', error);

@@ -6,6 +6,7 @@ use App\Models\Request;
 use App\Models\User;
 use App\Models\Report;
 use App\Models\GuideAcceptance;
+use App\Models\Matching;
 use App\Models\Notification;
 use App\Models\AdminSetting;
 use App\Services\UserMonthlyLimitService;
@@ -336,7 +337,9 @@ class RequestService
 
         // 利用可能な依頼（pending または guide_accepted ステータス）
         // 指名ガイドが設定されていない依頼、またはこのガイドが指名されている依頼のみを取得
+        // キャンセルされた依頼は除外
         $requests = Request::whereIn('status', ['pending', 'guide_accepted'])
+            ->where('status', '!=', 'cancelled') // キャンセルされた依頼を除外
             ->where(function($query) use ($guideId) {
                 // 指名ガイドが設定されていない依頼、またはこのガイドが指名されている依頼
                 $query->whereNull('nominated_guide_id')
@@ -414,6 +417,56 @@ class RequestService
             // オブジェクトとして返すために stdClass に変換
             return (object) $requestArray;
         })->values(); // インデックスをリセットしてJSONシリアライズを確実にする
+    }
+
+    /**
+     * 依頼をキャンセル
+     * マッチング成立済みの依頼はキャンセル不可
+     */
+    public function cancelRequest(int $requestId, int $userId): Request
+    {
+        $request = Request::findOrFail($requestId);
+
+        // 権限チェック（依頼作成者のみキャンセル可能）
+        if ($request->user_id !== $userId) {
+            throw new \Exception('この依頼をキャンセルする権限がありません');
+        }
+
+        // 既にキャンセル済みの場合はエラー
+        if ($request->status === 'cancelled') {
+            throw new \Exception('この依頼は既にキャンセルされています');
+        }
+
+        // マッチング成立済み（matched または in_progress）の場合はキャンセル不可
+        if (in_array($request->status, ['matched', 'in_progress'])) {
+            throw new \Exception('マッチング成立済みの依頼はキャンセルできません');
+        }
+
+        // マッチングが存在する場合は確認
+        $matching = Matching::where('request_id', $requestId)
+            ->whereIn('status', ['matched', 'in_progress'])
+            ->first();
+
+        if ($matching) {
+            throw new \Exception('マッチング成立済みの依頼はキャンセルできません');
+        }
+
+        // 依頼をキャンセル状態に更新
+        $request->update([
+            'status' => 'cancelled',
+        ]);
+
+        // 関連するGuideAcceptanceを削除（pending状態のみ）
+        GuideAcceptance::where('request_id', $requestId)
+            ->where('status', 'pending')
+            ->delete();
+
+        \Log::info('依頼がキャンセルされました', [
+            'request_id' => $requestId,
+            'user_id' => $userId,
+        ]);
+
+        return $request;
     }
 }
 
