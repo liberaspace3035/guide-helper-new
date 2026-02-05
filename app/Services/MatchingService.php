@@ -44,6 +44,11 @@ class MatchingService
         // 依頼の存在確認
         $request = Request::findOrFail($requestId);
 
+        // キャンセル済みの依頼は応募不可
+        if ($request->status === 'cancelled') {
+            throw new \Exception('この依頼は既にキャンセルされています');
+        }
+
         // ガイドの対応範囲チェック
         $guideProfile = $guide->guideProfile;
         if ($guideProfile) {
