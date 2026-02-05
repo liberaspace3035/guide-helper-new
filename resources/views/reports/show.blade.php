@@ -26,9 +26,9 @@
                     </div>
                 </div>
             </div>
-            <span class="status-badge" :class="report.status === 'submitted' ? 'status-pending' : 'status-approved'" :aria-label="(report.status === 'submitted' ? '承認待ち' : '承認済み') + 'の状態'">
-                <span class="status-icon" x-html="report.status === 'submitted' ? '<svg width=\'14\' height=\'14\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\' aria-hidden=\'true\'><circle cx=\'12\' cy=\'12\' r=\'10\'></circle><polyline points=\'12 6 12 12 16 14\'></polyline></svg>' : '<svg width=\'14\' height=\'14\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\' aria-hidden=\'true\'><path d=\'M22 11.08V12a10 10 0 1 1-5.93-9.14\'></path><polyline points=\'22 4 12 14.01 9 11.01\'></polyline></svg>'"></span>
-                <span x-text="report.status === 'submitted' ? '承認待ち' : '承認済み'"></span>
+            <span class="status-badge" :class="getStatusBadgeClass(report.status)" :aria-label="getStatusLabel(report.status) + 'の状態'">
+                <span class="status-icon" x-html="getStatusIcon(report.status)"></span>
+                <span x-text="getStatusLabel(report.status)"></span>
             </span>
         </div>
 
@@ -249,6 +249,35 @@ function reportDetail() {
             const day = date.getDate();
             
             return `${year}/${month}/${day}`;
+        },
+        getStatusBadgeClass(status) {
+            const statusMap = {
+                'submitted': 'status-pending',
+                'revision_requested': 'status-revision',
+                'user_approved': 'status-approved',
+                'admin_approved': 'status-approved',
+                'approved': 'status-approved'
+            };
+            return statusMap[status] || 'status-pending';
+        },
+        getStatusLabel(status) {
+            const statusMap = {
+                'submitted': '承認待ち',
+                'revision_requested': '修正依頼中',
+                'user_approved': 'ユーザー承認済み',
+                'admin_approved': '管理者承認済み',
+                'approved': '承認済み'
+            };
+            return statusMap[status] || '承認待ち';
+        },
+        getStatusIcon(status) {
+            if (status === 'submitted') {
+                return '<svg width=\'14\' height=\'14\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\' aria-hidden=\'true\'><circle cx=\'12\' cy=\'12\' r=\'10\'></circle><polyline points=\'12 6 12 12 16 14\'></polyline></svg>';
+            } else if (status === 'revision_requested') {
+                return '<svg width=\'14\' height=\'14\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\' aria-hidden=\'true\'><path d=\'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\'></path><path d=\'M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z\'></path></svg>';
+            } else {
+                return '<svg width=\'14\' height=\'14\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\' aria-hidden=\'true\'><path d=\'M22 11.08V12a10 10 0 1 1-5.93-9.14\'></path><polyline points=\'22 4 12 14.01 9 11.01\'></polyline></svg>';
+            }
         }
     }
 }

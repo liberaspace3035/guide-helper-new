@@ -465,6 +465,7 @@ small {
   font-weight: 500;
   box-shadow: var(--shadow-md);
   animation: slideDown 0.3s ease-out;
+  position: relative;
   
   .flash-icon {
     flex-shrink: 0;
@@ -475,6 +476,33 @@ small {
   span {
     flex: 1;
     line-height: 1.5;
+  }
+  
+  .flash-close {
+    background: none;
+    border: none;
+    padding: var(--spacing-xs);
+    cursor: pointer;
+    color: currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    opacity: 0.7;
+    
+    &:hover {
+      opacity: 1;
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    svg {
+      width: 16px;
+      height: 16px;
+    }
   }
 }
 
@@ -766,7 +794,7 @@ small {
   margin: auto;
   
   &.modal-content-sm {
-    max-width: 720px;
+    max-width: 800px;
     max-height: 80vh;
   }
 }
@@ -796,6 +824,13 @@ small {
   font-size: 0.9rem;
 }
 
+.report-modal-body {
+ display: block !important;
+ grid-template-columns: 1fr 1fr;
+ gap: 12px 24px;
+ font-size: 0.9rem;
+}
+
 .modal-section {
   grid-column: 1 / -1;
   margin-bottom: 16px;
@@ -822,10 +857,15 @@ small {
 .modal-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px 24px;
+  gap: 16px 32px;
   
   &.modal-grid-full {
     grid-column: 1 / -1;
+  }
+  
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 

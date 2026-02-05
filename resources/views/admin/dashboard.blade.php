@@ -939,7 +939,7 @@
             </div>
 
             <template x-if="selectedReport">
-                <div class="modal-body">
+                <div class="modal-body report-modal-body">
                     <div class="modal-grid">
                         <div class="modal-field">
                             <strong>報告書ID</strong>
@@ -959,11 +959,11 @@
                         </div>
                         <div class="modal-field">
                             <strong>開始時刻</strong>
-                            <span x-text="selectedReport.actual_start_time || '-'"></span>
+                            <span x-text="selectedReport.actual_start_time ? formatTimeOnly(selectedReport.actual_start_time) : '-'"></span>
                         </div>
                         <div class="modal-field">
                             <strong>終了時刻</strong>
-                            <span x-text="selectedReport.actual_end_time || '-'"></span>
+                            <span x-text="selectedReport.actual_end_time ? formatTimeOnly(selectedReport.actual_end_time) : '-'"></span>
                         </div>
 
                         <div class="modal-field modal-grid-full modal-field-spaced">

@@ -147,6 +147,12 @@
   border: 2px solid #10b981;
 }
 
+.status-badge.status-revision {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 2px solid #ef4444;
+}
+
 .report-content {
   display: flex;
   flex-direction: column;
