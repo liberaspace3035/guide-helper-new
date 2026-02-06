@@ -2768,14 +2768,83 @@
   .matchings-table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    margin-left: calc(-1 * var(--spacing-md));
+    margin-right: calc(-1 * var(--spacing-md));
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+  
+  .acceptances-table-container {
+    margin-left: calc(-1 * var(--spacing-md));
+    margin-right: calc(-1 * var(--spacing-md));
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+  
+  .acceptances-table {
+    min-width: 600px;
+    
+    tbody tr td {
+      &:nth-child(4) {
+        min-width: 140px;
+      }
+    }
+  }
+  
+  .monthly-limits-table {
+    min-width: 700px;
+    
+    tbody tr td {
+      &:nth-child(2) {
+        min-width: 180px;
+      }
+      
+      &:nth-child(6) {
+        min-width: 120px;
+      }
+    }
+  }
+  
+  .operation-logs-table {
+    min-width: 800px;
+    
+    tbody tr td {
+      &:nth-child(1) {
+        min-width: 140px;
+      }
+      
+      &:nth-child(6) {
+        min-width: 120px;
+      }
+    }
   }
 
   .matchings-table {
-    min-width: 800px;
+    min-width: 750px;
+    
+    thead tr th {
+      padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    tbody tr td {
+      padding: var(--spacing-sm) var(--spacing-md);
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.4;
+      
+      &:nth-child(3) {
+        min-width: 140px;
+      }
+      
+      &:nth-child(4) {
+        min-width: 180px;
+      }
+    }
   }
 
   .table-actions {
     padding: var(--spacing-xs);
+    white-space: nowrap;
   }
 
   .action-buttons {
@@ -2784,22 +2853,37 @@
   }
 
   .action-btn {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     
     svg {
-      width: 22px;
-      height: 22px;
+      width: 18px;
+      height: 18px;
     }
   }
 
   .usage-table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    margin-left: calc(-1 * var(--spacing-md));
+    margin-right: calc(-1 * var(--spacing-md));
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
   }
 
   .usage-table {
-    min-width: 400px;
+    min-width: 500px;
+    
+    thead tr th {
+      padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    tbody tr td {
+      padding: var(--spacing-sm) var(--spacing-md);
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.4;
+    }
   }
 }
 
@@ -2845,6 +2929,74 @@
     font-size: 14px;
     padding: var(--spacing-sm) var(--spacing-md);
     min-height: 48px;
+  }
+
+  .matchings-table-wrapper {
+    margin-left: calc(-1 * var(--spacing-md));
+    margin-right: calc(-1 * var(--spacing-md));
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+
+  .matchings-table {
+    min-width: 700px;
+    
+    thead tr th {
+      padding: 8px var(--spacing-sm);
+    }
+    
+    tbody tr td {
+      padding: 10px var(--spacing-sm);
+      line-height: 1.4;
+      
+      &:first-child {
+        min-width: 80px;
+      }
+      
+      &:nth-child(2) {
+        min-width: 10px;
+      }
+      
+      &:nth-child(3) {
+        min-width: 140px;
+      }
+      
+      &:nth-child(4) {
+        min-width: 180px;
+      }
+      
+      &:nth-child(5) {
+        min-width: 140px;
+      }
+
+      &:nth-child(6) {
+        min-width: 140px;
+      }
+
+      &:nth-child(7) {
+        min-width: 140px;
+      }
+    }
+  }
+
+  .usage-table-wrapper {
+    margin-left: calc(-1 * var(--spacing-md));
+    margin-right: calc(-1 * var(--spacing-md));
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+
+  .usage-table {
+    min-width: 450px;
+    
+    thead tr th {
+      padding: 8px var(--spacing-sm);
+    }
+    
+    tbody tr td {
+      padding: 10px var(--spacing-sm);
+      line-height: 1.4;
+    }
   }
 }
 
@@ -3222,7 +3374,6 @@
   }
 
 .table-actions {
-  display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
@@ -3322,15 +3473,16 @@
   }
 
   .admin-table {
-    min-width: 700px;
-    font-size: 12px;
+    min-width: 600px;
   }
 
   .admin-table th,
   .admin-table td {
-    padding: var(--spacing-xs);
+    padding: 8px var(--spacing-xs);
     white-space: nowrap;
     text-align: center;
+    line-height: 1.3;
+    min-width: 140px;
   }
 
   // スマホでも特定の列は改行可能
@@ -3338,13 +3490,51 @@
   .admin-table td:nth-child(5),
   .admin-table td:nth-child(6) {
     white-space: normal;
+    word-break: break-word;
+  }
+  
+  .table-container {
+    margin-left: calc(-1 * var(--spacing-md));
+    margin-right: calc(-1 * var(--spacing-md));
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+  
+  .monthly-limits-table {
+    min-width: 1250px;
+    
+    tbody tr td {
+      &:nth-child(2) {
+        min-width: 160px;
+      }
+      
+      &:nth-child(6) {
+        min-width: 100px;
+      }
+    }
+  }
+  
+  .operation-logs-table {
+    min-width: 900px;
+    
+    tbody tr td {
+      &:nth-child(1) {
+        min-width: 140px;
+      }
+      
+      &:nth-child(6) {
+        min-width: 100px;
+      }
+    }
   }
 
   // 承諾待ち一覧テーブルのレスポンシブ対応
   .acceptances-table {
+    
     thead tr th {
       padding: var(--spacing-sm) var(--spacing-md);
       font-size: 11px;
+      width: 140px;
     }
     
     tbody tr td {
@@ -3369,8 +3559,7 @@
   }
 
   .table-inline-field {
-    flex-direction: column;
-    align-items: stretch;
+    align-items: center;
   }
 
   .table-inline-field input {
