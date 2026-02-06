@@ -77,6 +77,12 @@ php artisan db:seed --class=AdminUserSeeder --force || {
     echo "⚠️  Admin user seeder failed, but continuing..."
 }
 
+# メールテンプレートと通知設定のシーダー実行
+echo "📧 Running email templates seeder..."
+php artisan db:seed --class=EmailTemplatesSeeder --force || {
+    echo "⚠️  Email templates seeder failed, but continuing..."
+}
+
 # 本番環境での最適化
 if [ "$APP_ENV" = "production" ]; then
     echo "⚡ Optimizing for production..."
