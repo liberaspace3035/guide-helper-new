@@ -24,6 +24,28 @@ class EmailTemplateController extends Controller
     }
 
     /**
+     * テンプレート作成
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'template_key' => 'required|string|max:255|unique:email_templates,template_key',
+            'subject' => 'required|string|max:255',
+            'body' => 'required|string',
+            'is_active' => 'boolean',
+        ]);
+
+        $template = EmailTemplate::create([
+            'template_key' => $request->input('template_key'),
+            'subject' => $request->input('subject'),
+            'body' => $request->input('body'),
+            'is_active' => $request->input('is_active', true),
+        ]);
+
+        return response()->json(['message' => 'テンプレートを作成しました', 'template' => $template], 201);
+    }
+
+    /**
      * テンプレート更新
      */
     public function update(Request $request, int $id)
@@ -42,6 +64,17 @@ class EmailTemplateController extends Controller
         ]);
 
         return response()->json(['message' => 'テンプレートを更新しました', 'template' => $template]);
+    }
+
+    /**
+     * テンプレート削除
+     */
+    public function destroy(int $id)
+    {
+        $template = EmailTemplate::findOrFail($id);
+        $template->delete();
+
+        return response()->json(['message' => 'テンプレートを削除しました']);
     }
 
     /**

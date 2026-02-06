@@ -60,7 +60,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/requests', [\App\Http\Controllers\Api\AdminController::class, 'requests']);
         Route::get('/operation-logs', [\App\Http\Controllers\Api\AdminController::class, 'operationLogs']);
         Route::get('/email-templates', [\App\Http\Controllers\Api\EmailTemplateController::class, 'index']);
+        Route::post('/email-templates', [\App\Http\Controllers\Api\EmailTemplateController::class, 'store']);
         Route::put('/email-templates/{id}', [\App\Http\Controllers\Api\EmailTemplateController::class, 'update']);
+        Route::delete('/email-templates/{id}', [\App\Http\Controllers\Api\EmailTemplateController::class, 'destroy']);
         Route::get('/email-settings', [\App\Http\Controllers\Api\EmailTemplateController::class, 'settings']);
         Route::put('/email-settings/{id}', [\App\Http\Controllers\Api\EmailTemplateController::class, 'updateSetting']);
         Route::get('/acceptances', [\App\Http\Controllers\Api\AdminController::class, 'acceptances']);

@@ -3056,9 +3056,11 @@
 .template-actions {
   display: flex;
   justify-content: flex-end;
+  gap: var(--spacing-sm);
   margin-top: var(--spacing-md);
   
-  .btn-primary {
+  .btn-primary,
+  .btn-secondary {
     font-weight: 700; // font-bold
     font-size: 14px; // text-sm
     height: 36px; // 少し大きめ

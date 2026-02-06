@@ -700,7 +700,73 @@
                         </svg>
                         メールテンプレート編集
                     </h2>
+                    <button
+                        class="btn-primary"
+                        @click="showNewTemplateForm = !showNewTemplateForm"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        新規作成
+                    </button>
                 </div>
+                <!-- 新規テンプレート作成フォーム -->
+                <template x-if="showNewTemplateForm">
+                    <div class="email-template-card" style="margin-bottom: var(--spacing-xl); border: 2px dashed var(--border-color);">
+                        <div class="template-card-header">
+                            <div class="template-title-section">
+                                <h3>新規テンプレート作成</h3>
+                            </div>
+                        </div>
+                        <div class="template-form">
+                            <div class="form-group">
+                                <label class="form-label">テンプレートキー <span style="color: var(--error-color);">*</span></label>
+                                <input
+                                    type="text"
+                                    x-model="newTemplate.template_key"
+                                    class="form-control"
+                                    placeholder="例: custom_notification"
+                                />
+                                <small class="form-text">英数字とアンダースコアのみ使用可能です</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">件名 <span style="color: var(--error-color);">*</span></label>
+                                <input
+                                    type="text"
+                                    x-model="newTemplate.subject"
+                                    class="form-control"
+                                    placeholder="件名を入力"
+                                />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">本文 <span style="color: var(--error-color);">*</span></label>
+                                <textarea
+                                    x-model="newTemplate.body"
+                                    class="form-control"
+                                    rows="10"
+                                    placeholder="本文を入力"
+                                ></textarea>
+                                <small class="form-text">本文内で依頼情報やマッチング情報などを挿入する場合は、該当する項目名を波括弧で囲んでください</small>
+                            </div>
+                            <div class="template-actions">
+                                <button
+                                    class="btn-secondary"
+                                    @click="showNewTemplateForm = false; newTemplate = { template_key: '', subject: '', body: '', is_active: true }"
+                                >
+                                    キャンセル
+                                </button>
+                                <button
+                                    class="btn-primary"
+                                    @click="createEmailTemplate()"
+                                    :disabled="!newTemplate.template_key || !newTemplate.subject || !newTemplate.body"
+                                >
+                                    作成
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
                 <template x-if="emailTemplates.length === 0">
                     <p>テンプレートを読み込み中...</p>
                 </template>
@@ -747,6 +813,17 @@
                                         <small class="form-text">本文内で依頼情報やマッチング情報などを挿入する場合は、該当する項目名を波括弧で囲んでください</small>
                                     </div>
                                     <div class="template-actions">
+                                        <button
+                                            class="btn-danger"
+                                            @click="deleteEmailTemplate(template.id)"
+                                            style="margin-right: auto;"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                            削除
+                                        </button>
                                         <button
                                             class="btn-primary"
                                             @click="updateEmailTemplate(template.id, template.editingSubject || template.subject, template.editingBody || template.body, template.is_active)"
@@ -1503,6 +1580,13 @@ function adminDashboard() {
         guideMeta: {},
         userAdminComment: {},
         emailTemplates: [],
+        showNewTemplateForm: false,
+        newTemplate: {
+            template_key: '',
+            subject: '',
+            body: '',
+            is_active: true
+        },
         emailSettings: [],
         operationLogs: [],
         userMonthlyLimits: {},
@@ -2097,6 +2181,59 @@ function adminDashboard() {
             const template = this.emailTemplates.find(t => t.id === templateId);
             if (template) {
                 template.is_active = isActive;
+            }
+        },
+
+        async createEmailTemplate() {
+            if (!this.newTemplate.template_key || !this.newTemplate.subject || !this.newTemplate.body) {
+                alert('すべての必須項目を入力してください');
+                return;
+            }
+
+            // テンプレートキーのバリデーション（英数字とアンダースコアのみ）
+            if (!/^[a-zA-Z0-9_]+$/.test(this.newTemplate.template_key)) {
+                alert('テンプレートキーは英数字とアンダースコアのみ使用可能です');
+                return;
+            }
+
+            try {
+                await this.apiFetch('/api/admin/email-templates', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        template_key: this.newTemplate.template_key,
+                        subject: this.newTemplate.subject,
+                        body: this.newTemplate.body,
+                        is_active: this.newTemplate.is_active
+                    })
+                });
+                alert('テンプレートを作成しました');
+                this.showNewTemplateForm = false;
+                this.newTemplate = { template_key: '', subject: '', body: '', is_active: true };
+                await this.fetchEmailTemplates();
+            } catch (error) {
+                const errorMessage = error.message || 'テンプレートの作成に失敗しました';
+                alert(errorMessage);
+                console.error(error);
+            }
+        },
+
+        async deleteEmailTemplate(templateId) {
+            const template = this.emailTemplates.find(t => t.id === templateId);
+            if (!template) return;
+
+            if (!confirm(`テンプレート「${template.template_key}」を削除しますか？この操作は取り消せません。`)) {
+                return;
+            }
+
+            try {
+                await this.apiFetch(`/api/admin/email-templates/${templateId}`, {
+                    method: 'DELETE'
+                });
+                alert('テンプレートを削除しました');
+                await this.fetchEmailTemplates();
+            } catch (error) {
+                alert('テンプレートの削除に失敗しました');
+                console.error(error);
             }
         },
 
