@@ -71,6 +71,18 @@ class AdminService
         });
         
         return $acceptances->map(function($acceptance) {
+                // user_selectedをboolean型で確実に取得
+                $userSelected = $acceptance->user_selected;
+                if (is_null($userSelected)) {
+                    $userSelected = false;
+                } elseif (is_string($userSelected)) {
+                    // 文字列の場合はbooleanに変換
+                    $userSelected = filter_var($userSelected, FILTER_VALIDATE_BOOLEAN);
+                } elseif (is_int($userSelected)) {
+                    // 整数の場合はbooleanに変換（0=false, 1=true）
+                    $userSelected = (bool) $userSelected;
+                }
+                
                 return [
                     'id' => (int) $acceptance->id,
                     'request_id' => (int) $acceptance->request_id,
@@ -83,7 +95,7 @@ class AdminService
                     'guide_name' => $acceptance->guide->name ?? '',
                     'status' => $acceptance->status,
                     'admin_decision' => $acceptance->admin_decision,
-                    'user_selected' => $acceptance->user_selected ?? false,
+                    'user_selected' => (bool) $userSelected, // boolean型で確実に返す
                     'created_at' => $acceptance->created_at,
                 ];
             })
@@ -212,6 +224,36 @@ class AdminService
         
         $matchingService = app(\App\Services\MatchingService::class);
         return $matchingService->createMatching($requestId, $request->user_id, $guideId);
+    }
+
+    public function batchApproveMatchings(array $matchings): array
+    {
+        $results = [
+            'success' => [],
+            'failed' => [],
+        ];
+
+        foreach ($matchings as $matchingData) {
+            try {
+                $requestId = $matchingData['request_id'];
+                $guideId = $matchingData['guide_id'];
+                
+                $matching = $this->approveMatching($requestId, $guideId);
+                $results['success'][] = [
+                    'request_id' => $requestId,
+                    'guide_id' => $guideId,
+                    'matching_id' => $matching->id,
+                ];
+            } catch (\Exception $e) {
+                $results['failed'][] = [
+                    'request_id' => $matchingData['request_id'] ?? null,
+                    'guide_id' => $matchingData['guide_id'] ?? null,
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return $results;
     }
 
     public function rejectMatching(int $requestId, int $guideId): void

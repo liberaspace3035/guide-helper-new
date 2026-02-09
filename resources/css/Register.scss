@@ -328,6 +328,18 @@ small {
   line-height: 1.5;
 }
 
+.error-message-field {
+  display: block;
+  color: var(--error-color);
+  font-size: 12px;
+  margin-top: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: #fce8e6;
+  border-left: 3px solid var(--error-color);
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+
 .login-link {
   text-align: center;
   margin-top: var(--spacing-md);

@@ -69,6 +69,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports', [\App\Http\Controllers\Api\AdminController::class, 'reports']);
         Route::get('/reports/user-approved', [\App\Http\Controllers\Api\AdminController::class, 'userApprovedReports']);
         Route::post('/reports/{id}/approve', [\App\Http\Controllers\Api\AdminController::class, 'approveReport']);
+        Route::post('/reports/batch-approve', [\App\Http\Controllers\Api\AdminController::class, 'batchApproveReports']);
+        Route::post('/reports/batch-return', [\App\Http\Controllers\Api\AdminController::class, 'batchReturnReports']);
         Route::get('/reports/csv', [\App\Http\Controllers\Api\AdminController::class, 'reportsCsv']);
         Route::get('/reports/{id}/csv', [\App\Http\Controllers\Api\AdminController::class, 'reportCsv']);
         Route::get('/usage/csv', [\App\Http\Controllers\Api\AdminController::class, 'usageCsv']);
@@ -76,6 +78,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/settings/auto-matching', [\App\Http\Controllers\Api\AdminController::class, 'getAutoMatching']);
         Route::put('/settings/auto-matching', [\App\Http\Controllers\Api\AdminController::class, 'updateAutoMatching']);
         Route::post('/matchings/approve', [\App\Http\Controllers\Api\AdminController::class, 'approveMatching']);
+        Route::post('/matchings/batch-approve', [\App\Http\Controllers\Api\AdminController::class, 'batchApproveMatchings']);
         Route::post('/matchings/reject', [\App\Http\Controllers\Api\AdminController::class, 'rejectMatching']);
         Route::get('/users', [\App\Http\Controllers\Api\AdminController::class, 'users']);
         Route::get('/guides', [\App\Http\Controllers\Api\AdminController::class, 'guides']);

@@ -83,10 +83,7 @@
                 <template x-for="announcement in announcements" :key="announcement.id">
                     <tr>
                         <td class="title-cell">
-                            <div class="title-content">
-                                <strong class="announcement-title-bold" x-text="announcement.title"></strong>
-                                <span class="content-preview" x-text="announcement.content.substring(0, 50) + '...'"></span>
-                            </div>
+                            <strong class="announcement-title-bold" x-text="announcement.title"></strong>
                         </td>
                         <td>
                             <span class="target-badge" :class="announcement.target_audience" x-text="getTargetLabel(announcement.target_audience)"></span>
@@ -160,3 +157,4 @@ document.addEventListener('alpine:init', () => {
 });
 </script>
 @endpush
+

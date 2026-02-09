@@ -97,6 +97,75 @@ class AdminController extends Controller
         }
     }
 
+    public function batchApproveReports(Request $request)
+    {
+        try {
+            $admin = Auth::user();
+            if (!$admin || !$admin->isAdmin()) {
+                return response()->json(['error' => '管理者権限が必要です'], 403);
+            }
+
+            $request->validate([
+                'report_ids' => 'required|array',
+                'report_ids.*' => 'required|integer|exists:reports,id',
+            ]);
+
+            $reportService = app(\App\Services\ReportService::class);
+            $results = $reportService->batchAdminApproveReports($request->input('report_ids'), $admin->id);
+
+            foreach ($request->input('report_ids') as $reportId) {
+                $this->logService->logReportApproval($admin->id, $reportId, $request);
+            }
+
+            return response()->json([
+                'message' => '一括承認処理が完了しました',
+                'successful_count' => $results['successful_count'],
+                'failed_count' => $results['failed_count'],
+                'failed_items' => $results['failed_items'],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdminController::batchApproveReports error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function batchReturnReports(Request $request)
+    {
+        try {
+            $admin = Auth::user();
+            if (!$admin || !$admin->isAdmin()) {
+                return response()->json(['error' => '管理者権限が必要です'], 403);
+            }
+
+            $request->validate([
+                'report_ids' => 'required|array',
+                'report_ids.*' => 'required|integer|exists:reports,id',
+                'revision_notes' => 'required|string|max:1000',
+            ]);
+
+            $reportService = app(\App\Services\ReportService::class);
+            $results = $reportService->batchAdminRequestRevision($request->input('report_ids'), $admin->id, $request->input('revision_notes'));
+
+            foreach ($request->input('report_ids') as $reportId) {
+                $this->logService->logReportRevisionRequest($admin->id, $reportId, $request->input('revision_notes'), $request);
+            }
+
+            return response()->json([
+                'message' => '一括差し戻し処理が完了しました',
+                'successful_count' => $results['successful_count'],
+                'failed_count' => $results['failed_count'],
+                'failed_items' => $results['failed_items'],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdminController::batchReturnReports error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
     public function stats()
     {
         try {
@@ -208,6 +277,45 @@ class AdminController extends Controller
             }
 
             return response()->json(['message' => 'マッチングが却下されました']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function batchApproveMatchings(Request $request)
+    {
+        $request->validate([
+            'matchings' => 'required|array|min:1',
+            'matchings.*.request_id' => 'required|integer|exists:requests,id',
+            'matchings.*.guide_id' => 'required|integer|exists:users,id',
+        ]);
+
+        try {
+            $results = $this->adminService->batchApproveMatchings($request->input('matchings'));
+
+            // ログ記録
+            $admin = Auth::user();
+            if ($admin && $admin->isAdmin()) {
+                foreach ($results['success'] as $success) {
+                    $this->logService->logMatchingApproval(
+                        $admin->id,
+                        $success['request_id'],
+                        $success['guide_id'],
+                        $request
+                    );
+                }
+            }
+
+            $message = sprintf(
+                '%d件のマッチングを承認しました。%s',
+                count($results['success']),
+                count($results['failed']) > 0 ? sprintf('%d件の承認に失敗しました。', count($results['failed'])) : ''
+            );
+
+            return response()->json([
+                'message' => $message,
+                'results' => $results,
+            ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -325,8 +433,10 @@ class AdminController extends Controller
     public function updateUserProfileExtra(Request $request, int $id)
     {
         $request->validate([
-            'recipient_number' => 'nullable|string',
+            'recipient_number' => 'nullable|string|regex:/^\d{10}$/',
             'admin_comment' => 'nullable|string',
+        ], [
+            'recipient_number.regex' => '受給者証番号は半角数字10桁で入力してください。',
         ]);
 
         $this->adminService->updateUserProfileExtra(
@@ -347,8 +457,10 @@ class AdminController extends Controller
             'contact_method' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
             'introduction' => 'nullable|string',
-            'recipient_number' => 'nullable|string',
+            'recipient_number' => 'nullable|string|regex:/^\d{10}$/',
             'admin_comment' => 'nullable|string',
+        ], [
+            'recipient_number.regex' => '受給者証番号は半角数字10桁で入力してください。',
         ]);
 
         try {
@@ -378,7 +490,9 @@ class AdminController extends Controller
     public function updateGuideProfileExtra(Request $request, int $id)
     {
         $request->validate([
-            'employee_number' => 'nullable|string',
+            'employee_number' => 'nullable|string|regex:/^\d{3}-\d{3}$/',
+        ], [
+            'employee_number.regex' => '従業員番号は000-000形式（半角数字6桁をハイフンで区切る）で入力してください。',
         ]);
 
         $this->adminService->updateGuideProfileExtra(
@@ -399,8 +513,10 @@ class AdminController extends Controller
             'available_areas' => 'nullable|array',
             'available_days' => 'nullable|array',
             'available_times' => 'nullable|array',
-            'employee_number' => 'nullable|string',
+            'employee_number' => 'nullable|string|regex:/^\d{3}-\d{3}$/',
             'admin_comment' => 'nullable|string',
+        ], [
+            'employee_number.regex' => '従業員番号は000-000形式（半角数字6桁をハイフンで区切る）で入力してください。',
         ]);
 
         try {

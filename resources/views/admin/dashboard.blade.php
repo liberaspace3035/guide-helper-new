@@ -127,21 +127,68 @@
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
                             承諾待ち一覧
+                            <span class="section-title-hint" title="ユーザーが選択したガイドのみ承認できます">ⓘ</span>
                         </h2>
-                        <template x-if="acceptances.length > 0">
-                            <span class="pending-count" x-text="acceptances.length + '件'"></span>
+                        <template x-if="getFilteredAcceptances().length > 0">
+                            <span class="pending-count" x-text="getFilteredAcceptances().length + '件'"></span>
                         </template>
                     </div>
-                    <template x-if="acceptances.length === 0">
+                    <div class="filter-controls">
+                        <label class="filter-toggle">
+                            <input
+                                type="checkbox"
+                                x-model="hideOldAcceptances"
+                                @change="saveAcceptanceFilterSetting()"
+                            />
+                            <span>長期間未承認を非表示</span>
+                        </label>
+                        <template x-if="hideOldAcceptances">
+                            <select
+                                x-model="hideOldAcceptancesDays"
+                                @change="saveAcceptanceFilterSetting()"
+                                class="filter-days-select"
+                            >
+                                <option value="30">30日以上</option>
+                                <option value="60">60日以上</option>
+                                <option value="90">90日以上</option>
+                                <option value="180">180日以上</option>
+                            </select>
+                        </template>
+                    </div>
+                    <div class="section-actions">
+                        <button
+                            x-show="selectedAcceptances.length > 0"
+                            @click="batchApproveMatchings()"
+                            class="btn-primary"
+                            :disabled="selectedAcceptances.length === 0"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            選択した<span x-text="selectedAcceptances.length"></span>件を一括承認
+                        </button>
+                    </div>
+                    <template x-if="getFilteredAcceptances().length === 0">
                         <div class="empty-state-small">
                             <p>承諾待ちの依頼はありません</p>
                         </div>
                     </template>
-                    <template x-if="acceptances.length > 0">
+                    <template x-if="getFilteredAcceptances().length > 0">
                         <div class="table-container acceptances-table-container">
-                            <table class="admin-table acceptances-table">
-                                <thead>
+                        <table class="admin-table acceptances-table">
+                            <thead>
                                     <tr>
+                                        <th class="checkbox-cell">
+                                            <input
+                                                type="checkbox"
+                                                class="acceptance-checkbox acceptance-checkbox-select-all"
+                                                @change="toggleSelectAllAcceptances($event.target.checked)"
+                                                :checked="getSelectableAcceptancesCount() > 0 && selectedAcceptances.length === getSelectableAcceptancesCount()"
+                                                x-ref="selectAllCheckbox"
+                                                x-effect="if ($refs.selectAllCheckbox) { $refs.selectAllCheckbox.indeterminate = selectedAcceptances.length > 0 && selectedAcceptances.length < getSelectableAcceptancesCount(); }"
+                                                aria-label="すべて選択"
+                                            />
+                                        </th>
                                         <th>依頼ID</th>
                                         <th>ユーザー</th>
                                         <th>ガイド</th>
@@ -150,8 +197,20 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <template x-for="acc in acceptances" :key="acc.id">
+                                    <template x-for="acc in getFilteredAcceptances()" :key="acc.id">
                                         <tr>
+                                            <td class="checkbox-cell">
+                                                <input
+                                                    type="checkbox"
+                                                    class="acceptance-checkbox"
+                                                    :value="JSON.stringify({request_id: acc.request_id, guide_id: acc.guide_id, user_selected: acc.user_selected})"
+                                                    @change="toggleAcceptanceSelection(acc.request_id, acc.guide_id, $event.target.checked)"
+                                                    :checked="isAcceptanceSelected(acc.request_id, acc.guide_id)"
+                                                    :disabled="!acc.user_selected"
+                                                    :aria-label="acc.user_selected ? `依頼ID ${acc.request_id}番を選択` : `依頼ID ${acc.request_id}番（ユーザーがまだガイドを選択していないため選択できません）`"
+                                                    :title="acc.user_selected ? '' : 'ユーザーがまだガイドを選択していないため、承認できません'"
+                                                />
+                                            </td>
                                             <td>
                                                 <span class="request-id" x-text="acc.request_id"></span>
                                             </td>
@@ -206,6 +265,21 @@
                         </h2>
                     </div>
                     <div class="section-actions">
+                        <div class="month-filter-controls">
+                            <label class="month-filter-label">
+                                <span>表示月:</span>
+                                <select
+                                    x-model="selectedReportMonth"
+                                    @change="filterReportsByMonth()"
+                                    class="month-filter-select"
+                                >
+                                    <option value="">すべての月</option>
+                                    <template x-for="monthKey in getAvailableMonths()" :key="monthKey">
+                                        <option :value="monthKey" x-text="monthKey"></option>
+                                    </template>
+                                </select>
+                            </label>
+                        </div>
                         <button
                             @click="exportCSV('reports')"
                             class="btn-secondary"
@@ -223,70 +297,80 @@
                         <p>報告書はありません</p>
                     </template>
                     <template x-if="reports.length > 0">
-                        <div class="table-container acceptances-table-container">
-                            <table class="admin-table acceptances-table">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>ユーザー</th>
-                                        <th>ガイド</th>
-                                        <th>実施日</th>
-                                        <th>ステータス</th>
-                                        <th>個別報告書ダウンロード</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <template x-for="report in reports" :key="report.id">
-                                        <tr>
-                                            <td>
-                                                <span class="request-id" x-text="report.id"></span>
-                                            </td>
-                                            <td>
-                                                <span class="user-name" x-text="report.user?.name || '—'"></span>
-                                            </td>
-                                            <td>
-                                                <span class="user-name" x-text="report.guide?.name || '—'"></span>
-                                            </td>
-                                            <td>
-                                                <div class="datetime-cell-vertical">
-                                                    <span class="datetime-date" x-text="formatReportDate(report.actual_date) || '-'"></span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="status-badge" :class="{
-                                                    'status-approved': report.status === 'approved' || report.status === 'admin_approved',
-                                                    'status-pending': report.status === 'submitted' || report.status === 'user_approved',
-                                                    'status-draft': report.status === 'draft'
-                                                }" x-text="
-                                                    report.status === 'admin_approved'
-                                                        ? '管理者承認済み'
-                                                        : report.status === 'user_approved'
-                                                            ? 'ユーザー承認済み／管理者承認待ち'
-                                                            : report.status === 'approved'
-                                                                ? '承認済み'
-                                                                : report.status === 'submitted'
-                                                                    ? '承認待ち'
-                                                                    : '下書き'
-                                                "></span>
-                                            </td>
-                                            <td>
-                                                <button
-                                                    @click="exportReportCSV(report.id)"
-                                                    class="download-link"
-                                                    :aria-label="'報告書ID ' + report.id + ' をCSV出力'"
-                                                >
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                                        <polyline points="7 10 12 15 17 10"></polyline>
-                                                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                                                    </svg>
-                                                    <span>CSV</span>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
+                        <div class="reports-by-month">
+                            <template x-for="(monthReports, monthKey) in getFilteredReportsByMonth()" :key="monthKey">
+                                <div class="month-section">
+                                    <div class="month-header">
+                                        <h3 class="month-title" x-text="monthKey"></h3>
+                                        <span class="month-count" x-text="monthReports.length + '件'"></span>
+                                    </div>
+                                    <div class="table-container acceptances-table-container">
+                                        <table class="admin-table acceptances-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>ユーザー</th>
+                                                    <th>ガイド</th>
+                                                    <th>実施日</th>
+                                                    <th>ステータス</th>
+                                                    <th>個別報告書ダウンロード</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template x-for="report in monthReports" :key="report.id">
+                                                    <tr>
+                                                        <td>
+                                                            <span class="request-id" x-text="report.id"></span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="user-name" x-text="report.user?.name || '—'"></span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="user-name" x-text="report.guide?.name || '—'"></span>
+                                                        </td>
+                                                        <td>
+                                                            <div class="datetime-cell-vertical">
+                                                                <span class="datetime-date" x-text="formatReportDate(report.actual_date) || '-'"></span>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span class="status-badge" :class="{
+                                                                'status-approved': report.status === 'approved' || report.status === 'admin_approved',
+                                                                'status-pending': report.status === 'submitted' || report.status === 'user_approved',
+                                                                'status-draft': report.status === 'draft'
+                                                            }" x-text="
+                                                                report.status === 'admin_approved'
+                                                                    ? '管理者承認済み'
+                                                                    : report.status === 'user_approved'
+                                                                        ? 'ユーザー承認済み／管理者承認待ち'
+                                                                        : report.status === 'approved'
+                                                                            ? '承認済み'
+                                                                            : report.status === 'submitted'
+                                                                                ? '承認待ち'
+                                                                                : '下書き'
+                                                            "></span>
+                                                        </td>
+                                                        <td>
+                                                            <button
+                                                                @click="exportReportCSV(report.id)"
+                                                                class="download-link"
+                                                                :aria-label="'報告書ID ' + report.id + ' をCSV出力'"
+                                                            >
+                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                                                </svg>
+                                                                <span>CSV</span>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </template>
                 </section>
@@ -306,6 +390,40 @@
                             <span class="pending-count" x-text="userApprovedReports.length + '件'"></span>
                         </template>
                     </div>
+                    <div class="section-actions">
+                        <button
+                            x-show="userApprovedReports.length > 0"
+                            @click="approveAllReports()"
+                            class="btn-primary"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            全件承諾
+                        </button>
+                        <button
+                            x-show="selectedReports.length > 0"
+                            @click="batchApproveReports()"
+                            class="btn-primary"
+                            :disabled="selectedReports.length === 0"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            選択した<span x-text="selectedReports.length"></span>件を承諾
+                        </button>
+                        <button
+                            x-show="selectedReports.length > 0"
+                            @click="batchReturnReports()"
+                            class="btn-reject"
+                            :disabled="selectedReports.length === 0"
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                <path d="M3 12l6-6m-6 6l6 6m-6-6h18"></path>
+                            </svg>
+                            選択した<span x-text="selectedReports.length"></span>件を差し戻し
+                        </button>
+                    </div>
                     <p class="section-description">
                         ユーザーが承認済みの報告書が表示されます。内容を確認し、問題なければ管理者承認してください。
                     </p>
@@ -319,6 +437,17 @@
                             <table class="admin-table acceptances-table">
                                 <thead>
                                     <tr>
+                                        <th class="checkbox-cell">
+                                            <input
+                                                type="checkbox"
+                                                class="acceptance-checkbox acceptance-checkbox-select-all"
+                                                @change="toggleSelectAllReports($event.target.checked)"
+                                                :checked="userApprovedReports.length > 0 && selectedReports.length === userApprovedReports.length"
+                                                x-ref="selectAllReportsCheckbox"
+                                                x-effect="if ($refs.selectAllReportsCheckbox) { $refs.selectAllReportsCheckbox.indeterminate = selectedReports.length > 0 && selectedReports.length < userApprovedReports.length; }"
+                                                aria-label="すべて選択"
+                                            />
+                                        </th>
                                         <th>ID</th>
                                         <th>ユーザー</th>
                                         <th>ガイド</th>
@@ -330,6 +459,16 @@
                                 <tbody>
                                     <template x-for="report in userApprovedReports" :key="report.id">
                                         <tr>
+                                            <td class="checkbox-cell">
+                                                <input
+                                                    type="checkbox"
+                                                    class="acceptance-checkbox"
+                                                    :value="report.id"
+                                                    @change="toggleReportSelection(report.id, $event.target.checked)"
+                                                    :checked="isReportSelected(report.id)"
+                                                    :aria-label="`報告書ID ${report.id}番を選択`"
+                                                />
+                                            </td>
                                             <td>
                                                 <span class="request-id" x-text="report.id"></span>
                                             </td>
@@ -426,8 +565,11 @@
                                                     type="text"
                                                     class="recipient-number-input"
                                                     :value="userMeta[user.id] || ''"
-                                                    @input="userMeta[user.id] = $event.target.value"
-                                                    placeholder="受給者証番号"
+                                                    @input="userMeta[user.id] = $event.target.value.replace(/\D/g, '').slice(0, 10)"
+                                                    maxlength="10"
+                                                    pattern="\d{10}"
+                                                    placeholder="受給者証番号（10桁）"
+                                                    aria-label="受給者証番号（半角数字10桁）"
                                                 />
                                                 <button
                                                     class="btn-save-meta"
@@ -532,8 +674,11 @@
                                                     type="text"
                                                     class="recipient-number-input"
                                                     :value="guideMeta[guide.id] || ''"
-                                                    @input="guideMeta[guide.id] = $event.target.value"
-                                                    placeholder="従業員番号"
+                                                    @input="formatEmployeeNumber(guide.id, $event.target.value)"
+                                                    maxlength="7"
+                                                    pattern="\d{3}-\d{3}"
+                                                    placeholder="000-000"
+                                                    aria-label="従業員番号（000-000形式）"
                                                 />
                                                 <button
                                                     class="btn-save-meta"
@@ -717,6 +862,18 @@
                         <div class="template-card-header">
                             <div class="template-title-section">
                                 <h3>新規テンプレート作成</h3>
+                                <template x-if="newTemplate.template_key">
+                                    <div class="template-meta-info">
+                                        <span class="template-recipient-badge" :class="getRecipientClassForNew(newTemplate)">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                                <polyline points="22,6 12,13 2,6"></polyline>
+                                            </svg>
+                                            <span x-text="getRecipientLabelForNew(newTemplate)"></span>
+                                        </span>
+                                        <span class="template-trigger-info" x-text="getTriggerDescription(newTemplate.template_key) || '送信タイミングを説明文に記載してください'"></span>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                         <div class="template-form">
@@ -726,9 +883,23 @@
                                     type="text"
                                     x-model="newTemplate.template_key"
                                     class="form-control"
-                                    placeholder="例: custom_notification"
+                                    placeholder="例: request_notification, matching_notification"
+                                    @input="updateRecipientFromKey()"
                                 />
-                                <small class="form-text">英数字とアンダースコアのみ使用可能です</small>
+                                <small class="form-text">英数字とアンダースコアのみ使用可能です。既存のテンプレートキーを入力すると送信先が自動設定されます。</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">送信先 <span style="color: var(--error-color);">*</span></label>
+                                <select
+                                    x-model="newTemplate.recipient"
+                                    class="form-control"
+                                >
+                                    <option value="">選択してください</option>
+                                    <option value="user">ユーザー</option>
+                                    <option value="guide">ガイド</option>
+                                    <option value="both">ユーザー・ガイド</option>
+                                </select>
+                                <small class="form-text">このメールテンプレートの送信先を選択してください。既存のテンプレートキーを入力すると自動設定されます。</small>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">件名 <span style="color: var(--error-color);">*</span></label>
@@ -752,7 +923,7 @@
                             <div class="template-actions">
                                 <button
                                     class="btn-secondary"
-                                    @click="showNewTemplateForm = false; newTemplate = { template_key: '', subject: '', body: '', is_active: true }"
+                                    @click="showNewTemplateForm = false; newTemplate = { template_key: '', subject: '', body: '', is_active: true, recipient: '' }"
                                 >
                                     キャンセル
                                 </button>
@@ -777,6 +948,16 @@
                                 <div class="template-card-header">
                                     <div class="template-title-section">
                                         <h3 x-text="getTemplateKeyLabel(template.template_key) || template.template_key"></h3>
+                                        <div class="template-meta-info">
+                                            <span class="template-recipient-badge" :class="getRecipientClass(template.template_key)">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                                </svg>
+                                                <span x-text="getRecipientLabel(template.template_key)"></span>
+                                            </span>
+                                            <span class="template-trigger-info" x-text="getTriggerDescription(template.template_key)"></span>
+                                        </div>
                                     </div>
                                     <div class="template-toggle-section">
                                         <label class="toggle-switch">
@@ -1181,7 +1362,11 @@
                                             type="text"
                                             class="modal-input"
                                             x-model="editingUserProfileData.recipient_number"
-                                            aria-label="受給者証番号"
+                                            @input="editingUserProfileData.recipient_number = $event.target.value.replace(/\D/g, '').slice(0, 10)"
+                                            maxlength="10"
+                                            pattern="\d{10}"
+                                            placeholder="半角数字10桁"
+                                            aria-label="受給者証番号（半角数字10桁）"
                                         />
                                     </template>
                                 </div>
@@ -1365,8 +1550,11 @@
                                             type="text"
                                             class="modal-input"
                                             x-model="editingGuideProfileData.employee_number"
-                                            placeholder="従業員番号を入力してください（任意）"
-                                            aria-label="従業員番号（任意）"
+                                            @input="formatEmployeeNumberInModal($event.target.value)"
+                                            maxlength="7"
+                                            pattern="\d{3}-\d{3}"
+                                            placeholder="000-000"
+                                            aria-label="従業員番号（000-000形式、任意）"
                                         />
                                     </template>
                                 </div>
@@ -1555,8 +1743,13 @@ function adminDashboard() {
         activeTab: 'dashboard',
         requests: [],
         acceptances: [],
+        selectedAcceptances: [], // 一括承認用の選択された承諾リスト
+        hideOldAcceptances: false, // 長期間未承認を非表示にする設定
+        hideOldAcceptancesDays: 30, // 非表示にする日数（デフォルト30日）
         reports: [],
         userApprovedReports: [], // ユーザー承認済み（管理者承認待ち）報告書
+        selectedReportMonth: '', // 選択された月（フィルタリング用）
+        selectedReports: [], // 一括操作用の選択された報告書IDリスト
         selectedReport: null,    // 詳細表示用
         showReportModal: false,
         selectedUserProfile: null,    // ユーザープロフィール詳細表示用
@@ -1585,7 +1778,8 @@ function adminDashboard() {
             template_key: '',
             subject: '',
             body: '',
-            is_active: true
+            is_active: true,
+            recipient: '' // 'user', 'guide', 'both'
         },
         emailSettings: [],
         operationLogs: [],
@@ -1626,13 +1820,17 @@ function adminDashboard() {
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: 'エラーが発生しました' }));
                 console.error('APIエラー:', url, errorData);
-                throw new Error(errorData.error || 'エラーが発生しました');
+                // バリデーションエラーの場合、エラーオブジェクトにresponseを含める
+                const error = new Error(errorData.message || errorData.error || 'エラーが発生しました');
+                error.response = { data: errorData };
+                throw error;
             }
             
             return response.json();
         },
 
         async init() {
+            this.loadAcceptanceFilterSetting();
             await this.fetchDashboardData();
         },
 
@@ -1696,6 +1894,16 @@ function adminDashboard() {
                 this.requests = requestsRes.requests || [];
                 this.acceptances = acceptancesRes.acceptances || [];
                 console.log("acceptancesRes", this.acceptances);
+                console.log("承諾待ちデータ:", this.acceptances);
+                console.log("acceptances.length:", this.acceptances.length);
+                console.log("user_selectedの値:", this.acceptances.map(acc => ({ 
+                    id: acc.id, 
+                    request_id: acc.request_id, 
+                    guide_id: acc.guide_id, 
+                    user_selected: acc.user_selected,
+                    user_selected_type: typeof acc.user_selected,
+                    user_selected_value: acc.user_selected
+                })));
                 this.reports = reportsRes.reports || [];
                 this.userApprovedReports = userApprovedReportsRes.reports || [];
                 this.autoMatching = settingsRes.auto_matching || false;
@@ -1777,6 +1985,163 @@ function adminDashboard() {
             }
         },
 
+        toggleAcceptanceSelection(requestId, guideId, checked) {
+            console.log('toggleAcceptanceSelection:', { requestId, guideId, checked });
+            if (checked) {
+                // 既に選択されていない場合のみ追加
+                if (!this.selectedAcceptances.find(acc => acc.request_id === requestId && acc.guide_id === guideId)) {
+                    this.selectedAcceptances.push({ request_id: requestId, guide_id: guideId });
+                    console.log('選択追加:', this.selectedAcceptances);
+                }
+            } else {
+                // 選択を解除
+                this.selectedAcceptances = this.selectedAcceptances.filter(
+                    acc => !(acc.request_id === requestId && acc.guide_id === guideId)
+                );
+                console.log('選択解除:', this.selectedAcceptances);
+            }
+        },
+
+        isAcceptanceSelected(requestId, guideId) {
+            return this.selectedAcceptances.some(
+                acc => acc.request_id === requestId && acc.guide_id === guideId
+            );
+        },
+
+        getSelectableAcceptancesCount() {
+            // ユーザーが選択されている承諾（選択可能な承諾）の数を返す（フィルタリング後）
+            return this.getFilteredAcceptances().filter(acc => acc.user_selected === true).length;
+        },
+
+        getFilteredAcceptances() {
+            if (!this.acceptances || this.acceptances.length === 0) {
+                return [];
+            }
+
+            if (!this.hideOldAcceptances) {
+                return this.acceptances;
+            }
+
+            const now = new Date();
+            const daysAgo = new Date(now);
+            daysAgo.setDate(now.getDate() - this.hideOldAcceptancesDays);
+
+            return this.acceptances.filter(acc => {
+                if (!acc.created_at) {
+                    return true; // created_atがない場合は表示
+                }
+
+                const createdDate = new Date(acc.created_at);
+                // 指定日数より新しい（最近の）データのみ表示
+                return createdDate >= daysAgo;
+            });
+        },
+
+        loadAcceptanceFilterSetting() {
+            // ローカルストレージから設定を読み込む
+            try {
+                const saved = localStorage.getItem('hideOldAcceptances');
+                if (saved !== null) {
+                    this.hideOldAcceptances = saved === 'true';
+                }
+                const savedDays = localStorage.getItem('hideOldAcceptancesDays');
+                if (savedDays !== null) {
+                    this.hideOldAcceptancesDays = parseInt(savedDays, 10) || 30;
+                }
+            } catch (e) {
+                console.error('設定の読み込みに失敗しました:', e);
+            }
+        },
+
+        saveAcceptanceFilterSetting() {
+            // ローカルストレージに設定を保存
+            try {
+                localStorage.setItem('hideOldAcceptances', this.hideOldAcceptances.toString());
+                localStorage.setItem('hideOldAcceptancesDays', this.hideOldAcceptancesDays.toString());
+            } catch (e) {
+                console.error('設定の保存に失敗しました:', e);
+            }
+        },
+
+        toggleSelectAllAcceptances(checked) {
+            console.log('toggleSelectAllAcceptances:', checked);
+            // ユーザーが選択されている承諾のみを対象とする（フィルタリング後）
+            const selectableAcceptances = this.getFilteredAcceptances().filter(acc => acc.user_selected === true);
+            
+            if (checked) {
+                // 一括選択: 選択可能なすべての承諾を選択
+                this.selectedAcceptances = selectableAcceptances.map(acc => ({ 
+                    request_id: acc.request_id, 
+                    guide_id: acc.guide_id 
+                }));
+                console.log('全選択後のselectedAcceptances:', this.selectedAcceptances);
+            } else {
+                // 一括解除: すべての選択を解除
+                this.selectedAcceptances = [];
+                console.log('全選択解除');
+            }
+        },
+
+        async batchApproveMatchings() {
+            if (this.selectedAcceptances.length === 0) {
+                alert('承認する項目を選択してください');
+                return;
+            }
+
+            // ユーザーが選択されている承諾のみを承認
+            const validAcceptances = this.selectedAcceptances.filter(acc => {
+                const acceptance = this.acceptances.find(
+                    a => a.request_id === acc.request_id && a.guide_id === acc.guide_id
+                );
+                return acceptance && acceptance.user_selected === true;
+            });
+
+            if (validAcceptances.length === 0) {
+                alert('ユーザーが選択されている承諾のみ承認できます');
+                return;
+            }
+
+            if (!confirm(`選択した${validAcceptances.length}件のマッチングを承認しますか？`)) {
+                return;
+            }
+
+            try {
+                const response = await this.apiFetch('/api/admin/matchings/batch-approve', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        matchings: validAcceptances
+                    })
+                });
+
+                const successCount = response.results?.success?.length || 0;
+                const failedCount = response.results?.failed?.length || 0;
+
+                let message = `${successCount}件のマッチングを承認しました`;
+                if (failedCount > 0) {
+                    message += `\n${failedCount}件の承認に失敗しました`;
+                    if (response.results?.failed) {
+                        const errors = response.results.failed.map(f => 
+                            `依頼ID ${f.request_id}: ${f.error}`
+                        ).join('\n');
+                        message += '\n\n失敗した項目:\n' + errors;
+                    }
+                }
+
+                alert(message);
+                this.selectedAcceptances = [];
+                await this.fetchDashboardData();
+            } catch (error) {
+                let errorMessage = '一括承認に失敗しました';
+                if (error.response && error.response.data && error.response.data.error) {
+                    errorMessage = error.response.data.error;
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                alert(errorMessage);
+                console.error(error);
+            }
+        },
+
         async approveMatching(requestId, guideId, userSelected) {
             if (userSelected === false || userSelected === "false") {
                 alert('ユーザーが選択されていません');
@@ -1835,6 +2200,99 @@ function adminDashboard() {
             window.open(url, '_blank');
         },
 
+        toggleReportSelection(reportId, checked) {
+            if (checked) {
+                if (!this.selectedReports.includes(reportId)) {
+                    this.selectedReports.push(reportId);
+                }
+            } else {
+                this.selectedReports = this.selectedReports.filter(id => id !== reportId);
+            }
+        },
+
+        isReportSelected(reportId) {
+            return this.selectedReports.includes(reportId);
+        },
+
+        toggleSelectAllReports(checked) {
+            if (checked) {
+                this.selectedReports = this.userApprovedReports.map(report => report.id);
+            } else {
+                this.selectedReports = [];
+            }
+        },
+
+        async approveAllReports() {
+            if (!confirm(`すべての報告書（${this.userApprovedReports.length}件）を管理者承認しますか？`)) return;
+            
+            const reportIds = this.userApprovedReports.map(report => report.id);
+            await this.batchApproveReports(reportIds);
+        },
+
+        async batchApproveReports(reportIds = null) {
+            const ids = reportIds || this.selectedReports;
+            if (!ids || ids.length === 0) {
+                alert('承認する報告書を選択してください');
+                return;
+            }
+            
+            if (!confirm(`選択した${ids.length}件の報告書を管理者承認しますか？`)) return;
+            
+            try {
+                const data = await this.apiFetch('/api/admin/reports/batch-approve', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        report_ids: ids
+                    })
+                });
+                
+                alert(data.message || `${data.successful_count || ids.length}件の報告書を管理者承認しました`);
+                this.selectedReports = [];
+                await this.fetchDashboardData();
+            } catch (error) {
+                console.error('一括承認エラー:', error);
+                alert('報告書の一括承認に失敗しました: ' + error.message);
+            }
+        },
+
+        async batchReturnReports() {
+            if (this.selectedReports.length === 0) {
+                alert('差し戻しする報告書を選択してください');
+                return;
+            }
+            
+            const revisionNotes = prompt(`選択した${this.selectedReports.length}件の報告書の差し戻し理由を入力してください（ガイドに通知されます）:`);
+            if (!revisionNotes || !revisionNotes.trim()) {
+                alert('差し戻し理由を入力してください');
+                return;
+            }
+            
+            if (!confirm(`選択した${this.selectedReports.length}件の報告書をガイドに差し戻しますか？`)) return;
+            
+            try {
+                const data = await this.apiFetch('/api/admin/reports/batch-return', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        report_ids: this.selectedReports,
+                        revision_notes: revisionNotes.trim()
+                    })
+                });
+                
+                alert(data.message || `${data.successful_count || this.selectedReports.length}件の報告書を差し戻しました`);
+                this.selectedReports = [];
+                await this.fetchDashboardData();
+            } catch (error) {
+                console.error('一括差し戻しエラー:', error);
+                alert('報告書の一括差し戻しに失敗しました: ' + error.message);
+            }
+        },
+
         async approveReport(reportId) {
             if (!confirm('この報告書を管理者承認しますか？')) return;
             
@@ -1850,6 +2308,7 @@ function adminDashboard() {
                 alert('報告書の管理者承認に失敗しました: ' + error.message);
             }
         },
+
 
         openReportModal(report) {
             this.selectedReport = report;
@@ -1929,8 +2388,46 @@ function adminDashboard() {
                 alert('受給者証番号を更新しました');
                 await this.fetchUsers();
             } catch (error) {
-                alert('受給者証番号の更新に失敗しました');
+                let errorMessage = '受給者証番号の更新に失敗しました';
+                if (error.response && error.response.data) {
+                    if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    } else if (error.response.data.errors) {
+                        const errors = error.response.data.errors;
+                        const errorMessages = Object.values(errors).flat();
+                        errorMessage = errorMessages.join('\n');
+                    }
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                alert(errorMessage);
                 console.error(error);
+            }
+        },
+
+        formatEmployeeNumber(guideId, value) {
+            // 数字以外を削除
+            let digits = value.replace(/\D/g, '');
+            // 6桁まで制限
+            digits = digits.slice(0, 6);
+            // 3桁-3桁の形式にフォーマット
+            if (digits.length <= 3) {
+                this.guideMeta[guideId] = digits;
+            } else {
+                this.guideMeta[guideId] = digits.slice(0, 3) + '-' + digits.slice(3, 6);
+            }
+        },
+
+        formatEmployeeNumberInModal(value) {
+            // 数字以外を削除
+            let digits = value.replace(/\D/g, '');
+            // 6桁まで制限
+            digits = digits.slice(0, 6);
+            // 3桁-3桁の形式にフォーマット
+            if (digits.length <= 3) {
+                this.editingGuideProfileData.employee_number = digits;
+            } else {
+                this.editingGuideProfileData.employee_number = digits.slice(0, 3) + '-' + digits.slice(3, 6);
             }
         },
 
@@ -1945,7 +2442,19 @@ function adminDashboard() {
                 alert('従業員番号を更新しました');
                 await this.fetchGuides();
             } catch (error) {
-                alert('従業員番号の更新に失敗しました');
+                let errorMessage = '従業員番号の更新に失敗しました';
+                if (error.response && error.response.data) {
+                    if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    } else if (error.response.data.errors) {
+                        const errors = error.response.data.errors;
+                        const errorMessages = Object.values(errors).flat();
+                        errorMessage = errorMessages.join('\n');
+                    }
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                alert(errorMessage);
                 console.error(error);
             }
         },
@@ -2015,7 +2524,19 @@ function adminDashboard() {
                 this.editingUserProfileData = {};
             } catch (error) {
                 console.error('プロフィール更新エラー:', error);
-                alert('プロフィールの更新に失敗しました: ' + (error.message || '不明なエラー'));
+                let errorMessage = 'プロフィールの更新に失敗しました';
+                if (error.response && error.response.data) {
+                    if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    } else if (error.response.data.errors) {
+                        const errors = error.response.data.errors;
+                        const errorMessages = Object.values(errors).flat();
+                        errorMessage = errorMessages.join('\n');
+                    }
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                alert(errorMessage);
             } finally {
                 this.savingUserProfile = false;
             }
@@ -2106,7 +2627,19 @@ function adminDashboard() {
                 this.editingGuideProfileData = {};
             } catch (error) {
                 console.error('プロフィール更新エラー:', error);
-                alert('プロフィールの更新に失敗しました: ' + (error.message || '不明なエラー'));
+                let errorMessage = 'プロフィールの更新に失敗しました';
+                if (error.response && error.response.data) {
+                    if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    } else if (error.response.data.errors) {
+                        const errors = error.response.data.errors;
+                        const errorMessages = Object.values(errors).flat();
+                        errorMessage = errorMessages.join('\n');
+                    }
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                alert(errorMessage);
             } finally {
                 this.savingGuideProfile = false;
             }
@@ -2184,8 +2717,55 @@ function adminDashboard() {
             }
         },
 
+        updateRecipientFromKey() {
+            // 既存のテンプレートキーに基づいて送信先を自動設定
+            const key = this.newTemplate.template_key;
+            if (!key) {
+                this.newTemplate.recipient = '';
+                return;
+            }
+            
+            const recipientMap = {
+                'request_notification': 'guide',
+                'matching_notification': 'both',
+                'report_submitted': 'user',
+                'report_approved': 'guide',
+                'reminder_pending_request': 'user',
+                'password_reset': 'both',
+                'user_registration_thanks': 'user',
+                'guide_registration_thanks': 'guide',
+                'reminder_same_day': 'both',
+                'reminder_day_before': 'both',
+                'reminder_report_missing': 'guide'
+            };
+            
+            if (recipientMap[key]) {
+                this.newTemplate.recipient = recipientMap[key];
+            }
+        },
+
+        getRecipientLabelForNew(template) {
+            if (!template.recipient) return '未選択';
+            const labels = {
+                'user': 'ユーザー',
+                'guide': 'ガイド',
+                'both': 'ユーザー・ガイド'
+            };
+            return labels[template.recipient] || '未選択';
+        },
+
+        getRecipientClassForNew(template) {
+            if (!template.recipient) return '';
+            const classes = {
+                'user': 'recipient-user',
+                'guide': 'recipient-guide',
+                'both': 'recipient-both'
+            };
+            return classes[template.recipient] || '';
+        },
+
         async createEmailTemplate() {
-            if (!this.newTemplate.template_key || !this.newTemplate.subject || !this.newTemplate.body) {
+            if (!this.newTemplate.template_key || !this.newTemplate.subject || !this.newTemplate.body || !this.newTemplate.recipient) {
                 alert('すべての必須項目を入力してください');
                 return;
             }
@@ -2208,7 +2788,7 @@ function adminDashboard() {
                 });
                 alert('テンプレートを作成しました');
                 this.showNewTemplateForm = false;
-                this.newTemplate = { template_key: '', subject: '', body: '', is_active: true };
+                this.newTemplate = { template_key: '', subject: '', body: '', is_active: true, recipient: '' };
                 await this.fetchEmailTemplates();
             } catch (error) {
                 const errorMessage = error.message || 'テンプレートの作成に失敗しました';
@@ -2439,9 +3019,69 @@ function adminDashboard() {
                 'matching_notification': 'マッチング成立通知',
                 'report_submitted': '報告書提出通知',
                 'report_approved': '報告書承認通知',
-                'reminder_pending_request': '承認待ち依頼リマインド'
+                'reminder_pending_request': '承認待ち依頼リマインド',
+                'password_reset': 'パスワードリセット',
+                'user_registration_thanks': 'ユーザー登録お礼',
+                'guide_registration_thanks': 'ガイド登録お礼',
+                'reminder_same_day': '当日リマインド',
+                'reminder_day_before': '前日リマインド',
+                'reminder_report_missing': '報告書未提出リマインド'
             };
             return labels[key] || key;
+        },
+
+        getRecipientLabel(key) {
+            if (!key) return '';
+            const recipients = {
+                'request_notification': 'ガイド',
+                'matching_notification': 'ユーザー・ガイド',
+                'report_submitted': 'ユーザー',
+                'report_approved': 'ガイド',
+                'reminder_pending_request': 'ユーザー',
+                'password_reset': 'ユーザー・ガイド',
+                'user_registration_thanks': 'ユーザー',
+                'guide_registration_thanks': 'ガイド',
+                'reminder_same_day': 'ユーザー・ガイド',
+                'reminder_day_before': 'ユーザー・ガイド',
+                'reminder_report_missing': 'ガイド'
+            };
+            return recipients[key] || '不明';
+        },
+
+        getRecipientClass(key) {
+            if (!key) return '';
+            const classes = {
+                'request_notification': 'recipient-guide',
+                'matching_notification': 'recipient-both',
+                'report_submitted': 'recipient-user',
+                'report_approved': 'recipient-guide',
+                'reminder_pending_request': 'recipient-user',
+                'password_reset': 'recipient-both',
+                'user_registration_thanks': 'recipient-user',
+                'guide_registration_thanks': 'recipient-guide',
+                'reminder_same_day': 'recipient-both',
+                'reminder_day_before': 'recipient-both',
+                'reminder_report_missing': 'recipient-guide'
+            };
+            return classes[key] || '';
+        },
+
+        getTriggerDescription(key) {
+            if (!key) return '';
+            const descriptions = {
+                'request_notification': '新しい依頼が登録された時',
+                'matching_notification': 'マッチングが成立した時',
+                'report_submitted': '報告書が提出された時',
+                'report_approved': '報告書が承認された時',
+                'reminder_pending_request': '承認待ち依頼がある時（リマインド）',
+                'password_reset': 'パスワードリセットがリクエストされた時',
+                'user_registration_thanks': 'ユーザー登録が完了した時',
+                'guide_registration_thanks': 'ガイド登録が完了した時',
+                'reminder_same_day': '依頼当日のリマインド',
+                'reminder_day_before': '依頼前日のリマインド',
+                'reminder_report_missing': '報告書が未提出の場合のリマインド'
+            };
+            return descriptions[key] || '';
         },
 
         getNotificationDescription(type) {
@@ -2541,6 +3181,114 @@ function adminDashboard() {
                 return '';
             }
         },
+        getReportsByMonth() {
+            if (!this.reports || this.reports.length === 0) {
+                return {};
+            }
+
+            const grouped = {};
+            
+            this.reports.forEach(report => {
+                if (!report.actual_date) {
+                    // actual_dateがない場合は「日付不明」として分類
+                    const key = '日付不明';
+                    if (!grouped[key]) {
+                        grouped[key] = [];
+                    }
+                    grouped[key].push(report);
+                    return;
+                }
+
+                const date = new Date(report.actual_date);
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const monthKey = `${year}年${month}月`;
+
+                if (!grouped[monthKey]) {
+                    grouped[monthKey] = [];
+                }
+                grouped[monthKey].push(report);
+            });
+
+            // 月別にソート（新しい順）
+            const sorted = {};
+            const keys = Object.keys(grouped).sort((a, b) => {
+                // 「日付不明」は最後に
+                if (a === '日付不明') return 1;
+                if (b === '日付不明') return -1;
+                
+                // 年月で比較（新しい順）
+                const aMatch = a.match(/(\d+)年(\d+)月/);
+                const bMatch = b.match(/(\d+)年(\d+)月/);
+                
+                if (!aMatch || !bMatch) return 0;
+                
+                const aYear = parseInt(aMatch[1], 10);
+                const aMonth = parseInt(aMatch[2], 10);
+                const bYear = parseInt(bMatch[1], 10);
+                const bMonth = parseInt(bMatch[2], 10);
+                
+                if (aYear !== bYear) {
+                    return bYear - aYear; // 年が新しい順
+                }
+                return bMonth - aMonth; // 月が新しい順
+            });
+
+            keys.forEach(key => {
+                sorted[key] = grouped[key];
+            });
+
+            return sorted;
+        },
+
+        getAvailableMonths() {
+            // 利用可能な月のリストを取得（新しい順）
+            const grouped = this.getReportsByMonth();
+            return Object.keys(grouped).sort((a, b) => {
+                // 「日付不明」は最後に
+                if (a === '日付不明') return 1;
+                if (b === '日付不明') return -1;
+                
+                // 年月で比較（新しい順）
+                const aMatch = a.match(/(\d+)年(\d+)月/);
+                const bMatch = b.match(/(\d+)年(\d+)月/);
+                
+                if (!aMatch || !bMatch) return 0;
+                
+                const aYear = parseInt(aMatch[1], 10);
+                const aMonth = parseInt(aMatch[2], 10);
+                const bYear = parseInt(bMatch[1], 10);
+                const bMonth = parseInt(bMatch[2], 10);
+                
+                if (aYear !== bYear) {
+                    return bYear - aYear; // 年が新しい順
+                }
+                return bMonth - aMonth; // 月が新しい順
+            });
+        },
+
+        getFilteredReportsByMonth() {
+            const allReportsByMonth = this.getReportsByMonth();
+            
+            // 月が選択されていない場合はすべて表示
+            if (!this.selectedReportMonth) {
+                return allReportsByMonth;
+            }
+            
+            // 選択された月だけを表示
+            const filtered = {};
+            if (allReportsByMonth[this.selectedReportMonth]) {
+                filtered[this.selectedReportMonth] = allReportsByMonth[this.selectedReportMonth];
+            }
+            
+            return filtered;
+        },
+
+        filterReportsByMonth() {
+            // フィルタリング処理（Alpine.jsのリアクティビティで自動的に更新される）
+            // この関数は主にデバッグや将来の拡張用
+        },
+
         formatReportDate(dateStr) {
             if (!dateStr) return '';
             

@@ -334,6 +334,88 @@ class ReportService
         return $report;
     }
 
+    /**
+     * 管理者による差し戻し（ガイドへの修正依頼）
+     */
+    public function adminRequestRevision(int $reportId, int $adminId, string $revisionNotes): Report
+    {
+        $report = Report::findOrFail($reportId);
+
+        if ($report->status !== 'user_approved') {
+            throw new \Exception('ユーザー承認済みの報告書のみ差し戻しできます');
+        }
+
+        $report->update([
+            'status' => 'revision_requested',
+            'revision_notes' => $revisionNotes,
+        ]);
+
+        // ガイドに通知
+        Notification::create([
+            'user_id' => $report->guide_id,
+            'type' => 'report',
+            'title' => '報告書の修正依頼（管理者差し戻し）',
+            'message' => "報告書が管理者により差し戻されました。\n修正内容: {$revisionNotes}",
+            'related_id' => $reportId,
+        ]);
+
+        return $report;
+    }
+
+    /**
+     * 一括管理者承認
+     */
+    public function batchAdminApproveReports(array $reportIds, int $adminId): array
+    {
+        $successfulCount = 0;
+        $failedItems = [];
+
+        foreach ($reportIds as $reportId) {
+            try {
+                $this->adminApproveReport($reportId, $adminId);
+                $successfulCount++;
+            } catch (\Exception $e) {
+                $failedItems[] = [
+                    'report_id' => $reportId,
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return [
+            'successful_count' => $successfulCount,
+            'failed_count' => count($failedItems),
+            'failed_items' => $failedItems,
+        ];
+    }
+
+    /**
+     * 一括管理者差し戻し
+     */
+    public function batchAdminRequestRevision(array $reportIds, int $adminId, string $revisionNotes): array
+    {
+        $successfulCount = 0;
+        $failedItems = [];
+
+        foreach ($reportIds as $reportId) {
+            try {
+                $this->adminRequestRevision($reportId, $adminId, $revisionNotes);
+                $successfulCount++;
+            } catch (\Exception $e) {
+                $failedItems[] = [
+                    'report_id' => $reportId,
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return [
+            'successful_count' => $successfulCount,
+            'failed_count' => count($failedItems),
+            'failed_items' => $failedItems,
+        ];
+    }
+
     public function getGuideReports(int $guideId)
     {
         return Report::where('guide_id', $guideId)

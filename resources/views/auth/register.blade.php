@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="register-container" x-data="registerForm()">
+<div class="register-container" x-data="registerForm()" x-init="init()">
     <div class="register-card">
         <h1>新規登録</h1>
         <!-- 審査に関する注意書き -->
@@ -125,7 +125,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group form-group-half">
-                            <label for="postal_code">郵便番号 <span class="required">*</span></label>
+                            <label for="postal_code">郵便番号 <span class="required" aria-label="必須">*</span></label>
                             <input
                                 type="text"
                                 id="postal_code"
@@ -136,7 +136,12 @@
                                 required
                                 aria-required="true"
                                 inputmode="numeric"
+                                :aria-invalid="fieldErrors.postal_code ? 'true' : 'false'"
+                                :aria-describedby="fieldErrors.postal_code ? 'postal_code-error' : 'postal_code-description'"
+                                @blur="validatePostalCode()"
                             />
+                            <span id="postal_code-description" class="sr-only">郵便番号をハイフン付きで入力してください（例: 123-4567）</span>
+                            <span id="postal_code-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.postal_code" x-text="fieldErrors.postal_code"></span>
                         </div>
                         <div class="form-group form-group-half">
                             <label for="address">住所 <span class="required">*</span></label>
@@ -159,7 +164,9 @@
                     <div class="form-subsection">
                         <h2 class="section-title">連絡先</h2>
                         <div class="form-group">
-                            <label for="email">メールアドレス <span class="required">*</span></label>
+                            <label for="email">
+                                メールアドレス <span class="required" aria-label="必須">*</span>
+                            </label>
                             <input
                                 type="email"
                                 id="email"
@@ -168,10 +175,17 @@
                                 required
                                 autocomplete="email"
                                 aria-required="true"
+                                :aria-invalid="fieldErrors.email ? 'true' : 'false'"
+                                :aria-describedby="fieldErrors.email ? 'email-error' : 'email-description'"
+                                @blur="validateEmail()"
                             />
+                            <span id="email-description" class="sr-only">ログインに使用するメールアドレスを入力してください</span>
+                            <span id="email-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.email" x-text="fieldErrors.email"></span>
                         </div>
                         <div class="form-group">
-                            <label for="email_confirmation">メールアドレス（確認） <span class="required">*</span></label>
+                            <label for="email_confirmation">
+                                メールアドレス（確認） <span class="required" aria-label="必須">*</span>
+                            </label>
                             <input
                                 type="email"
                                 id="email_confirmation"
@@ -180,7 +194,12 @@
                                 required
                                 autocomplete="email"
                                 aria-required="true"
+                                :aria-invalid="fieldErrors.email_confirmation ? 'true' : 'false'"
+                                :aria-describedby="fieldErrors.email_confirmation ? 'email-confirmation-error' : 'email-confirmation-description'"
+                                @blur="validateEmailConfirmation()"
                             />
+                            <span id="email-confirmation-description" class="sr-only">上記で入力したメールアドレスと同じものを再度入力してください</span>
+                            <span id="email-confirmation-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.email_confirmation" x-text="fieldErrors.email_confirmation"></span>
                         </div>
                         <div class="form-group">
                             <label for="phone">電話番号 <span class="required">*</span></label>
@@ -215,7 +234,9 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="password">パスワード <span class="required">*</span></label>
+                            <label for="password">
+                                パスワード <span class="required" aria-label="必須">*</span>
+                            </label>
                             <input
                                 type="password"
                                 id="password"
@@ -225,11 +246,17 @@
                                 minlength="6"
                                 autocomplete="new-password"
                                 aria-required="true"
+                                :aria-invalid="fieldErrors.password ? 'true' : 'false'"
+                                :aria-describedby="fieldErrors.password ? 'password-error' : 'password-description'"
+                                @blur="validatePassword()"
                             />
-                            <small>6文字以上で入力してください</small>
+                            <small id="password-description">6文字以上で入力してください</small>
+                            <span id="password-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.password" x-text="fieldErrors.password"></span>
                         </div>
                         <div class="form-group">
-                            <label for="confirmPassword">パスワード（確認） <span class="required">*</span></label>
+                            <label for="confirmPassword">
+                                パスワード（確認） <span class="required" aria-label="必須">*</span>
+                            </label>
                             <input
                                 type="password"
                                 id="confirmPassword"
@@ -238,7 +265,12 @@
                                 required
                                 autocomplete="new-password"
                                 aria-required="true"
+                                :aria-invalid="fieldErrors.confirmPassword ? 'true' : 'false'"
+                                :aria-describedby="fieldErrors.confirmPassword ? 'confirm-password-error' : 'confirm-password-description'"
+                                @blur="validatePasswordConfirmation()"
                             />
+                            <span id="confirm-password-description" class="sr-only">上記で入力したパスワードと同じものを再度入力してください</span>
+                            <span id="confirm-password-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.confirmPassword" x-text="fieldErrors.confirmPassword"></span>
                         </div>
                     </div>
                 </div>
@@ -503,7 +535,26 @@ function registerForm() {
             preferred_work_hours: ''
         },
         error: '',
+        fieldErrors: {},
         loading: false,
+        init() {
+            // サーバーサイドのエラーをfieldErrorsに設定
+            @if($errors->has('postal_code'))
+                this.fieldErrors.postal_code = '{{ addslashes($errors->first('postal_code')) }}';
+            @endif
+            @if($errors->has('email'))
+                this.fieldErrors.email = '{{ addslashes($errors->first('email')) }}';
+            @endif
+            @if($errors->has('email_confirmation'))
+                this.fieldErrors.email_confirmation = '{{ addslashes($errors->first('email_confirmation')) }}';
+            @endif
+            @if($errors->has('password'))
+                this.fieldErrors.password = '{{ addslashes($errors->first('password')) }}';
+            @endif
+            @if($errors->has('confirmPassword'))
+                this.fieldErrors.confirmPassword = '{{ addslashes($errors->first('confirmPassword')) }}';
+            @endif
+        },
         // 面談日の最小値（今日以降）
         get minInterviewDate() {
             const now = new Date();
@@ -532,23 +583,85 @@ function registerForm() {
                 this.formData.qualifications.splice(index, 1);
             }
         },
+        validatePostalCode() {
+            const pattern = /^\d{3}-\d{4}$/;
+            if (this.formData.postal_code && !pattern.test(this.formData.postal_code)) {
+                this.fieldErrors.postal_code = '郵便番号は「123-4567」の形式で入力してください（ハイフンを含む7桁）';
+            } else {
+                delete this.fieldErrors.postal_code;
+            }
+        },
+        validateEmail() {
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (this.formData.email && !emailPattern.test(this.formData.email)) {
+                this.fieldErrors.email = 'メールアドレスの形式が正しくありません';
+            } else {
+                delete this.fieldErrors.email;
+            }
+            // 確認用メールアドレスとの一致チェック
+            if (this.formData.email_confirmation && this.formData.email !== this.formData.email_confirmation) {
+                this.fieldErrors.email_confirmation = 'メールアドレスが一致しません';
+            } else if (this.fieldErrors.email_confirmation === 'メールアドレスが一致しません') {
+                delete this.fieldErrors.email_confirmation;
+            }
+        },
+        validateEmailConfirmation() {
+            if (this.formData.email && this.formData.email_confirmation && this.formData.email !== this.formData.email_confirmation) {
+                this.fieldErrors.email_confirmation = 'メールアドレスが一致しません。上記で入力したメールアドレスと同じものを入力してください';
+            } else {
+                delete this.fieldErrors.email_confirmation;
+            }
+        },
+        validatePassword() {
+            if (this.formData.password && this.formData.password.length < 6) {
+                this.fieldErrors.password = 'パスワードは6文字以上で入力してください';
+            } else {
+                delete this.fieldErrors.password;
+            }
+            // 確認用パスワードとの一致チェック
+            if (this.formData.confirmPassword && this.formData.password !== this.formData.confirmPassword) {
+                this.fieldErrors.confirmPassword = 'パスワードが一致しません';
+            } else if (this.fieldErrors.confirmPassword === 'パスワードが一致しません') {
+                delete this.fieldErrors.confirmPassword;
+            }
+        },
+        validatePasswordConfirmation() {
+            if (this.formData.password && this.formData.confirmPassword && this.formData.password !== this.formData.confirmPassword) {
+                this.fieldErrors.confirmPassword = 'パスワードが一致しません。上記で入力したパスワードと同じものを入力してください';
+            } else {
+                delete this.fieldErrors.confirmPassword;
+            }
+        },
         handleSubmit() {
             this.error = '';
+            this.fieldErrors = {};
+            
+            // バリデーション実行
+            this.validatePostalCode();
+            this.validateEmail();
+            this.validateEmailConfirmation();
+            this.validatePassword();
+            this.validatePasswordConfirmation();
+            
+            // エラーがある場合は送信しない
+            if (Object.keys(this.fieldErrors).length > 0) {
+                return;
+            }
             
             // メール確認チェック
             if (this.formData.email !== this.formData.email_confirmation) {
-                this.error = 'メールアドレスが一致しません';
+                this.fieldErrors.email_confirmation = 'メールアドレスが一致しません';
                 return;
             }
             
             // パスワード確認チェック
             if (this.formData.password !== this.formData.confirmPassword) {
-                this.error = 'パスワードが一致しません';
+                this.fieldErrors.confirmPassword = 'パスワードが一致しません';
                 return;
             }
             
             if (this.formData.password.length < 6) {
-                this.error = 'パスワードは6文字以上である必要があります';
+                this.fieldErrors.password = 'パスワードは6文字以上で入力してください';
                 return;
             }
 

@@ -85,6 +85,11 @@ class EmailNotificationService
             'report_approved' => 'report',
             'reminder_pending_request' => 'reminder',
             'password_reset' => 'password_reset',
+            'user_registration_thanks' => 'registration',
+            'guide_registration_thanks' => 'registration',
+            'reminder_same_day' => 'reminder',
+            'reminder_day_before' => 'reminder',
+            'reminder_report_missing' => 'reminder',
         ];
         return $mapping[$templateKey] ?? 'request';
     }

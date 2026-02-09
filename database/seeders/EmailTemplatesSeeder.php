@@ -44,6 +44,36 @@ class EmailTemplatesSeeder extends Seeder
                 'body' => '承認待ちの依頼があります。確認をお願いします。\n\n依頼ID: {{request_id}}',
                 'is_active' => true,
             ],
+            [
+                'template_key' => 'user_registration_thanks',
+                'subject' => 'ご登録ありがとうございます',
+                'body' => '{{user_name}} 様\n\nこの度は、ガイドヘルパーマッチングサービスにご登録いただき、誠にありがとうございます。\n\nご登録いただいた内容を確認させていただき、審査を実施いたします。\n審査完了後、改めてご連絡させていただきます。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\n今後ともよろしくお願いいたします。',
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'guide_registration_thanks',
+                'subject' => 'ご登録ありがとうございます',
+                'body' => '{{user_name}} 様\n\nこの度は、ガイドヘルパーマッチングサービスにご登録いただき、誠にありがとうございます。\n\nご登録いただいた内容を確認させていただき、審査を実施いたします。\n審査完了後、改めてご連絡させていただきます。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\n今後ともよろしくお願いいたします。',
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'reminder_same_day',
+                'subject' => '本日の依頼について',
+                'body' => '{{user_name}} 様\n\n本日、以下の依頼が予定されています。\n\n依頼ID: {{request_id}}\n依頼タイプ: {{request_type}}\n依頼日時: {{request_date}} {{request_time}}\n場所: {{masked_address}}\n\nお時間になりましたら、ご対応をお願いいたします。',
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'reminder_day_before',
+                'subject' => '明日の依頼について',
+                'body' => '{{user_name}} 様\n\n明日、以下の依頼が予定されています。\n\n依頼ID: {{request_id}}\n依頼タイプ: {{request_type}}\n依頼日時: {{request_date}} {{request_time}}\n場所: {{masked_address}}\n\nお時間になりましたら、ご対応をお願いいたします。',
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'reminder_report_missing',
+                'subject' => '報告書の提出をお願いします',
+                'body' => '{{guide_name}} 様\n\n以下の報告書がまだ提出されていません。\n\n依頼ID: {{request_id}}\n実施日: {{actual_date}}\n\n報告書の提出をお願いいたします。',
+                'is_active' => true,
+            ],
         ];
 
         foreach ($templates as $template) {
