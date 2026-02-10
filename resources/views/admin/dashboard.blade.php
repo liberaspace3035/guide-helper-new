@@ -570,6 +570,7 @@
                                                     pattern="\d{10}"
                                                     placeholder="受給者証番号（10桁）"
                                                     aria-label="受給者証番号（半角数字10桁）"
+                                                    :id="'recipient-number-' + user.id"
                                                 />
                                                 <button
                                                     class="btn-save-meta"
@@ -679,6 +680,7 @@
                                                     pattern="\d{3}-\d{3}"
                                                     placeholder="000-000"
                                                     aria-label="従業員番号（000-000形式）"
+                                                    :id="'employee-number-' + guide.id"
                                                 />
                                                 <button
                                                     class="btn-save-meta"
@@ -2377,11 +2379,26 @@ function adminDashboard() {
         },
 
         async saveUserMeta(userId) {
+            // 入力欄から直接値を取得
+            const inputElement = document.getElementById(`recipient-number-${userId}`);
+            const recipientNumber = inputElement ? inputElement.value.trim() : (this.userMeta[userId] || '').trim();
+            
+            // フロントエンドでバリデーションチェック
+            if (recipientNumber && recipientNumber !== '') {
+                if (!/^\d{10}$/.test(recipientNumber)) {
+                    alert('受給者証番号は半角数字10桁で入力してください。');
+                    if (inputElement) {
+                        inputElement.focus();
+                    }
+                    return;
+                }
+            }
+            
             try {
                 await this.apiFetch(`/api/admin/users/${userId}/profile-extra`, {
                     method: 'PUT',
                     body: JSON.stringify({
-                        recipient_number: this.userMeta[userId] || null,
+                        recipient_number: recipientNumber || null,
                         admin_comment: null
                     })
                 });
@@ -2389,19 +2406,25 @@ function adminDashboard() {
                 await this.fetchUsers();
             } catch (error) {
                 let errorMessage = '受給者証番号の更新に失敗しました';
+                
                 if (error.response && error.response.data) {
-                    if (error.response.data.message) {
-                        errorMessage = error.response.data.message;
-                    } else if (error.response.data.errors) {
+                    if (error.response.data.errors) {
                         const errors = error.response.data.errors;
                         const errorMessages = Object.values(errors).flat();
                         errorMessage = errorMessages.join('\n');
+                    } else if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    } else if (error.response.data.error) {
+                        errorMessage = error.response.data.error;
                     }
                 } else if (error.message) {
                     errorMessage = error.message;
                 }
+                
                 alert(errorMessage);
-                console.error(error);
+                if (inputElement) {
+                    inputElement.focus();
+                }
             }
         },
 
@@ -2432,30 +2455,51 @@ function adminDashboard() {
         },
 
         async saveGuideMeta(guideId) {
+            // 入力欄から直接値を取得
+            const inputElement = document.getElementById(`employee-number-${guideId}`);
+            const employeeNumber = inputElement ? inputElement.value.trim() : (this.guideMeta[guideId] || '').trim();
+            
+            // フロントエンドでバリデーションチェック
+            if (employeeNumber && employeeNumber !== '') {
+                if (!/^\d{3}-\d{3}$/.test(employeeNumber)) {
+                    alert('従業員番号は000-000形式（半角数字6桁をハイフンで区切る）で入力してください。');
+                    if (inputElement) {
+                        inputElement.focus();
+                    }
+                    return;
+                }
+            }
+            
             try {
                 await this.apiFetch(`/api/admin/guides/${guideId}/profile-extra`, {
                     method: 'PUT',
                     body: JSON.stringify({
-                        employee_number: this.guideMeta[guideId] || null
+                        employee_number: employeeNumber || null
                     })
                 });
                 alert('従業員番号を更新しました');
                 await this.fetchGuides();
             } catch (error) {
                 let errorMessage = '従業員番号の更新に失敗しました';
+                
                 if (error.response && error.response.data) {
-                    if (error.response.data.message) {
-                        errorMessage = error.response.data.message;
-                    } else if (error.response.data.errors) {
+                    if (error.response.data.errors) {
                         const errors = error.response.data.errors;
                         const errorMessages = Object.values(errors).flat();
                         errorMessage = errorMessages.join('\n');
+                    } else if (error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    } else if (error.response.data.error) {
+                        errorMessage = error.response.data.error;
                     }
                 } else if (error.message) {
                     errorMessage = error.message;
                 }
+                
                 alert(errorMessage);
-                console.error(error);
+                if (inputElement) {
+                    inputElement.focus();
+                }
             }
         },
 

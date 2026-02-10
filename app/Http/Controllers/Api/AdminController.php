@@ -432,20 +432,27 @@ class AdminController extends Controller
 
     public function updateUserProfileExtra(Request $request, int $id)
     {
-        $request->validate([
-            'recipient_number' => 'nullable|string|regex:/^\d{10}$/',
-            'admin_comment' => 'nullable|string',
-        ], [
-            'recipient_number.regex' => '受給者証番号は半角数字10桁で入力してください。',
-        ]);
+        try {
+            $request->validate([
+                'recipient_number' => 'nullable|string|regex:/^\d{10}$/',
+                'admin_comment' => 'nullable|string',
+            ], [
+                'recipient_number.regex' => '受給者証番号は半角数字10桁で入力してください。',
+            ]);
 
-        $this->adminService->updateUserProfileExtra(
-            $id,
-            $request->input('recipient_number'),
-            $request->input('admin_comment')
-        );
+            $this->adminService->updateUserProfileExtra(
+                $id,
+                $request->input('recipient_number'),
+                $request->input('admin_comment')
+            );
 
-        return response()->json(['message' => 'ユーザー情報を更新しました']);
+            return response()->json(['message' => 'ユーザー情報を更新しました']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => '入力内容に誤りがあります。',
+                'errors' => $e->errors()
+            ], 422);
+        }
     }
 
     public function updateUserProfile(Request $request, int $id)
@@ -489,18 +496,25 @@ class AdminController extends Controller
 
     public function updateGuideProfileExtra(Request $request, int $id)
     {
-        $request->validate([
-            'employee_number' => 'nullable|string|regex:/^\d{3}-\d{3}$/',
-        ], [
-            'employee_number.regex' => '従業員番号は000-000形式（半角数字6桁をハイフンで区切る）で入力してください。',
-        ]);
+        try {
+            $request->validate([
+                'employee_number' => 'nullable|string|regex:/^\d{3}-\d{3}$/',
+            ], [
+                'employee_number.regex' => '従業員番号は000-000形式（半角数字6桁をハイフンで区切る）で入力してください。',
+            ]);
 
-        $this->adminService->updateGuideProfileExtra(
-            $id,
-            $request->input('employee_number')
-        );
+            $this->adminService->updateGuideProfileExtra(
+                $id,
+                $request->input('employee_number')
+            );
 
-        return response()->json(['message' => 'ガイド情報を更新しました']);
+            return response()->json(['message' => 'ガイド情報を更新しました']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => '入力内容に誤りがあります。',
+                'errors' => $e->errors()
+            ], 422);
+        }
     }
 
     public function updateGuideProfile(Request $request, int $id)
