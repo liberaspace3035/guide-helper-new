@@ -26,6 +26,33 @@
         <!-- ダッシュボードタブ -->
         <template x-if="activeTab === 'dashboard'">
             <div>
+                <!-- 通知セクション -->
+                <template x-if="notifications.length > 0">
+                    <section class="admin-section notifications-section" aria-label="通知">
+                        <div class="section-header">
+                            <h2>
+                                <svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                                通知
+                            </h2>
+                            <span class="notification-count" x-text="notifications.length + '件'"></span>
+                        </div>
+                        <ul class="notification-list">
+                            <template x-for="notif in notifications" :key="notif.id">
+                                <li class="notification-item">
+                                    <div class="notification-content">
+                                        <strong x-text="notif.title"></strong>
+                                        <p x-text="notif.message"></p>
+                                    </div>
+                                    <small x-text="formatDate(notif.created_at)"></small>
+                                </li>
+                            </template>
+                        </ul>
+                    </section>
+                </template>
+
                 <!-- 統計情報セクション -->
                 <template x-if="stats">
                     <section class="admin-stats-section">
@@ -526,8 +553,38 @@
                         ユーザー管理
                     </h2>
                 </div>
+                <div class="users-toolbar">
+                    <div class="users-search-sort">
+                        <label for="user-search" class="sr-only">名前またはメールで検索</label>
+                        <input
+                            type="search"
+                            id="user-search"
+                            class="users-search-input"
+                            placeholder="名前・メールで検索"
+                            x-model="userSearchQuery"
+                            @keydown.enter.prevent="fetchUsers()"
+                            aria-label="名前またはメールアドレスで検索"
+                        />
+                        <button type="button" class="btn-primary btn-search" @click="fetchUsers()">検索</button>
+                        <label for="user-sort" class="sr-only">並び順</label>
+                        <select
+                            id="user-sort"
+                            class="users-sort-select"
+                            x-model="userSortOrder"
+                            @change="fetchUsers()"
+                            aria-label="並び順を選択"
+                        >
+                            <option value="pending_first">未承認優先</option>
+                            <option value="created_desc">登録が新しい順</option>
+                            <option value="created_asc">登録が古い順</option>
+                            <option value="name_asc">名前（あいうえお順）</option>
+                            <option value="name_desc">名前（逆順）</option>
+                        </select>
+                    </div>
+                    <p x-show="userSearchQuery.trim() !== ''" class="users-result-count" x-text="'検索結果: ' + users.length + '件'"></p>
+                </div>
                 <template x-if="users.length === 0">
-                    <p>ユーザーは登録されていません</p>
+                    <p x-text="fetchingUsers ? '読み込み中...' : (userSearchQuery.trim() !== '' ? '検索条件に一致するユーザーはいません' : 'ユーザーは登録されていません')"></p>
                 </template>
                 <template x-if="users.length > 0">
                     <div class="table-container">
@@ -636,8 +693,38 @@
                         ガイド管理
                     </h2>
                 </div>
+                <div class="users-toolbar guides-toolbar">
+                    <div class="users-search-sort">
+                        <label for="guide-search" class="sr-only">名前またはメールで検索</label>
+                        <input
+                            type="search"
+                            id="guide-search"
+                            class="users-search-input"
+                            placeholder="名前・メールで検索"
+                            x-model="guideSearchQuery"
+                            @keydown.enter.prevent="fetchGuides()"
+                            aria-label="名前またはメールアドレスで検索"
+                        />
+                        <button type="button" class="btn-primary btn-search" @click="fetchGuides()">検索</button>
+                        <label for="guide-sort" class="sr-only">並び順</label>
+                        <select
+                            id="guide-sort"
+                            class="users-sort-select"
+                            x-model="guideSortOrder"
+                            @change="fetchGuides()"
+                            aria-label="並び順を選択"
+                        >
+                            <option value="pending_first">未承認優先</option>
+                            <option value="created_desc">登録が新しい順</option>
+                            <option value="created_asc">登録が古い順</option>
+                            <option value="name_asc">名前（あいうえお順）</option>
+                            <option value="name_desc">名前（逆順）</option>
+                        </select>
+                    </div>
+                    <p x-show="guideSearchQuery.trim() !== ''" class="users-result-count" x-text="'検索結果: ' + guides.length + '件'"></p>
+                </div>
                 <template x-if="guides.length === 0">
-                    <p>ガイドは登録されていません</p>
+                    <p x-text="fetchingGuides ? '読み込み中...' : (guideSearchQuery.trim() !== '' ? '検索条件に一致するガイドはいません' : 'ガイドは登録されていません')"></p>
                 </template>
                 <template x-if="guides.length > 0">
                     <div class="table-container">
@@ -750,7 +837,25 @@
                         </svg>
                         利用者の月次限度時間管理
                     </h2>
+                    <template x-if="users.length > 0">
+                        <a
+                            :href="getMonthlyLimitsSummaryCsvUrl()"
+                            download
+                            class="btn-primary"
+                            style="margin-left: auto;"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: middle;">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            残時間一覧をCSVダウンロード
+                        </a>
+                    </template>
                 </div>
+                <p class="section-description" style="margin-bottom: 1rem; color: var(--text-muted, #666); font-size: 0.9rem;">
+                    照会時は下表で各利用者の残時間をご確認いただくか、上記ボタンでCSVをダウンロードしてご利用ください。
+                </p>
                 <template x-if="users.length === 0">
                     <p>ユーザーは登録されていません</p>
                 </template>
@@ -760,11 +865,23 @@
                             <thead>
                                 <tr>
                                     <th>ユーザー名</th>
+                                    <th>受給者証番号</th>
                                     <th>年月</th>
-                                    <th>限度時間（時間）</th>
-                                    <th>使用時間（時間）</th>
-                                    <th>残時間（時間）</th>
+                                    <th colspan="3" class="limit-type-th">外出</th>
+                                    <th colspan="3" class="limit-type-th">自宅</th>
                                     <th>操作</th>
+                                </tr>
+                                <tr class="sub-header">
+                                    <th></th>
+                                    <th></th>
+                                    <th class="monthly-limits-th-year-month"></th>
+                                    <th class="monthly-limits-th-limit monthly-limits-th-outing">限度（h）</th>
+                                    <th class="monthly-limits-th-used monthly-limits-th-outing">使用（h）</th>
+                                    <th class="monthly-limits-th-remaining monthly-limits-th-outing">残（h）</th>
+                                    <th class="monthly-limits-th-limit">限度（h）</th>
+                                    <th class="monthly-limits-th-used">使用（h）</th>
+                                    <th class="monthly-limits-th-remaining">残（h）</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -774,7 +891,10 @@
                                             <span class="user-name-bold" x-text="user.name"></span>
                                         </td>
                                         <td>
-                                            <div class="table-inline-field">
+                                            <span class="recipient-number-value" :class="{ 'empty-data': !userMeta[user.id] }" x-text="userMeta[user.id] || '—'"></span>
+                                        </td>
+                                        <td class="monthly-limits-cell-year-month">
+                                            <div class="monthly-limits-year-month">
                                                 <input
                                                     type="number"
                                                     class="year-month-input"
@@ -783,7 +903,7 @@
                                                     max="2100"
                                                     :value="new Date().getFullYear()"
                                                 />
-                                                <span class="year-month-label">年</span>
+                                                <span class="year-month-sep">年</span>
                                                 <input
                                                     type="number"
                                                     class="year-month-input"
@@ -792,25 +912,35 @@
                                                     max="12"
                                                     :value="new Date().getMonth() + 1"
                                                 />
-                                                <span class="year-month-label">月</span>
+                                                <span class="year-month-sep">月</span>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td class="monthly-limits-cell-limit monthly-limits-cell-outing">
                                             <input
                                                 type="number"
                                                 class="limit-hours-input"
                                                 step="0.1"
                                                 min="0"
-                                                :id="'limit-' + user.id"
-                                                placeholder="限度時間"
+                                                :id="'limit-outing-' + user.id"
+                                                :value="getUserOutingLimitHours(user.id)"
+                                                placeholder="0"
                                             />
                                         </td>
-                                        <td>
-                                            <span class="hours-value" x-text="getUserUsedHours(user.id) || '0.0'"></span>
+                                        <td class="monthly-limits-cell-used monthly-limits-cell-outing"><span class="hours-value" x-text="getUserOutingUsedHours(user.id)"></span></td>
+                                        <td class="monthly-limits-cell-remaining monthly-limits-cell-outing"><span class="hours-value" x-text="getUserOutingRemainingHours(user.id)"></span></td>
+                                        <td class="monthly-limits-cell-limit">
+                                            <input
+                                                type="number"
+                                                class="limit-hours-input"
+                                                step="0.1"
+                                                min="0"
+                                                :id="'limit-home-' + user.id"
+                                                :value="getUserHomeLimitHours(user.id)"
+                                                placeholder="0"
+                                            />
                                         </td>
-                                        <td>
-                                            <span class="hours-value" x-text="getUserRemainingHours(user.id) || '0.0'"></span>
-                                        </td>
+                                        <td class="monthly-limits-cell-used"><span class="hours-value" x-text="getUserHomeUsedHours(user.id)"></span></td>
+                                        <td class="monthly-limits-cell-remaining"><span class="hours-value" x-text="getUserHomeRemainingHours(user.id)"></span></td>
                                         <td>
                                             <div class="user-action-buttons">
                                                 <button
@@ -1022,7 +1152,7 @@
             </section>
         </template>
 
-        <!-- メール通知設定タブ -->
+        <!-- 設定タブ（通知のオン/オフ・リマインド日数など） -->
         <template x-if="activeTab === 'email-settings'">
             <section class="admin-section">
                 <div class="section-header">
@@ -1031,9 +1161,10 @@
                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                         </svg>
-                        メール通知設定
+                        設定
                     </h2>
                 </div>
+                <p class="setting-section-note">各通知のオン/オフは、依頼・マッチング・報告書・リマインドなどのメール送信時に反映されます。</p>
                 <template x-if="emailSettings.length === 0">
                     <p>設定を読み込み中...</p>
                 </template>
@@ -1766,10 +1897,15 @@ function adminDashboard() {
         savingGuideProfile: false,
         users: [],
         guides: [],
+        userSortOrder: 'created_desc',
+        userSearchQuery: '',
+        guideSortOrder: 'created_desc',
+        guideSearchQuery: '',
         stats: null,
         autoMatching: false,
         loading: true,
         fetchingUsers: false, // ユーザー取得中のフラグ（重複リクエスト防止）
+        fetchingGuides: false, // ガイド取得中のフラグ（重複リクエスト防止）
         fetchingLimits: false, // 限度時間取得中のフラグ（重複リクエスト防止）
         userMeta: {},
         guideMeta: {},
@@ -1787,6 +1923,7 @@ function adminDashboard() {
         operationLogs: [],
         userMonthlyLimits: {},
         userCurrentLimits: {}, // 現在の月の限度時間情報を保持
+        notifications: @json($notifications ?? []),
 
         // セッション認証用の共通fetch関数
         async apiFetch(url, options = {}) {
@@ -1834,6 +1971,8 @@ function adminDashboard() {
         async init() {
             this.loadAcceptanceFilterSetting();
             await this.fetchDashboardData();
+            // 設定タブ用データをバックグラウンドで事前取得（タブ表示が速くなる）
+            this.fetchEmailSettings();
         },
 
         async fetchDashboardData() {
@@ -1935,7 +2074,12 @@ function adminDashboard() {
             
             this.fetchingUsers = true;
             try {
-                const data = await this.apiFetch('/api/admin/users');
+                const params = new URLSearchParams();
+                params.set('sort', this.userSortOrder || 'created_desc');
+                if (this.userSearchQuery && this.userSearchQuery.trim() !== '') {
+                    params.set('search', this.userSearchQuery.trim());
+                }
+                const data = await this.apiFetch('/api/admin/users?' + params.toString());
                 this.users = data.users || [];
                 
                 // メタデータを初期化
@@ -1943,9 +2087,9 @@ function adminDashboard() {
                     this.userMeta[u.id] = u.recipient_number || '';
                 });
                 
-                // 限度時間タブ用に、現在月の限度時間/使用時間/残時間も取得（順次処理でレート制限を回避）
+                // 限度時間タブ用に、現在月の限度時間/使用時間/残時間を一括取得
                 if (this.activeTab === 'monthly-limits') {
-                    await this.fetchAllUserCurrentLimits();
+                    await this.fetchMonthlyLimitsSummary();
                 }
             } catch (error) {
                 console.error('ユーザー一覧取得エラー:', error);
@@ -1960,8 +2104,17 @@ function adminDashboard() {
         },
 
         async fetchGuides() {
+            if (this.fetchingGuides) {
+                return;
+            }
+            this.fetchingGuides = true;
             try {
-                const data = await this.apiFetch('/api/admin/guides');
+                const params = new URLSearchParams();
+                params.set('sort', this.guideSortOrder || 'created_desc');
+                if (this.guideSearchQuery && this.guideSearchQuery.trim() !== '') {
+                    params.set('search', this.guideSearchQuery.trim());
+                }
+                const data = await this.apiFetch('/api/admin/guides?' + params.toString());
                 this.guides = data.guides || [];
                 
                 // メタデータを初期化
@@ -1971,6 +2124,8 @@ function adminDashboard() {
             } catch (error) {
                 console.error('ガイド一覧取得エラー:', error);
                 alert('ガイド一覧の取得に失敗しました');
+            } finally {
+                this.fetchingGuides = false;
             }
         },
 
@@ -2720,8 +2875,8 @@ function adminDashboard() {
                 const data = await this.apiFetch('/api/admin/email-settings');
                 this.emailSettings = data.settings || [];
             } catch (error) {
-                console.error('メール通知設定取得エラー:', error);
-                alert('メール通知設定の取得に失敗しました');
+                console.error('設定取得エラー:', error);
+                alert('設定の取得に失敗しました');
             }
         },
 
@@ -2880,10 +3035,10 @@ function adminDashboard() {
                         reminder_days: setting.reminder_days || null
                     })
                 });
-                alert('通知設定を更新しました');
+                alert('設定を更新しました');
                 await this.fetchEmailSettings();
             } catch (error) {
-                alert('通知設定の更新に失敗しました');
+                alert('設定の更新に失敗しました');
                 console.error(error);
             }
         },
@@ -2891,30 +3046,41 @@ function adminDashboard() {
         async setUserMonthlyLimit(userId) {
             const year = parseInt(document.getElementById(`year-${userId}`).value);
             const month = parseInt(document.getElementById(`month-${userId}`).value);
-            const limitHours = parseFloat(document.getElementById(`limit-${userId}`).value);
+            const limitOuting = parseFloat(document.getElementById(`limit-outing-${userId}`).value);
+            const limitHome = parseFloat(document.getElementById(`limit-home-${userId}`).value);
+            const outingVal = !isNaN(limitOuting) && limitOuting >= 0 ? limitOuting : 0;
+            const homeVal = !isNaN(limitHome) && limitHome >= 0 ? limitHome : 0;
 
-            if (!limitHours || limitHours < 0) {
-                alert('限度時間を正しく入力してください');
+            if (isNaN(limitOuting) && isNaN(limitHome)) {
+                alert('外出・自宅の限度時間を入力してください（未入力の場合は0として保存されます）');
                 return;
             }
 
-            if (!confirm(`${year}年${month}月の限度時間を${limitHours}時間に設定しますか？`)) {
+            if (!confirm(`${year}年${month}月の限度時間を設定しますか？\n外出: ${outingVal}時間 / 自宅: ${homeVal}時間`)) {
                 return;
             }
 
             try {
-                
                 await this.apiFetch(`/api/admin/users/${userId}/monthly-limit`, {
                     method: 'PUT',
                     body: JSON.stringify({
-                        limit_hours: limitHours,
+                        limit_hours: outingVal,
                         year: year,
-                        month: month
+                        month: month,
+                        request_type: 'outing'
+                    })
+                });
+                await this.apiFetch(`/api/admin/users/${userId}/monthly-limit`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        limit_hours: homeVal,
+                        year: year,
+                        month: month,
+                        request_type: 'home'
                     })
                 });
                 alert('限度時間を設定しました');
                 await this.fetchUserCurrentLimit(userId);
-                await this.loadUserMonthlyLimits(userId);
             } catch (error) {
                 alert('限度時間の設定に失敗しました');
                 console.error(error);
@@ -2923,20 +3089,23 @@ function adminDashboard() {
 
         async loadUserMonthlyLimits(userId) {
             try {
-                
                 const data = await this.apiFetch(`/api/admin/users/${userId}/monthly-limits`);
                 this.userMonthlyLimits[userId] = data.limits || [];
-                
+                const limits = data.limits || [];
+                const byMonth = {};
+                limits.forEach(limit => {
+                    const key = `${limit.year}-${limit.month}`;
+                    if (!byMonth[key]) byMonth[key] = { year: limit.year, month: limit.month, outing: null, home: null };
+                    if (limit.request_type === 'outing') byMonth[key].outing = limit;
+                    if (limit.request_type === 'home') byMonth[key].home = limit;
+                });
                 let message = `ユーザーID ${userId} の限度時間履歴:\n\n`;
-                if (data.limits && data.limits.length > 0) {
-                    data.limits.forEach(limit => {
-                        const usedHours = limit.used_hours || 0;
-                        const remainingHours = limit.remaining_hours || (limit.limit_hours - usedHours);
-                        message += `${limit.year}年${limit.month}月: 限度${limit.limit_hours}時間 / 使用${usedHours.toFixed(1)}時間 / 残り${remainingHours.toFixed(1)}時間\n`;
-                    });
-                } else {
-                    message += '履歴がありません';
-                }
+                Object.keys(byMonth).sort().reverse().forEach(key => {
+                    const m = byMonth[key];
+                    const fmt = (l) => l ? `限度${l.limit_hours} / 使用${(l.used_hours || 0).toFixed(1)} / 残${(l.remaining_hours != null ? l.remaining_hours : (l.limit_hours - (l.used_hours || 0))).toFixed(1)}h` : '—';
+                    message += `${m.year}年${m.month}月\n  外出: ${fmt(m.outing)}\n  自宅: ${fmt(m.home)}\n`;
+                });
+                if (Object.keys(byMonth).length === 0) message += '履歴がありません';
                 alert(message);
             } catch (error) {
                 console.error('限度時間履歴取得エラー:', error);
@@ -2944,17 +3113,39 @@ function adminDashboard() {
             }
         },
 
-        getUserUsedHours(userId) {
-            const currentLimit = this.userCurrentLimits[userId];
-            if (!currentLimit) return '0.0';
-            return (currentLimit.used_hours || 0).toFixed(1);
+        getUserOutingLimitHours(userId) {
+            const cur = this.userCurrentLimits[userId];
+            if (!cur || !cur.outing) return '';
+            return (cur.outing.limit_hours ?? 0);
         },
-
-        getUserRemainingHours(userId) {
-            const currentLimit = this.userCurrentLimits[userId];
-            if (!currentLimit) return '0.0';
-            const remaining = (currentLimit.limit_hours || 0) - (currentLimit.used_hours || 0);
-            return remaining.toFixed(1);
+        getUserHomeLimitHours(userId) {
+            const cur = this.userCurrentLimits[userId];
+            if (!cur || !cur.home) return '';
+            return (cur.home.limit_hours ?? 0);
+        },
+        getUserOutingUsedHours(userId) {
+            const cur = this.userCurrentLimits[userId];
+            if (!cur || !cur.outing) return '0.0';
+            return (cur.outing.used_hours ?? 0).toFixed(1);
+        },
+        getUserHomeUsedHours(userId) {
+            const cur = this.userCurrentLimits[userId];
+            if (!cur || !cur.home) return '0.0';
+            return (cur.home.used_hours ?? 0).toFixed(1);
+        },
+        getUserOutingRemainingHours(userId) {
+            const cur = this.userCurrentLimits[userId];
+            if (!cur || !cur.outing) return '0.0';
+            const r = cur.outing.remaining_hours;
+            if (r != null) return Number(r).toFixed(1);
+            return ((cur.outing.limit_hours ?? 0) - (cur.outing.used_hours ?? 0)).toFixed(1);
+        },
+        getUserHomeRemainingHours(userId) {
+            const cur = this.userCurrentLimits[userId];
+            if (!cur || !cur.home) return '0.0';
+            const r = cur.home.remaining_hours;
+            if (r != null) return Number(r).toFixed(1);
+            return ((cur.home.limit_hours ?? 0) - (cur.home.used_hours ?? 0)).toFixed(1);
         },
 
         async fetchUserCurrentLimit(userId) {
@@ -2962,60 +3153,69 @@ function adminDashboard() {
                 const now = new Date();
                 const year = now.getFullYear();
                 const month = now.getMonth() + 1;
-                
                 const data = await this.apiFetch(`/api/admin/users/${userId}/monthly-limits?year=${year}&month=${month}`);
-                
-                if (data.limits && data.limits.length > 0) {
-                    const limit = data.limits[0];
-                    this.userCurrentLimits[userId] = {
-                        limit_hours: limit.limit_hours || 0,
-                        used_hours: limit.used_hours || 0,
-                        remaining_hours: limit.remaining_hours || (limit.limit_hours - (limit.used_hours || 0))
-                    };
-                } else {
-                    this.userCurrentLimits[userId] = { limit_hours: 0, used_hours: 0, remaining_hours: 0 };
-                }
+                const limits = data.limits || [];
+                const def = () => ({ limit_hours: 0, used_hours: 0, remaining_hours: 0 });
+                const outing = limits.find(l => l.request_type === 'outing') || null;
+                const home = limits.find(l => l.request_type === 'home') || null;
+                const toRow = (l) => ({
+                    limit_hours: l.limit_hours || 0,
+                    used_hours: l.used_hours || 0,
+                    remaining_hours: l.remaining_hours != null ? l.remaining_hours : ((l.limit_hours || 0) - (l.used_hours || 0))
+                });
+                this.userCurrentLimits[userId] = {
+                    outing: outing ? toRow(outing) : def(),
+                    home: home ? toRow(home) : def()
+                };
             } catch (error) {
                 console.error(`ユーザー${userId}の限度時間取得エラー:`, error);
                 this.userCurrentLimits[userId] = {
-                    limit_hours: 0,
-                    used_hours: 0,
-                    remaining_hours: 0
+                    outing: { limit_hours: 0, used_hours: 0, remaining_hours: 0 },
+                    home: { limit_hours: 0, used_hours: 0, remaining_hours: 0 }
                 };
             }
         },
 
-        // すべてのユーザーの現在月の限度時間を順次取得（レート制限を回避）
-        async fetchAllUserCurrentLimits() {
+        // 全利用者の現在月の限度時間・残時間を一括取得（照会用・一覧表示用）
+        async fetchMonthlyLimitsSummary() {
             if (!this.users || this.users.length === 0) return;
-            
-            // 既に取得中の場合は重複リクエストを防ぐ
-            if (this.fetchingLimits) {
-                return;
-            }
-            
+            if (this.fetchingLimits) return;
             this.fetchingLimits = true;
-            
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const def = () => ({ outing: { limit_hours: 0, used_hours: 0, remaining_hours: 0 }, home: { limit_hours: 0, used_hours: 0, remaining_hours: 0 } });
             try {
-                // バッチサイズ（一度に処理するユーザー数）- レート制限を考慮して小さく設定
-                const batchSize = 3;
-                
-                for (let i = 0; i < this.users.length; i += batchSize) {
-                    const batch = this.users.slice(i, i + batchSize);
-                    
-                    // バッチ内のリクエストを並行処理
-                    await Promise.allSettled(
-                        batch.map(user => this.fetchUserCurrentLimit(user.id))
-                    );
-                    
-                    // 次のバッチの前に待機（レート制限を回避）- 待機時間を増やす
-                    if (i + batchSize < this.users.length) {
-                        await new Promise(resolve => setTimeout(resolve, 200));
+                const data = await this.apiFetch(`/api/admin/users/monthly-limits-summary?year=${year}&month=${month}`);
+                const summary = data.summary || [];
+                summary.forEach(row => {
+                    this.userCurrentLimits[row.user_id] = {
+                        outing: row.outing || def().outing,
+                        home: row.home || def().home
+                    };
+                });
+                this.users.forEach(u => {
+                    if (!this.userCurrentLimits[u.id]) {
+                        this.userCurrentLimits[u.id] = def();
                     }
+                });
+            } catch (error) {
+                console.error('限度時間一覧の取得エラー:', error);
+                for (let i = 0; i < this.users.length; i += 3) {
+                    const batch = this.users.slice(i, i + 3);
+                    await Promise.allSettled(batch.map(user => this.fetchUserCurrentLimit(user.id)));
+                    if (i + 3 < this.users.length) await new Promise(r => setTimeout(r, 200));
                 }
             } finally {
                 this.fetchingLimits = false;
             }
+        },
+
+        getMonthlyLimitsSummaryCsvUrl() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            return `/api/admin/users/monthly-limits-summary.csv?year=${year}&month=${month}`;
         },
 
         filterOperationLogs(operationType) {
@@ -3358,9 +3558,28 @@ function announcementManagement() {
             content: '',
             target_audience: 'all'
         },
+        readStatus: null,
+        showReadStatusModal: false,
 
         async init() {
             await this.fetchAnnouncements();
+        },
+
+        async fetchReadStatus(announcementId) {
+            try {
+                const api = window.apiFetch || ((url) => fetch(url, { credentials: 'include', headers: { 'Accept': 'application/json' } }).then(r => r.json()));
+                const data = await api(`/api/announcements/admin/${announcementId}/read-status`);
+                this.readStatus = data;
+                this.showReadStatusModal = true;
+            } catch (e) {
+                console.error(e);
+                alert('既読状況の取得に失敗しました');
+            }
+        },
+
+        closeReadStatusModal() {
+            this.showReadStatusModal = false;
+            this.readStatus = null;
         },
 
         async fetchAnnouncements() {

@@ -356,6 +356,15 @@
                                     <span>依頼一覧</span>
                                 </a>
                             </li>
+                            <li>
+                                <a href="{{ route('announcements.index') }}" :aria-current="window.location.pathname === '/announcements' ? 'page' : undefined">
+                                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                    <span>お知らせ</span>
+                                </a>
+                            </li>
                         @endif
                         @if(auth()->user()->isGuide() && auth()->user()->is_allowed)
                             <li>
@@ -369,6 +378,15 @@
                                         <line x1="3" y1="18" x2="3.01" y2="18"></line>
                                     </svg>
                                     <span>依頼一覧</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('announcements.index') }}" :aria-current="window.location.pathname === '/announcements' ? 'page' : undefined">
+                                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                    </svg>
+                                    <span>お知らせ</span>
                                 </a>
                             </li>
                         @endif
@@ -426,7 +444,7 @@
                                         </a>
                                     </li>
                                     <li>
-                                        <a href="{{ route('admin.dashboard') }}" :class="{ active: window.location.pathname === '/admin' && window.adminDashboard && window.adminDashboard.activeTab === 'monthly-limits' }" @click.prevent="if (window.adminDashboard) { if (window.adminDashboard.activeTab !== 'monthly-limits') { window.adminDashboard.activeTab = 'monthly-limits'; if (window.adminDashboard.users.length === 0) window.adminDashboard.fetchUsers(); else window.adminDashboard.fetchAllUserCurrentLimits(); } } else { window.location.href = '{{ route('admin.dashboard') }}'; }">
+                                        <a href="{{ route('admin.dashboard') }}" :class="{ active: window.location.pathname === '/admin' && window.adminDashboard && window.adminDashboard.activeTab === 'monthly-limits' }" @click.prevent="if (window.adminDashboard) { if (window.adminDashboard.activeTab !== 'monthly-limits') { window.adminDashboard.activeTab = 'monthly-limits'; if (window.adminDashboard.users.length === 0) window.adminDashboard.fetchUsers(); else window.adminDashboard.fetchMonthlyLimitsSummary(); } } else { window.location.href = '{{ route('admin.dashboard') }}'; }">
                                             <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <circle cx="12" cy="12" r="10"></circle>
                                                 <polyline points="12 6 12 12 16 14"></polyline>
@@ -449,7 +467,7 @@
                                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                                                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                                             </svg>
-                                            <span>メール通知設定</span>
+                                            <span>設定</span>
                                         </a>
                                     </li>
                                     <li>

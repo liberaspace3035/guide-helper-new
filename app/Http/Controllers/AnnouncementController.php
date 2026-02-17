@@ -36,6 +36,16 @@ class AnnouncementController extends Controller
         }
     }
 
+    public function markAsUnread($id)
+    {
+        try {
+            $this->announcementService->markAsUnread($id, Auth::id(), Auth::user()->role);
+            return response()->json(['message' => 'お知らせを未読に戻しました']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
     // 管理者向け：すべてのお知らせを取得
     public function getAllForAdmin()
     {
@@ -129,6 +139,17 @@ class AnnouncementController extends Controller
         try {
             $this->announcementService->deleteAnnouncement($id);
             return response()->json(['message' => 'お知らせを削除しました']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    // 管理者向け：お知らせの既読状況を取得
+    public function getReadStatusForAdmin($id)
+    {
+        try {
+            $status = $this->announcementService->getReadStatus((int) $id);
+            return response()->json($status);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }

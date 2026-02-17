@@ -57,7 +57,6 @@
   color: #1e40af;
   padding: var(--spacing-md);
   border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-xl);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -89,6 +88,24 @@
   margin-bottom: var(--spacing-xl);
   border-left: 4px solid var(--error-color);
   font-size: 14px;
+}
+
+.error-message-with-retry {
+  background-color: #fce8e6;
+  color: var(--error-color);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-xl);
+  border-left: 4px solid var(--error-color);
+  font-size: 14px;
+
+  p {
+    margin: 0 0 var(--spacing-md) 0;
+  }
+
+  .btn-primary {
+    margin-top: var(--spacing-sm);
+  }
 }
 
 .requests-list {

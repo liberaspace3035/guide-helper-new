@@ -11,19 +11,50 @@ use App\Models\GuideProfile;
 use App\Models\AdminSetting;
 use App\Models\Matching;
 use App\Models\Notification;
+use App\Models\UserMonthlyLimit;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AdminService
 {
-    public function getDashboardData(): array
+    public function getDashboardData(?User $adminUser = null): array
     {
-        return [
+        $data = [
             'requests' => $this->getAllRequests(),
             'acceptances' => $this->getPendingAcceptances(),
             'reports' => $this->getPendingReports(),
             'stats' => $this->getStats(),
             'autoMatching' => $this->getAutoMatchingSetting(),
         ];
+        if ($adminUser) {
+            $data['notifications'] = $this->getAdminNotifications($adminUser->id, 5);
+        } else {
+            $data['notifications'] = [];
+        }
+        return $data;
+    }
+
+    /**
+     * 管理者向けの未読通知を取得（新規登録・報告書承認待ち・承諾など）
+     */
+    public function getAdminNotifications(int $adminUserId, int $limit = 5): array
+    {
+        return Notification::where('user_id', $adminUserId)
+            ->whereNull('read_at')
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(function ($n) {
+                return [
+                    'id' => $n->id,
+                    'type' => $n->type,
+                    'title' => $n->title,
+                    'message' => $n->message,
+                    'related_id' => $n->related_id,
+                    'created_at' => $n->created_at?->toIso8601String() ?? $n->created_at,
+                ];
+            })
+            ->toArray();
     }
 
     public function getAllRequests(): array
@@ -433,18 +464,53 @@ class AdminService
             ->toArray();
     }
 
-    public function getAllUsers(): array
+    /**
+     * 利用者一覧を取得（並び替え・検索対応）
+     *
+     * @param string $sort 並び順: pending_first | created_desc | created_asc | name_asc | name_desc
+     * @param string|null $search 検索文字列（名前・メールアドレスで部分一致）
+     */
+    public function getAllUsers(string $sort = 'created_desc', ?string $search = null): array
     {
-        $users = User::where('role', 'user')
-            ->with('userProfile:id,user_id,contact_method,notes,recipient_number,admin_comment')
-            ->orderBy('created_at', 'desc')
-            ->get();
-        
+        $query = User::where('role', 'user')
+            ->with('userProfile:id,user_id,contact_method,notes,recipient_number,admin_comment');
+
+        if ($search !== null && trim($search) !== '') {
+            $term = '%' . trim($search) . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)
+                    ->orWhere('email', 'like', $term);
+            });
+        }
+
+        switch ($sort) {
+            case 'pending_first':
+                // 未承認(is_allowed=false)を先に、その後登録が新しい順
+                $query->orderBy('is_allowed', 'asc')
+                    ->orderBy('created_at', 'desc');
+                break;
+            case 'created_asc':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'name_asc':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'name_desc':
+                $query->orderBy('name', 'desc');
+                break;
+            case 'created_desc':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
+
+        $users = $query->get();
+
         // リレーションを明示的にロード
         $users->each(function ($user) {
             $user->userProfile;
         });
-        
+
         return $users->map(function($user) {
                 return [
                     'id' => (int) $user->id,
@@ -467,18 +533,110 @@ class AdminService
             ->toArray();
     }
 
-    public function getAllGuides(): array
+    /**
+     * 全利用者の指定月の限度時間・使用時間・残時間を一覧で取得（照会用・CSV用）
+     *
+     * @param int|null $year 年（省略時は当年）
+     * @param int|null $month 月（省略時は当月）
+     * @return array 各要素: user_id, user_name, email, recipient_number, year, month, limit_hours, used_hours, remaining_hours
+     */
+    public function getAllUsersMonthlyLimitsSummary(?int $year = null, ?int $month = null): array
     {
-        $guides = User::where('role', 'guide')
-            ->with('guideProfile:id,user_id,introduction,available_areas,available_days,available_times,employee_number,admin_comment')
-            ->orderBy('created_at', 'desc')
+        $now = Carbon::now();
+        $year = $year ?? $now->year;
+        $month = $month ?? $now->month;
+
+        $users = User::where('role', 'user')
+            ->with('userProfile:id,user_id,recipient_number')
+            ->orderBy('name')
             ->get();
-        
+
+        $limitsByUser = UserMonthlyLimit::where('year', $year)
+            ->where('month', $month)
+            ->whereIn('user_id', $users->pluck('id'))
+            ->get()
+            ->groupBy('user_id');
+
+        return $users->map(function ($user) use ($year, $month, $limitsByUser) {
+            $userLimits = $limitsByUser->get($user->id) ?? collect();
+            $outing = $userLimits->firstWhere('request_type', 'outing');
+            $home = $userLimits->firstWhere('request_type', 'home');
+            $build = function ($row) {
+                if (!$row) {
+                    return ['limit_hours' => 0.0, 'used_hours' => 0.0, 'remaining_hours' => 0.0];
+                }
+                $limit = (float) $row->limit_hours;
+                $used = (float) $row->used_hours;
+                return [
+                    'limit_hours' => round($limit, 2),
+                    'used_hours' => round($used, 2),
+                    'remaining_hours' => round(max(0, $limit - $used), 2),
+                ];
+            };
+
+            return [
+                'user_id' => (int) $user->id,
+                'user_name' => $user->name ?? '',
+                'email' => $user->email ?? '',
+                'recipient_number' => $user->userProfile->recipient_number ?? '',
+                'year' => $year,
+                'month' => $month,
+                'outing' => $build($outing),
+                'home' => $build($home),
+                // 後方互換: 合計
+                'limit_hours' => round($build($outing)['limit_hours'] + $build($home)['limit_hours'], 2),
+                'used_hours' => round($build($outing)['used_hours'] + $build($home)['used_hours'], 2),
+                'remaining_hours' => round($build($outing)['remaining_hours'] + $build($home)['remaining_hours'], 2),
+            ];
+        })->values()->toArray();
+    }
+
+    /**
+     * ガイド一覧を取得（並び替え・検索対応）
+     *
+     * @param string $sort 並び順: pending_first | created_desc | created_asc | name_asc | name_desc
+     * @param string|null $search 検索文字列（名前・メールアドレスで部分一致）
+     */
+    public function getAllGuides(string $sort = 'created_desc', ?string $search = null): array
+    {
+        $query = User::where('role', 'guide')
+            ->with('guideProfile:id,user_id,introduction,available_areas,available_days,available_times,employee_number,admin_comment');
+
+        if ($search !== null && trim($search) !== '') {
+            $term = '%' . trim($search) . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)
+                    ->orWhere('email', 'like', $term);
+            });
+        }
+
+        switch ($sort) {
+            case 'pending_first':
+                $query->orderBy('is_allowed', 'asc')
+                    ->orderBy('created_at', 'desc');
+                break;
+            case 'created_asc':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'name_asc':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'name_desc':
+                $query->orderBy('name', 'desc');
+                break;
+            case 'created_desc':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
+
+        $guides = $query->get();
+
         // リレーションを明示的にロード
         $guides->each(function ($guide) {
             $guide->guideProfile;
         });
-        
+
         return $guides->map(function($guide) {
                 $profile = $guide->guideProfile;
                 return [

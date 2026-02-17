@@ -81,6 +81,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/matchings/batch-approve', [\App\Http\Controllers\Api\AdminController::class, 'batchApproveMatchings']);
         Route::post('/matchings/reject', [\App\Http\Controllers\Api\AdminController::class, 'rejectMatching']);
         Route::get('/users', [\App\Http\Controllers\Api\AdminController::class, 'users']);
+        Route::get('/users/monthly-limits-summary', [\App\Http\Controllers\Api\AdminController::class, 'getUsersMonthlyLimitsSummary']);
+        Route::get('/users/monthly-limits-summary.csv', [\App\Http\Controllers\Api\AdminController::class, 'getUsersMonthlyLimitsSummaryCsv']);
         Route::get('/guides', [\App\Http\Controllers\Api\AdminController::class, 'guides']);
         Route::put('/users/{id}/profile-extra', [\App\Http\Controllers\Api\AdminController::class, 'updateUserProfileExtra']);
         Route::put('/guides/{id}/profile-extra', [\App\Http\Controllers\Api\AdminController::class, 'updateGuideProfileExtra']);
@@ -97,6 +99,7 @@ Route::middleware(['auth'])->group(function () {
     // 管理者向けお知らせ管理
     Route::middleware(['role:admin'])->prefix('announcements/admin')->group(function () {
         Route::get('/all', [\App\Http\Controllers\AnnouncementController::class, 'getAllForAdmin']);
+        Route::get('/{id}/read-status', [\App\Http\Controllers\AnnouncementController::class, 'getReadStatusForAdmin']);
         Route::post('/', [\App\Http\Controllers\AnnouncementController::class, 'createForAdmin']);
         Route::put('/{id}', [\App\Http\Controllers\AnnouncementController::class, 'updateForAdmin']);
         Route::delete('/{id}', [\App\Http\Controllers\AnnouncementController::class, 'deleteForAdmin']);

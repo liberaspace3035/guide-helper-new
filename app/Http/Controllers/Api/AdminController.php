@@ -418,15 +418,27 @@ class AdminController extends Controller
             ->header('Content-Disposition', 'attachment; filename=usage.csv');
     }
 
-    public function users()
+    public function users(Request $request)
     {
-        $users = $this->adminService->getAllUsers();
+        $sort = $request->query('sort', 'created_desc');
+        $search = $request->query('search');
+        $allowedSort = ['pending_first', 'created_desc', 'created_asc', 'name_asc', 'name_desc'];
+        if (!in_array($sort, $allowedSort, true)) {
+            $sort = 'created_desc';
+        }
+        $users = $this->adminService->getAllUsers($sort, $search !== null && trim($search) !== '' ? trim($search) : null);
         return response()->json(['users' => $users]);
     }
 
-    public function guides()
+    public function guides(Request $request)
     {
-        $guides = $this->adminService->getAllGuides();
+        $sort = $request->query('sort', 'created_desc');
+        $search = $request->query('search');
+        $allowedSort = ['pending_first', 'created_desc', 'created_asc', 'name_asc', 'name_desc'];
+        if (!in_array($sort, $allowedSort, true)) {
+            $sort = 'created_desc';
+        }
+        $guides = $this->adminService->getAllGuides($sort, $search !== null && trim($search) !== '' ? trim($search) : null);
         return response()->json(['guides' => $guides]);
     }
 
@@ -439,6 +451,7 @@ class AdminController extends Controller
             ], [
                 'recipient_number.regex' => '受給者証番号は半角数字10桁で入力してください。',
             ]);
+            
 
             $this->adminService->updateUserProfileExtra(
                 $id,
@@ -710,7 +723,7 @@ class AdminController extends Controller
     }
 
     /**
-     * ユーザーの月次限度時間を設定
+     * ユーザーの月次限度時間を設定（request_type 省略時は外出・自宅両方に同じ値を設定）
      */
     public function setUserMonthlyLimit(Request $request, int $userId)
     {
@@ -718,21 +731,25 @@ class AdminController extends Controller
             'limit_hours' => 'required|numeric|min:0',
             'year' => 'required|integer|min:2000|max:2100',
             'month' => 'required|integer|min:1|max:12',
+            'request_type' => 'nullable|string|in:outing,home',
         ]);
 
         try {
             $limitService = app(\App\Services\UserMonthlyLimitService::class);
-            $limit = $limitService->setLimit(
-                $userId,
-                $request->input('limit_hours'),
-                $request->input('year'),
-                $request->input('month')
-            );
+            $limitHours = (float) $request->input('limit_hours');
+            $year = (int) $request->input('year');
+            $month = (int) $request->input('month');
+            $requestType = $request->input('request_type');
 
-            return response()->json([
-                'message' => '限度時間を設定しました',
-                'limit' => $limit,
-            ]);
+            if ($requestType) {
+                $limit = $limitService->setLimit($userId, $limitHours, $year, $month, $requestType);
+                return response()->json(['message' => '限度時間を設定しました', 'limit' => $limit]);
+            }
+            // 未指定の場合は外出・自宅両方に同じ値を設定（後方互換）
+            $limitService->setLimit($userId, $limitHours, $year, $month, 'outing');
+            $limitService->setLimit($userId, $limitHours, $year, $month, 'home');
+            $limit = $limitService->getOrCreateLimit($userId, $year, $month, 'outing');
+            return response()->json(['message' => '限度時間を設定しました（外出・自宅）', 'limit' => $limit]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -745,28 +762,30 @@ class AdminController extends Controller
     {
         try {
             $query = \App\Models\UserMonthlyLimit::where('user_id', $userId);
-            
+
             // 年月でフィルタリング（オプション）
             if ($request->has('year') && $request->has('month')) {
                 $query->where('year', $request->input('year'))
                       ->where('month', $request->input('month'));
             }
-            
+
             $limits = $query->orderBy('year', 'desc')
                 ->orderBy('month', 'desc')
                 ->get();
 
-            // 使用時間と残時間を計算
+            // 使用時間と残時間を計算（request_type ごと）
             $limitService = app(\App\Services\UserMonthlyLimitService::class);
             $limits = $limits->map(function($limit) use ($limitService) {
-                $usedHours = $limitService->getUsedHours($limit->user_id, $limit->year, $limit->month);
-                $remainingHours = $limitService->getRemainingHours($limit->user_id, $limit->year, $limit->month);
-                
+                $requestType = $limit->request_type ?? 'outing';
+                $usedHours = $limitService->getUsedHours($limit->user_id, $limit->year, $limit->month, $requestType);
+                $remainingHours = $limitService->getRemainingHours($limit->user_id, $limit->year, $limit->month, $requestType);
+
                 return [
                     'id' => $limit->id,
                     'user_id' => $limit->user_id,
                     'year' => $limit->year,
                     'month' => $limit->month,
+                    'request_type' => $requestType,
                     'limit_hours' => $limit->limit_hours,
                     'used_hours' => $usedHours,
                     'remaining_hours' => $remainingHours,
@@ -776,6 +795,63 @@ class AdminController extends Controller
             });
 
             return response()->json(['limits' => $limits]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * 全利用者の指定月の限度時間・残時間一覧を取得（照会用・一括表示用）
+     */
+    public function getUsersMonthlyLimitsSummary(Request $request)
+    {
+        try {
+            $year = $request->query('year') ? (int) $request->query('year') : null;
+            $month = $request->query('month') ? (int) $request->query('month') : null;
+            $summary = $this->adminService->getAllUsersMonthlyLimitsSummary($year, $month);
+            return response()->json([
+                'year' => $year ?? (int) now()->format('Y'),
+                'month' => $month ?? (int) now()->format('n'),
+                'summary' => $summary,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * 全利用者の指定月の限度時間・残時間一覧をCSVでダウンロード
+     */
+    public function getUsersMonthlyLimitsSummaryCsv(Request $request)
+    {
+        try {
+            $year = $request->query('year') ? (int) $request->query('year') : (int) now()->format('Y');
+            $month = $request->query('month') ? (int) $request->query('month') : (int) now()->format('n');
+            $rows = $this->adminService->getAllUsersMonthlyLimitsSummary($year, $month);
+
+            $csvHeader = 'ユーザーID,ユーザー名,メール,受給者証番号,年,月,限度時間(時間),使用時間(時間),残時間(時間)' . "\n";
+            $csvRows = array_map(function ($row) {
+                return sprintf(
+                    '%d,"%s","%s","%s",%d,%d,%s,%s,%s',
+                    $row['user_id'],
+                    str_replace('"', '""', $row['user_name']),
+                    str_replace('"', '""', $row['email']),
+                    str_replace('"', '""', $row['recipient_number']),
+                    $row['year'],
+                    $row['month'],
+                    $row['limit_hours'],
+                    $row['used_hours'],
+                    $row['remaining_hours']
+                );
+            }, $rows);
+
+            $csv = "\xEF\xBB\xBF" . $csvHeader . implode("\n", $csvRows);
+
+            $filename = sprintf('monthly_limits_%04d%02d.csv', $year, $month);
+
+            return response($csv, 200)
+                ->header('Content-Type', 'text/csv; charset=utf-8')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

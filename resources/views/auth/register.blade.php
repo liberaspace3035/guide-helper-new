@@ -17,15 +17,17 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('register') }}" @submit.prevent="handleSubmit" aria-label="ユーザー登録フォーム">
+        <form method="POST" action="{{ route('register') }}" @submit="handleSubmit($event)" aria-label="ユーザー登録フォーム">
             @csrf
-            <div x-show="error" class="error-message" role="alert" aria-live="polite" x-text="error"></div>
+            <div x-show="error" class="error-message" id="register-error-client" role="alert" aria-live="polite" aria-atomic="true" x-text="error"></div>
             @if($errors->any())
-                <div class="error-message" role="alert" aria-live="polite">
-                    {{ $errors->first() }}
+                <div class="error-message" id="register-error-summary" role="alert" aria-live="polite" aria-atomic="true">
+                    <span class="sr-only">入力内容に誤りがあります。</span>{{ $errors->first() }}
                 </div>
             @endif
-            
+
+            <!-- 入力画面 -->
+            <div x-show="step === 'input'" x-cloak>
             <!-- 基本情報と連絡先を1行に配置 -->
             <div class="form-sections-row">
                 <!-- 基本情報セクション -->
@@ -71,11 +73,14 @@
                                     x-model="formData.last_name_kana"
                                     placeholder="セイ（全角カタカナで入力）"
                                     pattern="[ァ-ヶー\s]*"
-                                    title="全角カタカナで入力してください"
+                                    title="姓（カナ）は全角カタカナで入力してください。名前の読み方の部分です。"
                                     required
                                     aria-required="true"
+                                    :aria-invalid="!!fieldErrors.last_name_kana"
+                                    :aria-describedby="fieldErrors.last_name_kana ? 'last_name_kana-error' : null"
                                 />
                                 <label for="last_name_kana" class="input-label">姓（カナ）</label>
+                                <span id="last_name_kana-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.last_name_kana" x-text="fieldErrors.last_name_kana"></span>
                             </div>
                             <div class="name-input-item">
                                 <input
@@ -85,17 +90,21 @@
                                     x-model="formData.first_name_kana"
                                     placeholder="メイ（全角カタカナで入力）"
                                     pattern="[ァ-ヶー\s]*"
-                                    title="全角カタカナで入力してください"
+                                    title="名（カナ）は全角カタカナで入力してください。名前の読み方の部分です。"
                                     required
                                     aria-required="true"
+                                    :aria-invalid="!!fieldErrors.first_name_kana"
+                                    :aria-describedby="fieldErrors.first_name_kana ? 'first_name_kana-error' : null"
                                 />
                                 <label for="first_name_kana" class="input-label">名（カナ）</label>
+                                <span id="first_name_kana-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.first_name_kana" x-text="fieldErrors.first_name_kana"></span>
                             </div>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group form-group-half">
                             <label for="birth_date">生年月日 <span class="required">*</span></label>
+                            <span id="birth_date-description" class="sr-only">今日より前の日付を入力してください。18歳以上である必要があります。</span>
                             <input
                                 type="date"
                                 id="birth_date"
@@ -104,7 +113,10 @@
                                 required
                                 aria-required="true"
                                 aria-label="生年月日"
+                                :aria-invalid="!!fieldErrors.birth_date"
+                                :aria-describedby="fieldErrors.birth_date ? 'birth_date-description birth_date-error' : 'birth_date-description'"
                             />
+                            <span id="birth_date-error" class="error-message-field" role="alert" aria-live="polite" aria-atomic="true" x-show="fieldErrors.birth_date" x-text="fieldErrors.birth_date"></span>
                         </div>
                         <div class="form-group form-group-half">
                             <label for="gender">性別 <span class="required">*</span></label>
@@ -321,15 +333,42 @@
 
                     <div class="form-group">
                         <label for="application_reason">応募のきっかけ <span class="required">*</span></label>
-                        <textarea
+                        <select
                             id="application_reason"
-                            name="application_reason"
                             x-model="formData.application_reason"
-                            rows="4"
                             required
                             aria-required="true"
-                            placeholder="このサービスを知ったきっかけや応募理由を記入してください"
-                        ></textarea>
+                            :aria-describedby="formData.application_reason === 'その他（自由記述）' ? 'application_reason_other_description' : null"
+                        >
+                            <option value="">選択してください</option>
+                            <option value="With Blindのホームページを見て">With Blindのホームページを見て</option>
+                            <option value="X（旧Twitter）の投稿を見て">X（旧Twitter）の投稿を見て</option>
+                            <option value="Facebookの投稿を見て">Facebookの投稿を見て</option>
+                            <option value="Instagramの投稿を見て">Instagramの投稿を見て</option>
+                            <option value="知人・友人からの紹介">知人・友人からの紹介</option>
+                            <option value="家族からの紹介">家族からの紹介</option>
+                            <option value="学校・職場からの紹介">学校・職場からの紹介</option>
+                            <option value="他の利用者・ガイドからの紹介">他の利用者・ガイドからの紹介</option>
+                            <option value="イベントや説明会に参加して">イベントや説明会に参加して</option>
+                            <option value="メディア掲載（テレビ・新聞・Web記事など）を見て">メディア掲載（テレビ・新聞・Web記事など）を見て</option>
+                            <option value="検索エンジン（Googleなど）で見つけて">検索エンジン（Googleなど）で見つけて</option>
+                            <option value="その他（自由記述）">その他（自由記述）</option>
+                        </select>
+                        <template x-if="formData.application_reason === 'その他（自由記述）'">
+                            <div class="form-group" style="margin-top: 0.75rem;">
+                                <label for="application_reason_other" class="input-label">その他の内容を記入してください <span class="required">*</span></label>
+                                <textarea
+                                    id="application_reason_other"
+                                    x-model="formData.application_reason_other"
+                                    rows="3"
+                                    placeholder="きっかけの内容を記入してください"
+                                    aria-required="true"
+                                    :required="formData.application_reason === 'その他（自由記述）'"
+                                ></textarea>
+                                <span id="application_reason_other_description" class="sr-only">その他を選んだ場合は、きっかけの内容を記入してください</span>
+                            </div>
+                        </template>
+                        <input type="hidden" name="application_reason" :value="getApplicationReasonValue()">
                     </div>
 
                     <div class="form-group">
@@ -347,15 +386,24 @@
 
                     <div class="form-group">
                         <label for="disability_support_level">障害支援区分 <span class="required">*</span></label>
-                        <input
-                            type="text"
+                        <select
                             id="disability_support_level"
                             name="disability_support_level"
                             x-model="formData.disability_support_level"
                             required
                             aria-required="true"
-                            placeholder="例: 1, 2, 3, 4, 5, 6"
-                        />
+                            aria-describedby="disability_support_level-desc"
+                        >
+                            <option value="">選択してください</option>
+                            <option value="１">１</option>
+                            <option value="２">２</option>
+                            <option value="３">３</option>
+                            <option value="４">４</option>
+                            <option value="５">５</option>
+                            <option value="６">６</option>
+                            <option value="なし">なし</option>
+                        </select>
+                        <span id="disability_support_level-desc" class="sr-only">１から６、またはなしから選択</span>
                     </div>
 
                     <div class="form-group">
@@ -479,16 +527,102 @@
                     </div>
                 </div>
             </template>
-            
+
+            </div>
+            <!-- /入力画面 -->
+
+            <!-- 入力内容確認画面 -->
+            <div x-show="step === 'confirm'" x-cloak class="confirm-section" role="region" aria-label="入力内容の確認">
+                <div class="confirm-header">
+                    <h2 class="confirm-title">入力内容の確認</h2>
+                    <p class="confirm-description">以下の内容に誤りがなければ「送信する」を押してください。修正する場合は「修正する」から入力画面に戻れます。</p>
+                </div>
+
+                <div class="confirm-block">
+                    <h3 class="confirm-block-title">基本情報</h3>
+                    <div class="confirm-list">
+                        <div class="confirm-row"><span class="confirm-label">登録種別</span><span class="confirm-value" x-text="formData.role === 'user' ? '利用者' : 'ガイド'"></span></div>
+                        <div class="confirm-row"><span class="confirm-label">お名前</span><span class="confirm-value" x-text="(formData.last_name || '') + ' ' + (formData.first_name || '')"></span></div>
+                        <div class="confirm-row"><span class="confirm-label">お名前（カナ）</span><span class="confirm-value" x-text="(formData.last_name_kana || '') + ' ' + (formData.first_name_kana || '')"></span></div>
+                        <div class="confirm-row"><span class="confirm-label">生年月日</span><span class="confirm-value" x-text="formData.birth_date || '—'"></span></div>
+                        <div class="confirm-row"><span class="confirm-label">性別</span><span class="confirm-value" x-text="getGenderLabel(formData.gender)"></span></div>
+                    </div>
+                </div>
+
+                <div class="confirm-block">
+                    <h3 class="confirm-block-title">連絡先</h3>
+                    <div class="confirm-list">
+                        <div class="confirm-row"><span class="confirm-label">郵便番号</span><span class="confirm-value" x-text="formData.postal_code || '—'"></span></div>
+                        <div class="confirm-row"><span class="confirm-label">住所</span><span class="confirm-value" x-text="formData.address || '—'"></span></div>
+                        <div class="confirm-row"><span class="confirm-label">電話番号</span><span class="confirm-value" x-text="formData.phone || '—'"></span></div>
+                        <div class="confirm-row"><span class="confirm-label">メールアドレス</span><span class="confirm-value" x-text="formData.email || '—'"></span></div>
+                        <div class="confirm-row"><span class="confirm-label">パスワード</span><span class="confirm-value">********</span></div>
+                    </div>
+                </div>
+
+                <template x-if="formData.role === 'user'">
+                    <div class="confirm-block">
+                        <h3 class="confirm-block-title">利用者情報</h3>
+                        <div class="confirm-list">
+                            <div class="confirm-row"><span class="confirm-label">面談希望日時（第1希望）</span><span class="confirm-value" x-text="formatConfirmDateTime(formData.interview_date_1)"></span></div>
+                            <div class="confirm-row"><span class="confirm-label">面談希望日時（第2希望）</span><span class="confirm-value" x-text="formatConfirmDateTime(formData.interview_date_2) || '—'"></span></div>
+                            <div class="confirm-row"><span class="confirm-label">面談希望日時（第3希望）</span><span class="confirm-value" x-text="formatConfirmDateTime(formData.interview_date_3) || '—'"></span></div>
+                            <div class="confirm-row"><span class="confirm-label">応募のきっかけ</span><span class="confirm-value" x-text="getApplicationReasonValue() || '—'"></span></div>
+                            <div class="confirm-row"><span class="confirm-label">視覚障害の状況</span><span class="confirm-value confirm-text-block" x-text="formData.visual_disability_status || '—'"></span></div>
+                            <div class="confirm-row"><span class="confirm-label">障害支援区分</span><span class="confirm-value" x-text="formData.disability_support_level || '—'"></span></div>
+                            <div class="confirm-row"><span class="confirm-label">普段の生活状況</span><span class="confirm-value confirm-text-block" x-text="formData.daily_life_situation || '—'"></span></div>
+                        </div>
+                    </div>
+                </template>
+
+                <template x-if="formData.role === 'guide'">
+                    <div class="confirm-block">
+                        <h3 class="confirm-block-title">ガイド情報</h3>
+                        <div class="confirm-list">
+                            <div class="confirm-row"><span class="confirm-label">応募理由</span><span class="confirm-value confirm-text-block" x-text="formData.application_reason || '—'"></span></div>
+                            <div class="confirm-row"><span class="confirm-label">実現したいこと</span><span class="confirm-value confirm-text-block" x-text="formData.goal || '—'"></span></div>
+                            <div class="confirm-row"><span class="confirm-label">保有資格</span><span class="confirm-value">
+                                <template x-for="(qual, index) in formData.qualifications" :key="index">
+                                    <div class="confirm-qual-item" x-text="(qual.name || '') + (qual.obtained_date ? '（' + qual.obtained_date + '）' : '')"></div>
+                                </template>
+                            </span></div>
+                            <div class="confirm-row"><span class="confirm-label">希望勤務時間</span><span class="confirm-value confirm-text-block" x-text="formData.preferred_work_hours || '—'"></span></div>
+                        </div>
+                    </div>
+                </template>
+
+                <div class="confirm-actions">
+                    <button
+                        type="button"
+                        class="btn-secondary btn-confirm-back"
+                        @click="step = 'input'"
+                        aria-label="入力画面に戻る"
+                    >
+                        修正する
+                    </button>
+                    <button
+                        type="submit"
+                        class="btn-primary btn-confirm-submit"
+                        :disabled="loading"
+                        aria-label="登録を送信する"
+                    >
+                        <span x-show="!loading">送信する</span>
+                        <span x-show="loading">送信中...</span>
+                    </button>
+                </div>
+            </div>
+            <!-- /入力内容確認画面 -->
+
+            <div x-show="step === 'input'">
             <button
-                type="submit"
+                type="button"
                 class="btn-primary btn-block"
-                :disabled="loading"
-                aria-label="登録ボタン"
+                @click="validateAndGoToConfirm()"
+                aria-label="入力内容を確認する"
             >
-                <span x-show="!loading">登録</span>
-                <span x-show="loading">登録中...</span>
+                入力内容を確認する
             </button>
+            </div>
         </form>
         <p class="login-link">
             既にアカウントをお持ちの方は
@@ -526,6 +660,7 @@ function registerForm() {
             interview_date_2: '',
             interview_date_3: '',
             application_reason: '',
+            application_reason_other: '',
             visual_disability_status: '',
             disability_support_level: '',
             daily_life_situation: '',
@@ -537,6 +672,7 @@ function registerForm() {
         error: '',
         fieldErrors: {},
         loading: false,
+        step: 'input',
         init() {
             // サーバーサイドのエラーをfieldErrorsに設定
             @if($errors->has('postal_code'))
@@ -553,6 +689,15 @@ function registerForm() {
             @endif
             @if($errors->has('confirmPassword'))
                 this.fieldErrors.confirmPassword = '{{ addslashes($errors->first('confirmPassword')) }}';
+            @endif
+            @if($errors->has('last_name_kana'))
+                this.fieldErrors.last_name_kana = '{{ addslashes($errors->first('last_name_kana')) }}';
+            @endif
+            @if($errors->has('first_name_kana'))
+                this.fieldErrors.first_name_kana = '{{ addslashes($errors->first('first_name_kana')) }}';
+            @endif
+            @if($errors->has('birth_date'))
+                this.fieldErrors.birth_date = '{{ addslashes($errors->first('birth_date')) }}';
             @endif
         },
         // 面談日の最小値（今日以降）
@@ -582,6 +727,110 @@ function registerForm() {
             if (this.formData.qualifications.length > 1) {
                 this.formData.qualifications.splice(index, 1);
             }
+        },
+        getApplicationReasonValue() {
+            if (this.formData.role !== 'user') return this.formData.application_reason || '';
+            if (this.formData.application_reason === 'その他（自由記述）') {
+                const other = (this.formData.application_reason_other || '').trim();
+                return other ? 'その他（自由記述）：' + other : 'その他（自由記述）';
+            }
+            return this.formData.application_reason || '';
+        },
+        getGenderLabel(value) {
+            const map = { male: '男性', female: '女性', other: 'その他', prefer_not_to_say: '回答しない' };
+            return map[value] || value || '—';
+        },
+        formatConfirmDateTime(str) {
+            if (!str) return '';
+            try {
+                const d = new Date(str);
+                if (isNaN(d.getTime())) return str;
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const h = String(d.getHours()).padStart(2, '0');
+                const min = String(d.getMinutes()).padStart(2, '0');
+                return y + '/' + m + '/' + day + ' ' + h + ':' + min;
+            } catch (e) { return str; }
+        },
+        validateAndGoToConfirm() {
+            this.error = '';
+            this.validatePostalCode();
+            this.validateEmail();
+            this.validateEmailConfirmation();
+            this.validatePassword();
+            this.validatePasswordConfirmation();
+            if (Object.keys(this.fieldErrors).length > 0) return;
+            if (this.formData.email !== this.formData.email_confirmation) {
+                this.fieldErrors.email_confirmation = 'メールアドレスが一致しません';
+                return;
+            }
+            if (this.formData.password !== this.formData.confirmPassword) {
+                this.fieldErrors.confirmPassword = 'パスワードが一致しません';
+                return;
+            }
+            if (this.formData.password.length < 6) {
+                this.fieldErrors.password = 'パスワードは6文字以上で入力してください';
+                return;
+            }
+            if (this.formData.role === 'user') {
+                if (!this.formData.interview_date_1) { this.error = '面談希望日時（第1希望）を入力してください'; return; }
+                if (!this.formData.application_reason) { this.error = '応募のきっかけを選択してください'; return; }
+                if (this.formData.application_reason === 'その他（自由記述）' && !this.formData.application_reason_other?.trim()) { this.error = 'その他の内容を記入してください'; return; }
+                if (!this.formData.visual_disability_status) { this.error = '視覚障害の状況を入力してください'; return; }
+                if (!this.formData.disability_support_level) { this.error = '障害支援区分を選択してください'; return; }
+                if (!this.formData.daily_life_situation) { this.error = '普段の生活状況を入力してください'; return; }
+            } else if (this.formData.role === 'guide') {
+                if (!this.formData.application_reason) { this.error = '応募理由を入力してください'; return; }
+                if (!this.formData.goal) { this.error = '実現したいことを入力してください'; return; }
+                if (!this.formData.qualifications || this.formData.qualifications.length === 0) { this.error = '保有資格を1件以上入力してください'; return; }
+                for (let i = 0; i < this.formData.qualifications.length; i++) {
+                    if (!this.formData.qualifications[i].name || !this.formData.qualifications[i].obtained_date) {
+                        this.error = '保有資格の資格名と取得年月日を入力してください';
+                        return;
+                    }
+                }
+                if (!this.formData.preferred_work_hours) { this.error = '希望勤務時間を入力してください'; return; }
+            }
+            this.step = 'confirm';
+            this.$el.querySelector('.confirm-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+        submitForm() {
+            const form = this.$el.querySelector('form');
+            if (!form) {
+                this.loading = false;
+                return;
+            }
+            this.loading = true;
+            const formData = new FormData(form);
+            const action = form.getAttribute('action') || form.action;
+            const method = (form.getAttribute('method') || form.method || 'post').toUpperCase();
+
+            fetch(action, {
+                method: method,
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html'
+                }
+            })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.text().then(html => {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                });
+            })
+            .catch(err => {
+                console.error('送信エラー:', err);
+                this.loading = false;
+                alert('送信に失敗しました。もう一度お試しください。');
+            });
         },
         validatePostalCode() {
             const pattern = /^\d{3}-\d{4}$/;
@@ -632,7 +881,14 @@ function registerForm() {
                 delete this.fieldErrors.confirmPassword;
             }
         },
-        handleSubmit() {
+        handleSubmit(ev) {
+            // 確認画面からの送信: そのまま送信させる（prevent しない）
+            if (this.step === 'confirm') {
+                this.loading = true;
+                return;
+            }
+            ev.preventDefault();
+
             this.error = '';
             this.fieldErrors = {};
             
@@ -672,7 +928,11 @@ function registerForm() {
                     return;
                 }
                 if (!this.formData.application_reason) {
-                    this.error = '応募のきっかけを入力してください';
+                    this.error = '応募のきっかけを選択してください';
+                    return;
+                }
+                if (this.formData.application_reason === 'その他（自由記述）' && !this.formData.application_reason_other?.trim()) {
+                    this.error = 'その他の内容を記入してください';
                     return;
                 }
                 if (!this.formData.visual_disability_status) {
@@ -680,7 +940,7 @@ function registerForm() {
                     return;
                 }
                 if (!this.formData.disability_support_level) {
-                    this.error = '障害支援区分を入力してください';
+                    this.error = '障害支援区分を選択してください';
                     return;
                 }
                 if (!this.formData.daily_life_situation) {
@@ -712,9 +972,8 @@ function registerForm() {
                     return;
                 }
             }
-            
-            this.loading = true;
-            this.$el.submit();
+
+            this.validateAndGoToConfirm();
         }
     }
 }

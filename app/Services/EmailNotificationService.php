@@ -155,6 +155,32 @@ class EmailNotificationService
     }
 
     /**
+     * 管理者向け：新規ユーザー/ガイド登録の通知メールを送信
+     */
+    public function sendAdminNewRegistrationNotification(User $admin, string $registrantName, bool $isGuide): bool
+    {
+        $subject = $isGuide ? '【管理者通知】新規ガイドが登録されました' : '【管理者通知】新規ユーザーが登録されました';
+        $typeLabel = $isGuide ? 'ガイド' : 'ユーザー';
+        $body = "管理者 様\n\n";
+        $body .= "{$registrantName} さんが新規{$typeLabel}として登録しました。\n\n";
+        $body .= ($isGuide ? 'ガイド管理' : 'ユーザー管理') . "の承認待ち一覧で確認し、審査を行ってください。\n\n";
+        $body .= "ガイドマッチングアプリ 管理画面";
+
+        try {
+            Mail::raw($body, function ($message) use ($admin, $subject) {
+                $message->to($admin->email, $admin->name)
+                    ->subject($subject);
+            });
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('管理者向け新規登録通知メール送信エラー: ' . $e->getMessage(), [
+                'admin_id' => $admin->id,
+            ]);
+            return false;
+        }
+    }
+
+    /**
      * パスワードリセット通知を送信
      */
     public function sendPasswordResetNotification(User $user, string $resetUrl): bool

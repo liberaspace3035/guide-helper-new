@@ -54,18 +54,37 @@
 
         <template x-if="filteredAnnouncements.length > 0">
             <template x-for="announcement in filteredAnnouncements" :key="announcement.id">
-                <div class="announcement-card" :class="{ 'unread': !announcement.is_read }" @click="handleRead(announcement.id)">
+                <article
+                    class="announcement-card"
+                    :class="{ 'unread': !announcement.is_read }"
+                    :aria-label="'お知らせ、' + (announcement.title || '') + '、' + (announcement.is_read ? '既読' : '未読')"
+                    role="article"
+                    @click="handleRead(announcement.id)"
+                >
                     <div class="announcement-header">
                         <h3 x-text="announcement.title"></h3>
                         <template x-if="!announcement.is_read">
-                            <span class="unread-badge">未読</span>
+                            <span class="unread-badge" aria-label="未読">未読</span>
+                        </template>
+                        <template x-if="announcement.is_read">
+                            <span class="read-badge sr-only" aria-hidden="true">既読</span>
                         </template>
                     </div>
                     <div class="announcement-content" x-html="announcement.content"></div>
                     <div class="announcement-footer">
                         <span class="announcement-date" x-text="formatDate(announcement.created_at)"></span>
+                        <template x-if="announcement.is_read">
+                            <button
+                                type="button"
+                                class="btn-unread"
+                                @click.stop="handleUnread(announcement.id)"
+                                aria-label="このお知らせを未読に戻す"
+                            >
+                                未読に戻す
+                            </button>
+                        </template>
                     </div>
-                </div>
+                </article>
             </template>
         </template>
     </div>
@@ -101,7 +120,7 @@ function announcementsData() {
             const announcement = this.announcements.find(a => a.id === announcementId);
             if (announcement && !announcement.is_read) {
                 try {
-                    await fetch(`/announcements/${announcementId}/read`, {
+                    const res = await fetch('{{ url("/announcements") }}/' + announcementId + '/read', {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -109,10 +128,37 @@ function announcementsData() {
                             'Accept': 'application/json'
                         }
                     });
-                    announcement.is_read = 1;
-                    announcement.read_at = new Date().toISOString();
+                    if (res.ok) {
+                        announcement.is_read = 1;
+                        announcement.read_at = new Date().toISOString();
+                    }
                 } catch (err) {
                     console.error('既読登録エラー:', err);
+                }
+            }
+        },
+        async handleUnread(announcementId) {
+            const announcement = this.announcements.find(a => a.id === announcementId);
+            if (announcement && announcement.is_read) {
+                try {
+                    const res = await fetch('{{ url("/announcements") }}/' + announcementId + '/unread', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    if (res.ok) {
+                        announcement.is_read = 0;
+                        announcement.read_at = null;
+                    } else {
+                        const data = await res.json().catch(() => ({}));
+                        alert(data.error || '未読に戻せませんでした');
+                    }
+                } catch (err) {
+                    console.error('未読に戻すエラー:', err);
+                    alert('未読に戻せませんでした');
                 }
             }
         },

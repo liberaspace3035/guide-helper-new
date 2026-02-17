@@ -37,23 +37,35 @@ class UserController extends Controller
             $year = $request->input('year', $now->year);
             $month = $request->input('month', $now->month);
             
-            // 限度時間を取得（なければ作成）
-            $limit = $this->limitService->getOrCreateLimit($user->id, $year, $month);
-            $usedHours = $this->limitService->getUsedHours($user->id, $year, $month);
-            $remainingHours = $this->limitService->getRemainingHours($user->id, $year, $month);
-            
+            // 外出・自宅それぞれの限度時間を取得
+            $outing = $this->limitService->getOrCreateLimit($user->id, $year, $month, 'outing');
+            $home = $this->limitService->getOrCreateLimit($user->id, $year, $month, 'home');
+            $buildLimit = function ($row) {
+                $used = (float) $row->used_hours;
+                $limit = (float) $row->limit_hours;
+                return [
+                    'id' => $row->id,
+                    'user_id' => $row->user_id,
+                    'year' => $row->year,
+                    'month' => $row->month,
+                    'request_type' => $row->request_type ?? 'outing',
+                    'limit_hours' => $limit,
+                    'used_hours' => $used,
+                    'remaining_hours' => max(0, $limit - $used),
+                    'created_at' => $row->created_at,
+                    'updated_at' => $row->updated_at,
+                ];
+            };
+
             return response()->json([
-                'limit' => [
-                    'id' => $limit->id,
-                    'user_id' => $limit->user_id,
-                    'year' => $limit->year,
-                    'month' => $limit->month,
-                    'limit_hours' => (float) $limit->limit_hours,
-                    'used_hours' => $usedHours,
-                    'remaining_hours' => $remainingHours,
-                    'created_at' => $limit->created_at,
-                    'updated_at' => $limit->updated_at,
-                ]
+                'year' => (int) $year,
+                'month' => (int) $month,
+                'limits' => [
+                    'outing' => $buildLimit($outing),
+                    'home' => $buildLimit($home),
+                ],
+                // 後方互換: 単一 limit は外出のデータを返す
+                'limit' => $buildLimit($outing),
             ]);
         } catch (\Exception $e) {
             \Log::error('UserController::getMyMonthlyLimit error: ' . $e->getMessage(), [
@@ -88,16 +100,18 @@ class UserController extends Controller
                 ->orderBy('month', 'desc')
                 ->get();
 
-            // 使用時間と残時間を計算
+            // 使用時間と残時間を計算（request_type ごと）
             $limits = $limits->map(function($limit) {
-                $usedHours = $this->limitService->getUsedHours($limit->user_id, $limit->year, $limit->month);
-                $remainingHours = $this->limitService->getRemainingHours($limit->user_id, $limit->year, $limit->month);
-                
+                $requestType = $limit->request_type ?? 'outing';
+                $usedHours = $this->limitService->getUsedHours($limit->user_id, $limit->year, $limit->month, $requestType);
+                $remainingHours = $this->limitService->getRemainingHours($limit->user_id, $limit->year, $limit->month, $requestType);
+
                 return [
                     'id' => $limit->id,
                     'user_id' => $limit->user_id,
                     'year' => $limit->year,
                     'month' => $limit->month,
+                    'request_type' => $requestType,
                     'limit_hours' => (float) $limit->limit_hours,
                     'used_hours' => $usedHours,
                     'remaining_hours' => $remainingHours,

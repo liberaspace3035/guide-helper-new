@@ -65,6 +65,13 @@
   }
 }
 
+.password-voice-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 var(--spacing-xs);
+  line-height: 1.4;
+}
+
 .input-icon {
   width: 18px;
   height: 18px;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\GuideProfile;
+use App\Models\Notification;
 use App\Services\EmailNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -48,10 +49,10 @@ class AuthController extends Controller
                 function ($attribute, $value, $fail) {
                     $age = Carbon::parse($value)->age;
                     if ($age < 18) {
-                        $fail('年齢は18歳以上である必要があります。');
+                        $fail('生年月日から計算した年齢は18歳以上である必要があります。');
                     }
                     if ($age > 120) {
-                        $fail('年齢は120歳以下である必要があります。');
+                        $fail('生年月日から計算した年齢は120歳以下である必要があります。');
                     }
                 },
             ],
@@ -66,7 +67,7 @@ class AuthController extends Controller
                 'interview_date_3' => 'nullable|date',
                 'application_reason' => 'required|string',
                 'visual_disability_status' => 'required|string',
-                'disability_support_level' => 'required|string|max:10',
+                'disability_support_level' => 'required|string|in:１,２,３,４,５,６,なし',
                 'daily_life_situation' => 'required|string',
             ]);
         } else if ($request->role === 'guide') {
@@ -81,7 +82,13 @@ class AuthController extends Controller
         }
 
         $validator = Validator::make($request->all(), $rules, [
-            'birth_date.before' => '生年月日は今日より前の日付にしてください。',
+            'last_name_kana.regex' => '姓（カナ）は全角カタカナで入力してください。名前の読み方の部分です。',
+            'first_name_kana.regex' => '名（カナ）は全角カタカナで入力してください。名前の読み方の部分です。',
+            'birth_date.required' => '生年月日を入力してください。',
+            'birth_date.date' => '生年月日は正しい日付を入力してください。',
+            'birth_date.before' => '生年月日は未来の日付にはできません。今日より前の日付を入力してください。',
+            'disability_support_level.required' => '障害支援区分を選択してください。',
+            'disability_support_level.in' => '障害支援区分は選択肢から選んでください。',
         ]);
 
         if ($validator->fails()) {
@@ -155,6 +162,24 @@ class AuthController extends Controller
                 'qualifications' => $qualifications,
                 'preferred_work_hours' => $request->preferred_work_hours,
             ]);
+        }
+
+        // 管理者全員に新規登録の通知（画面上＋メール）を送る
+        $admins = User::where('role', 'admin')->get();
+        $isGuide = $request->role === 'guide';
+        $title = $isGuide ? '新規ガイドが登録されました' : '新規ユーザーが登録されました';
+        $message = $fullName . ' さんが新規登録しました。' . ($isGuide ? 'ガイド管理' : 'ユーザー管理') . 'の承認待ち一覧で確認してください。';
+        $emailService = app(EmailNotificationService::class);
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'type' => $isGuide ? 'guide_registration' : 'user_registration',
+                'title' => $title,
+                'message' => $message,
+                'related_id' => $user->id,
+                'created_at' => now(),
+            ]);
+            $emailService->sendAdminNewRegistrationNotification($admin, $fullName, $isGuide);
         }
 
         // APIリクエストの場合はJSONレスポンスを返す

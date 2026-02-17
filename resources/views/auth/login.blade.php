@@ -16,15 +16,15 @@
         
         <form method="POST" action="{{ route('login') }}" @submit.prevent="loading = true; $el.submit()" aria-label="ログインフォーム">
             @csrf
-            <div x-show="error" class="error-message" role="alert" aria-live="polite" x-text="error" x-transition></div>
+            <div x-show="error" class="error-message" id="login-error-summary" role="alert" aria-live="polite" aria-atomic="true" x-text="error" x-transition></div>
             @if($errors->any())
-                <div class="error-message" role="alert" aria-live="polite">
-                    <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="error-message" id="login-error-summary" role="alert" aria-live="polite" aria-atomic="true">
+                    <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    {{ $errors->first() }}
+                    <span class="sr-only">入力内容に誤りがあります。</span>{{ $errors->first() }}
                 </div>
             @endif
             
@@ -60,6 +60,9 @@
                     </svg>
                     パスワード
                 </label>
+                <p id="password-voice-hint" class="password-voice-hint">
+                    音声で入力を確認したい場合は、入力欄の右にある「パスワードを表示」を押すと、入力した文字が読み上げられます。
+                </p>
                 <div class="input-wrapper password-wrapper">
                     <input
                         :type="showPassword ? 'text' : 'password'"
@@ -69,6 +72,7 @@
                         required
                         autocomplete="current-password"
                         aria-required="true"
+                        aria-describedby="password-voice-hint"
                         placeholder="パスワードを入力"
                         class="input-with-icon"
                     />

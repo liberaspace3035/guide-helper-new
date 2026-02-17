@@ -27,6 +27,27 @@ class RequestService
         $this->aiService = $aiService;
     }
 
+    /**
+     * PostgreSQL の UTF-8 エラーを防ぐため、不正なバイト列を除去して有効な UTF-8 に正規化する。
+     * クライアント環境差（IME・貼り付け・音声入力など）で稀に混入する不正バイト列を除去する。
+     */
+    private function sanitizeUtf8(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+        if (function_exists('iconv')) {
+            $cleaned = @iconv('UTF-8', 'UTF-8//IGNORE', $value);
+            return $cleaned !== false ? $cleaned : $value;
+        }
+        // iconv がない環境: mb_convert_encoding で不正バイトを置換（PHP 7.2+）
+        if (function_exists('mb_convert_encoding')) {
+            $cleaned = @mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+            return $cleaned !== false ? $cleaned : $value;
+        }
+        return $value;
+    }
+
     public function createRequest(array $data, int $userId): Request
     {
         // 承認待ちの報告書がある場合は新規依頼を作成できない
@@ -66,21 +87,23 @@ class RequestService
                 $year = $requestDate->year;
                 $month = $requestDate->month;
                 
-                // 残時間チェック
-                if (!$this->limitService->canCreateRequest($userId, $requestHours, $year, $month)) {
-                    $remaining = $this->limitService->getRemainingHours($userId, $year, $month);
-                    throw new \Exception("月次限度時間を超過しています。残時間: {$remaining}時間（必要時間: {$requestHours}時間）");
+                // 残時間チェック（依頼種別＝外出/自宅ごとの限度で判定）
+                $requestType = $data['request_type'] ?? 'outing';
+                if (!$this->limitService->canCreateRequest($userId, $requestHours, $year, $month, $requestType)) {
+                    $remaining = $this->limitService->getRemainingHours($userId, $year, $month, $requestType);
+                    $typeLabel = $requestType === 'home' ? '自宅' : '外出';
+                    throw new \Exception("{$typeLabel}の月次限度時間を超過しています。残時間: {$remaining}時間（必要時間: {$requestHours}時間）");
                 }
             }
         }
 
-        // 都道府県と市区町村・番地を結合してdestination_addressを作成
-        $prefecture = $data['prefecture'] ?? '';
-        $cityAddress = $data['destination_address'] ?? '';
+        // 都道府県と市区町村・番地を結合してdestination_addressを作成（UTF-8 正規化で不正バイト列を除去）
+        $prefecture = $this->sanitizeUtf8($data['prefecture'] ?? '') ?? '';
+        $cityAddress = $this->sanitizeUtf8($data['destination_address'] ?? '') ?? '';
         $fullAddress = $prefecture . $cityAddress;
-        
-        // 住所マスキング
-        $maskedAddress = $this->maskAddressService->maskAddress($fullAddress);
+
+        // 住所マスキング（マスク結果も正規化）
+        $maskedAddress = $this->sanitizeUtf8($this->maskAddressService->maskAddress($fullAddress)) ?? '';
 
         // 日付形式の正規化（DATE型用）
         $requestDate = $data['request_date'] ?? null;
@@ -140,25 +163,31 @@ class RequestService
             }
         }
 
-        // AI入力補助（音声入力テキストの整形）
-        $notes = $data['notes'] ?? null;
+        // AI入力補助（音声入力テキストの整形）。入力・出力ともに UTF-8 正規化
+        $notes = $this->sanitizeUtf8($data['notes'] ?? null);
         $formattedNotes = null;
-        $isVoiceInput = $data['is_voice_input'] ?? false;
-        
-        if ($notes && $isVoiceInput) {
-            $formattedNotes = $this->aiService->formatVoiceText($notes);
+        $isVoiceInput = !empty($data['is_voice_input']);
+        $serviceContent = $this->sanitizeUtf8($data['service_content'] ?? '') ?? '';
+
+        if ($serviceContent && $isVoiceInput) {
+            $notes = $serviceContent; // 音声入力の生テキストを備考として保存
+            $formattedNotes = $this->sanitizeUtf8($this->aiService->formatVoiceText($serviceContent));
+            $serviceContent = $formattedNotes ?? $serviceContent; // サービス内容にはAI整形後のテキストを保存
         }
 
-        // 依頼作成
+        // 待ち合わせ場所も正規化
+        $meetingPlace = $this->sanitizeUtf8($data['meeting_place'] ?? null);
+
+        // 依頼作成（DB に渡す文字列はすべて有効な UTF-8）
         $request = Request::create([
             'user_id' => $userId,
             'nominated_guide_id' => $data['nominated_guide_id'] ?? null,
             'request_type' => $data['request_type'],
             'prefecture' => $prefecture,
             'destination_address' => $fullAddress,
-            'meeting_place' => $data['meeting_place'] ?? null,
+            'meeting_place' => $meetingPlace,
             'masked_address' => $maskedAddress,
-            'service_content' => $data['service_content'],
+            'service_content' => $serviceContent,
             'request_date' => $requestDate,
             'request_time' => $requestTime,
             'start_time' => $startTime,

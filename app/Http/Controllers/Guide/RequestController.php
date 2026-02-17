@@ -19,8 +19,12 @@ class RequestController extends Controller
     public function index()
     {
         $guide = Auth::user();
+        $guide->load('guideProfile');
+        if (!$guide->guideProfile || trim((string) ($guide->guideProfile->introduction ?? '')) === '') {
+            return redirect()->route('profile')
+                ->withErrors(['error' => '依頼に応募するには、プロフィールの自己PR（自己紹介）の入力が必要です。下記の「自己PR（自己紹介）」欄に入力してください。']);
+        }
         $requests = $this->requestService->getAvailableRequestsForGuide($guide->id);
-        
         return view('guide.requests.index', [
             'requests' => $requests,
         ]);

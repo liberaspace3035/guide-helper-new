@@ -250,16 +250,20 @@ class ReportService
                 // 実施日から年月を取得
                 $year = $actualDate->year;
                 $month = $actualDate->month;
-                
+                // 依頼種別（外出/自宅）に応じて加算先を分ける
+                $request = $report->request ?? Request::find($report->request_id);
+                $requestType = ($request && in_array($request->request_type, ['outing', 'home'], true)) ? $request->request_type : 'outing';
+
                 // 使用時間を追加
-                $this->limitService->addUsedHours($report->user_id, $usedHours, $year, $month);
-                
+                $this->limitService->addUsedHours($report->user_id, $usedHours, $year, $month, $requestType);
+
                 \Log::info('利用時間を計上しました', [
                     'report_id' => $reportId,
                     'user_id' => $report->user_id,
                     'used_hours' => $usedHours,
                     'year' => $year,
                     'month' => $month,
+                    'request_type' => $requestType,
                 ]);
             } catch (\Exception $e) {
                 \Log::error('利用時間計上エラー', [

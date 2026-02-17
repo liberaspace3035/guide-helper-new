@@ -23,7 +23,10 @@ class RequestController extends Controller
     public function myRequests()
     {
         $user = Auth::user();
-        
+        if (!$user) {
+            return response()->json(['error' => '認証が必要です'], 401);
+        }
+
         // 完了したマッチングに関連する依頼IDを取得
         $completedMatchingRequestIds = Matching::where('user_id', $user->id)
             ->where('status', 'completed')
@@ -106,11 +109,16 @@ class RequestController extends Controller
     {
         // セッション認証を使用
         $guide = auth()->user();
-        
         if (!$guide) {
             return response()->json(['error' => '認証が必要です'], 401);
         }
-        
+        $guide->load('guideProfile');
+        if (!$guide->guideProfile || trim((string) ($guide->guideProfile->introduction ?? '')) === '') {
+            return response()->json([
+                'error' => '依頼に応募するには、プロフィールの自己PR（自己紹介）の入力が必要です。',
+                'introduction_required' => true,
+            ], 403);
+        }
         $requests = $this->requestService->getAvailableRequestsForGuide($guide->id);
         
         // request_typeを日本語に変換して配列に変換
@@ -298,29 +306,63 @@ class RequestController extends Controller
     }
 
     /**
-     * 指名用の利用可能なガイド一覧を取得
+     * 指名用の利用可能なガイド一覧を取得（地域・性別・年齢・キーワードで検索・ページネーション対応）
      */
-    public function availableGuides()
+    public function availableGuides(Request $request)
     {
-        // 承認済みのガイドのみを取得
-        $guides = User::where('role', 'guide')
-            ->where('is_allowed', true)
-            ->with('guideProfile:id,user_id,introduction')
-            ->select('id', 'name', 'gender', 'birth_date')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($guide) {
-                $age = $guide->birth_date ? \Carbon\Carbon::parse($guide->birth_date)->age : null;
-                return [
-                    'id' => $guide->id,
-                    'name' => $guide->name,
-                    'gender' => $guide->gender,
-                    'age' => $age,
-                    'introduction' => $guide->guideProfile->introduction ?? null,
+        $perPage = min((int) $request->input('per_page', 20), 50);
+        $page = max(1, (int) $request->input('page', 1));
+        $area = $request->input('area');       // 都道府県
+        $gender = $request->input('gender');   // male / female 等
+        $ageMin = $request->has('age_min') ? (int) $request->input('age_min') : null;
+        $ageMax = $request->has('age_max') ? (int) $request->input('age_max') : null;
+        $keyword = $request->input('keyword'); // 自己PR（introduction）のキーワード
+
+        $query = User::query()
+            ->where('users.role', 'guide')
+            ->where('users.is_allowed', true)
+            ->join('guide_profiles', 'users.id', '=', 'guide_profiles.user_id')
+            ->select('users.id', 'users.name', 'users.gender', 'users.birth_date', 'guide_profiles.introduction', 'guide_profiles.available_areas');
+
+        if (!empty($area)) {
+            $query->whereJsonContains('guide_profiles.available_areas', $area);
+        }
+        if (!empty($gender)) {
+            $query->where('users.gender', $gender);
+        }
+        if ($ageMin !== null && $ageMin !== '') {
+            $query->whereRaw('TIMESTAMPDIFF(YEAR, users.birth_date, CURDATE()) >= ?', [$ageMin]);
+        }
+        if ($ageMax !== null && $ageMax !== '') {
+            $query->whereRaw('TIMESTAMPDIFF(YEAR, users.birth_date, CURDATE()) <= ?', [$ageMax]);
+        }
+        if (!empty($keyword)) {
+            $query->where('guide_profiles.introduction', 'like', '%' . addcslashes($keyword, '%_\\') . '%');
+        }
+
+        $query->orderBy('users.name');
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+        $guides = $paginator->getCollection()->map(function ($row) {
+            $age = $row->birth_date ? \Carbon\Carbon::parse($row->birth_date)->age : null;
+            $availableAreas = is_string($row->available_areas) ? json_decode($row->available_areas, true) : $row->available_areas;
+            return [
+                'id' => $row->id,
+                'name' => $row->name,
+                'gender' => $row->gender,
+                'age' => $age,
+                'introduction' => $row->introduction ?? null,
+                'available_areas' => is_array($availableAreas) ? $availableAreas : [],
             ];
         });
-        
-        return response()->json(['guides' => $guides]);
+
+        return response()->json([
+            'guides' => $guides,
+            'total' => $paginator->total(),
+            'per_page' => $paginator->perPage(),
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+        ]);
     }
 
     /**

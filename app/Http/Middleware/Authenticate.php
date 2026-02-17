@@ -12,7 +12,19 @@ class Authenticate extends Middleware
      */
     protected function redirectTo(Request $request): ?string
     {
-        return $request->expectsJson() ? null : route('login');
+        // APIリクエストの場合は401エラーを返す
+        if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+            \Log::warning('認証エラー: ユーザーが認証されていません', [
+                'url' => $request->fullUrl(),
+                'method' => $request->method(),
+                'session_id' => session()->getId(),
+                'has_session' => $request->hasSession(),
+                'cookies' => $request->cookies->all(),
+            ]);
+            return null; // 401エラーを返す
+        }
+        
+        return route('login');
     }
 }
 

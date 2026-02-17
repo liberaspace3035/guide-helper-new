@@ -90,17 +90,6 @@
 
         @if($user->isUser())
             <div class="form-group">
-                <label for="contact_method">連絡手段</label>
-                <input
-                    type="text"
-                    id="contact_method"
-                    name="contact_method"
-                    x-model="formData.contact_method"
-                    value="{{ $user->userProfile->contact_method ?? '' }}"
-                    placeholder="例: 電話、メール、LINE等"
-                />
-            </div>
-            <div class="form-group">
                 <label for="notes">備考</label>
                 <textarea
                     id="notes"
@@ -121,27 +110,33 @@
                 </div>
             @endif
             <div class="form-group">
-                <label for="introduction">自己紹介</label>
+                <label for="introduction">自己PR（自己紹介） <span class="required" aria-label="必須">*</span></label>
                 <textarea
                     id="introduction"
                     name="introduction"
                     x-model="formData.introduction"
                     rows="4"
-                    placeholder="自己紹介を記入してください"
+                    placeholder="依頼を作成するには入力が必須です。ガイドに伝えたいことなどを記入してください。"
+                    required
+                    aria-required="true"
                 >{{ $user->userProfile->introduction ?? '' }}</textarea>
+                <small class="form-help-text">依頼を作成するには、ここへの入力が必要です。</small>
             </div>
         @endif
 
         @if($user->isGuide())
             <div class="form-group">
-                <label for="introduction">自己紹介</label>
+                <label for="introduction">自己PR（自己紹介） <span class="required" aria-label="必須">*</span></label>
                 <textarea
                     id="introduction"
                     name="introduction"
                     x-model="formData.introduction"
                     rows="4"
-                    placeholder="自己紹介を記入してください"
+                    placeholder="依頼に応募するには入力が必須です。ユーザーに伝えたいことなどを記入してください。"
+                    required
+                    aria-required="true"
                 >{{ $user->guideProfile->introduction ?? '' }}</textarea>
+                <small class="form-help-text">依頼に応募するには、ここへの入力が必要です。</small>
             </div>
 
             <div class="form-group">
@@ -245,7 +240,6 @@ function profileForm() {
             name: '{{ $user->name }}',
             phone: '{{ $user->phone ?? '' }}',
             address: '{{ $user->address ?? '' }}',
-            contact_method: '{{ $user->userProfile->contact_method ?? '' }}',
             notes: '{{ $user->userProfile->notes ?? '' }}',
             introduction: '{{ $user->userProfile->introduction ?? ($user->guideProfile->introduction ?? '') }}',
             available_areas: @json($user->guideProfile ? ($user->guideProfile->available_areas ?? []) : []),

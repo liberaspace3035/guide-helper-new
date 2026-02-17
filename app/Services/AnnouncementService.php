@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Announcement;
 use App\Models\AnnouncementRead;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class AnnouncementService
@@ -93,6 +94,25 @@ class AnnouncementService
         );
     }
 
+    /**
+     * お知らせを未読に戻す（announcement_reads のレコードを削除）
+     */
+    public function markAsUnread(int $announcementId, int $userId, string $userRole): void
+    {
+        $announcement = Announcement::findOrFail($announcementId);
+
+        if ($userRole === 'user' && $announcement->target_audience === 'guide') {
+            throw new \Exception('このお知らせは対象外です');
+        }
+        if ($userRole === 'guide' && $announcement->target_audience === 'user') {
+            throw new \Exception('このお知らせは対象外です');
+        }
+
+        AnnouncementRead::where('announcement_id', $announcementId)
+            ->where('user_id', $userId)
+            ->delete();
+    }
+
     public function createAnnouncement(array $data, int $createdBy): Announcement
     {
         return Announcement::create([
@@ -113,6 +133,44 @@ class AnnouncementService
     public function deleteAnnouncement(int $announcementId): void
     {
         Announcement::findOrFail($announcementId)->delete();
+    }
+
+    /**
+     * お知らせの既読状況を取得（管理者用）
+     * 対象者数・既読数・既読者一覧を返す
+     */
+    public function getReadStatus(int $announcementId): array
+    {
+        $announcement = Announcement::findOrFail($announcementId);
+
+        $roleCondition = match ($announcement->target_audience) {
+            'user' => ['user'],
+            'guide' => ['guide'],
+            default => ['user', 'guide'],
+        };
+        $totalTarget = User::whereIn('role', $roleCondition)->count();
+
+        $reads = AnnouncementRead::where('announcement_id', $announcementId)
+            ->with('user:id,name')
+            ->orderBy('read_at', 'desc')
+            ->get();
+
+        $readers = $reads->map(function ($r) {
+            return [
+                'user_id' => $r->user_id,
+                'name' => $r->user->name ?? '',
+                'read_at' => $r->read_at?->toIso8601String(),
+            ];
+        })->values()->toArray();
+
+        return [
+            'announcement_id' => $announcementId,
+            'title' => $announcement->title,
+            'target_audience' => $announcement->target_audience,
+            'total_target' => $totalTarget,
+            'read_count' => $reads->count(),
+            'readers' => $readers,
+        ];
     }
 }
 

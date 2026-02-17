@@ -29,11 +29,29 @@ class RequestController extends Controller
 
     public function create()
     {
+        $user = Auth::user();
+        if ($user->isUser()) {
+            $user->load('userProfile');
+            $introduction = trim($user->userProfile->introduction ?? '');
+            if ($introduction === '') {
+                return redirect()->route('profile')
+                    ->withErrors(['error' => '依頼を作成するには、プロフィールの自己PR（自己紹介）の入力が必要です。下記の「自己PR（自己紹介）」欄に入力してください。']);
+            }
+        }
         return view('requests.create');
     }
 
     public function store(Request $request)
     {
+        $user = Auth::user();
+        if ($user->isUser()) {
+            $user->load('userProfile');
+            if (trim($user->userProfile->introduction ?? '') === '') {
+                return redirect()->route('profile')
+                    ->withErrors(['error' => '依頼を作成するには、プロフィールの自己PR（自己紹介）の入力が必要です。プロフィールから入力してください。']);
+            }
+        }
+
         $prefectures = [
             '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
             '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
@@ -196,9 +214,13 @@ class RequestController extends Controller
             }
             
             $createdRequest = $this->requestService->createRequest($data, Auth::id());
-            
+
+            $successMessage = $createdRequest->formatted_notes !== null
+                ? '依頼が作成されました（音声入力をAIで整形しました）'
+                : '依頼が作成されました';
+
             return redirect()->route('requests.index')
-                ->with('success', '依頼が作成されました');
+                ->with('success', $successMessage);
         } catch (\Exception $e) {
             \Log::error('依頼作成エラー: ' . $e->getMessage(), [
                 'data' => $data ?? [],

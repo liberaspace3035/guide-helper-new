@@ -57,6 +57,7 @@ Route::middleware(['auth'])->group(function () {
            Route::get('/chat/{matchingId}', [\App\Http\Controllers\ChatController::class, 'show'])->name('chat.show');
            Route::get('/announcements', [\App\Http\Controllers\AnnouncementController::class, 'index'])->name('announcements.index');
            Route::post('/announcements/{id}/read', [\App\Http\Controllers\AnnouncementController::class, 'markAsRead'])->name('announcements.read');
+           Route::post('/announcements/{id}/unread', [\App\Http\Controllers\AnnouncementController::class, 'markAsUnread'])->name('announcements.unread');
     
     // 管理者専用ルート
     Route::middleware(['role:admin'])->group(function () {

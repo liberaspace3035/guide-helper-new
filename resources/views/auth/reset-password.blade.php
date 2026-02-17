@@ -21,15 +21,15 @@
             <input type="hidden" name="token" value="{{ $token }}">
             <input type="hidden" name="email" value="{{ $email }}">
             
-            <div x-show="error" class="error-message" role="alert" aria-live="polite" x-text="error" x-transition></div>
+            <div x-show="error" class="error-message" id="reset-password-error-client" role="alert" aria-live="polite" aria-atomic="true" x-text="error" x-transition></div>
             @if($errors->any())
-                <div class="error-message" role="alert" aria-live="polite">
-                    <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="error-message" id="reset-password-error-summary" role="alert" aria-live="polite" aria-atomic="true">
+                    <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    {{ $errors->first() }}
+                    <span class="sr-only">入力内容に誤りがあります。</span>{{ $errors->first() }}
                 </div>
             @endif
             
@@ -77,6 +77,7 @@
                         aria-required="true"
                         placeholder="新しいパスワードを入力"
                         class="input-with-icon"
+                        @if($errors->has('password')) aria-invalid="true" aria-describedby="password-error" @endif
                     />
                     <button
                         type="button"
@@ -95,6 +96,9 @@
                         </svg>
                     </button>
                 </div>
+                @if($errors->has('password'))
+                    <div id="password-error" class="error-message-field" role="alert" aria-live="polite">{{ $errors->first('password') }}</div>
+                @endif
             </div>
             
             <div class="form-group">
@@ -116,6 +120,7 @@
                         aria-required="true"
                         placeholder="パスワードを再入力"
                         class="input-with-icon"
+                        @if($errors->has('password_confirmation')) aria-invalid="true" aria-describedby="password_confirmation-error" @endif
                     />
                     <button
                         type="button"
@@ -134,6 +139,9 @@
                         </svg>
                     </button>
                 </div>
+                @if($errors->has('password_confirmation'))
+                    <div id="password_confirmation-error" class="error-message-field" role="alert" aria-live="polite">{{ $errors->first('password_confirmation') }}</div>
+                @endif
             </div>
             
             <button

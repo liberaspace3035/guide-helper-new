@@ -18,7 +18,10 @@
 
 
     <template x-if="error">
-        <div class="error-message" x-text="error"></div>
+        <div class="error-message-with-retry">
+            <p x-text="error"></p>
+            <button type="button" class="btn-primary" @click="error = ''; loading = true; fetchRequests();" aria-label="もう一度読み込む">もう一度読み込む</button>
+        </div>
     </template>
 
     <template x-if="!loading && !error && requests.length === 0">
@@ -229,10 +232,12 @@ function requestsData() {
             this.fetchRequests();
         },
         async fetchRequests() {
+            this.error = '';
+            this.loading = true;
             try {
-                // タイムアウト設定（10秒）
+                // タイムアウト設定（15秒）
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
                 
                 const response = await fetch('/api/requests/my-requests', {
                     credentials: 'include',
@@ -245,10 +250,11 @@ function requestsData() {
                 
                 clearTimeout(timeoutId);
                 
-                // 419/401エラーのハンドリング
+                // 419/401エラーのハンドリング（必ず loading を解除してから return）
                 if (window.handleApiResponse) {
                     const shouldContinue = await window.handleApiResponse(response);
                     if (!shouldContinue) {
+                        this.loading = false;
                         return;
                     }
                 }
@@ -257,7 +263,15 @@ function requestsData() {
                     throw new Error(`HTTPエラー: ステータス ${response.status}`);
                 }
                 
-                const data = await response.json();
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseErr) {
+                    console.error('依頼一覧 JSON 解析エラー:', parseErr);
+                    this.error = '依頼一覧の取得に失敗しました。サーバー応答の形式が不正です。';
+                    return;
+                }
+                
                 this.requests = data.requests || [];
                 
                 // マッチング情報を設定
@@ -279,9 +293,9 @@ function requestsData() {
                 this.selectedGuideMap = { ...this.selectedGuideMap, ...selected };
             } catch (err) {
                 if (err.name === 'AbortError') {
-                    this.error = 'リクエストがタイムアウトしました。しばらく待ってから再度お試しください。';
+                    this.error = 'リクエストがタイムアウトしました。しばらく待ってから「もう一度読み込む」を押してください。';
                 } else {
-                    this.error = '依頼一覧の取得に失敗しました';
+                    this.error = '依頼一覧の取得に失敗しました。ネットワークを確認して「もう一度読み込む」を押してください。';
                 }
                 console.error('依頼一覧取得エラー:', err);
             } finally {

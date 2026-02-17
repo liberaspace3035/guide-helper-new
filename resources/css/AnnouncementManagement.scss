@@ -300,6 +300,106 @@
   border-radius: 6px; // rounded-md
 }
 
+.btn-read-status {
+  padding: 0.35rem 0.75rem;
+  font-size: 13px;
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+
+  &:hover {
+    background-color: #e2e8f0;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+}
+
+.announcement-management .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.announcement-management .read-status-modal {
+  background: var(--surface-color);
+  border-radius: var(--radius-lg);
+  max-width: 480px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.announcement-management .read-status-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.announcement-management .read-status-modal .modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.announcement-management .read-status-modal .modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.announcement-management .read-status-modal .modal-body {
+  padding: var(--spacing-lg);
+}
+
+.announcement-management .read-status-modal .read-status-title {
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+}
+
+.announcement-management .read-status-modal .read-status-summary {
+  margin-bottom: var(--spacing-md);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.announcement-management .read-status-modal .read-status-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.announcement-management .read-status-modal .read-status-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+}
+
+.announcement-management .read-status-modal .read-at {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.announcement-management .read-status-modal .read-status-empty {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+
 .empty-message {
   text-align: center;
   color: var(--text-tertiary);

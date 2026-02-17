@@ -47,7 +47,9 @@ class AIInputService
 
             if ($response->successful()) {
                 $result = $response->json();
-                return $result['choices'][0]['message']['content'] ?? $this->basicFormat($text);
+                $formatted = $result['choices'][0]['message']['content'] ?? $this->basicFormat($text);
+                Log::info('AI音声テキスト整形を実行しました', ['input_length' => strlen($text), 'output_length' => strlen($formatted)]);
+                return $formatted;
             } else {
                 Log::warning('OpenAI API エラー', [
                     'status' => $response->status(),

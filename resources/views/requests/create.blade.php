@@ -5,10 +5,10 @@
     <h1>依頼作成</h1>
     <form method="POST" action="{{ route('requests.store') }}" @submit.prevent="handleSubmit($event)" x-ref="requestForm" class="request-form" aria-label="依頼作成フォーム">
         @csrf
-        <div x-show="error" class="error-message full-width" role="alert" aria-live="polite" x-text="error"></div>
+        <div x-show="error" class="error-message full-width" id="request-form-error-client" role="alert" aria-live="polite" aria-atomic="true" x-text="error"></div>
         @if($errors->any())
-            <div class="error-message full-width" role="alert" aria-live="polite">
-                {{ $errors->first() }}
+            <div class="error-message full-width" id="request-form-error-summary" role="alert" aria-live="polite" aria-atomic="true">
+                <span class="sr-only">入力内容に誤りがあります。</span>{{ $errors->first() }}
             </div>
         @endif
 
@@ -21,28 +21,147 @@
                 required
                 aria-required="true"
                 class="@if($errors->has('request_type')) is-invalid @endif"
+                @if($errors->has('request_type')) aria-invalid="true" aria-describedby="request_type-error" @endif
             >
                 <option value="outing">外出</option>
                 <option value="home">自宅</option>
             </select>
             @if($errors->has('request_type'))
-                <div class="field-error" role="alert">{{ $errors->first('request_type') }}</div>
+                <div id="request_type-error" class="field-error" role="alert" aria-live="polite">{{ $errors->first('request_type') }}</div>
             @endif
         </div>
 
-        <div class="form-group">
-            <label for="nominated_guide_id">指名ガイド（任意）</label>
-            <select
-                id="nominated_guide_id"
-                name="nominated_guide_id"
-                x-model="formData.nominated_guide_id"
-            >
-                <option value="">指名しない</option>
-                <template x-for="guide in availableGuides" :key="guide.id">
-                    <option :value="guide.id" x-text="guide.name + (guide.introduction ? ' - ' + guide.introduction.substring(0, 30) + '...' : '')"></option>
-                </template>
-            </select>
-            <small>特定のガイドを指名して依頼を投稿できます。指名した場合、そのガイドに優先的に通知されます。</small>
+        <div class="form-group guide-nomination-group">
+            <label id="guide-nomination-label">指名ガイド（任意）</label>
+            <p class="guide-nomination-desc">特定のガイドを指名して依頼を投稿できます。地域・性別・年齢・自己PRのキーワードで検索して選択してください。</p>
+
+            <template x-if="formData.nominated_guide_id">
+                <div class="nominated-guide-selected" aria-live="polite">
+                    <span class="nominated-guide-name" x-text="selectedGuide ? selectedGuide.name : '—'"></span>
+                    <button type="button" class="btn-change-guide" @click="clearNominatedGuide()" aria-label="指名ガイドを変更する">変更</button>
+                </div>
+            </template>
+
+            <template x-if="!formData.nominated_guide_id">
+                <div class="guide-search-box" aria-labelledby="guide-nomination-label">
+                    <div class="guide-search-filters">
+                        <div class="guide-filter-item">
+                            <label for="guide_filter_area">地域</label>
+                            <select id="guide_filter_area" x-model="guideFilter.area" aria-label="地域で絞り込み">
+                                <option value="">指定なし</option>
+                                <option value="北海道">北海道</option>
+                                <option value="青森県">青森県</option>
+                                <option value="岩手県">岩手県</option>
+                                <option value="宮城県">宮城県</option>
+                                <option value="秋田県">秋田県</option>
+                                <option value="山形県">山形県</option>
+                                <option value="福島県">福島県</option>
+                                <option value="茨城県">茨城県</option>
+                                <option value="栃木県">栃木県</option>
+                                <option value="群馬県">群馬県</option>
+                                <option value="埼玉県">埼玉県</option>
+                                <option value="千葉県">千葉県</option>
+                                <option value="東京都">東京都</option>
+                                <option value="神奈川県">神奈川県</option>
+                                <option value="新潟県">新潟県</option>
+                                <option value="富山県">富山県</option>
+                                <option value="石川県">石川県</option>
+                                <option value="福井県">福井県</option>
+                                <option value="山梨県">山梨県</option>
+                                <option value="長野県">長野県</option>
+                                <option value="岐阜県">岐阜県</option>
+                                <option value="静岡県">静岡県</option>
+                                <option value="愛知県">愛知県</option>
+                                <option value="三重県">三重県</option>
+                                <option value="滋賀県">滋賀県</option>
+                                <option value="京都府">京都府</option>
+                                <option value="大阪府">大阪府</option>
+                                <option value="兵庫県">兵庫県</option>
+                                <option value="奈良県">奈良県</option>
+                                <option value="和歌山県">和歌山県</option>
+                                <option value="鳥取県">鳥取県</option>
+                                <option value="島根県">島根県</option>
+                                <option value="岡山県">岡山県</option>
+                                <option value="広島県">広島県</option>
+                                <option value="山口県">山口県</option>
+                                <option value="徳島県">徳島県</option>
+                                <option value="香川県">香川県</option>
+                                <option value="愛媛県">愛媛県</option>
+                                <option value="高知県">高知県</option>
+                                <option value="福岡県">福岡県</option>
+                                <option value="佐賀県">佐賀県</option>
+                                <option value="長崎県">長崎県</option>
+                                <option value="熊本県">熊本県</option>
+                                <option value="大分県">大分県</option>
+                                <option value="宮崎県">宮崎県</option>
+                                <option value="鹿児島県">鹿児島県</option>
+                                <option value="沖縄県">沖縄県</option>
+                            </select>
+                        </div>
+                        <div class="guide-filter-item">
+                            <label for="guide_filter_gender">性別</label>
+                            <select id="guide_filter_gender" x-model="guideFilter.gender" aria-label="性別で絞り込み">
+                                <option value="">指定なし</option>
+                                <option value="male">男性</option>
+                                <option value="female">女性</option>
+                                <option value="other">その他</option>
+                            </select>
+                        </div>
+                        <div class="guide-filter-item">
+                            <label for="guide_filter_age">年齢</label>
+                            <select id="guide_filter_age" x-model="guideFilter.age_range" aria-label="年齢で絞り込み">
+                                <option value="">指定なし</option>
+                                <option value="20-29">20〜29歳</option>
+                                <option value="30-39">30〜39歳</option>
+                                <option value="40-49">40〜49歳</option>
+                                <option value="50-59">50〜59歳</option>
+                                <option value="60-">60歳以上</option>
+                            </select>
+                        </div>
+                        <div class="guide-filter-item guide-filter-keyword">
+                            <label for="guide_filter_keyword">キーワード（自己PR）</label>
+                            <input type="text" id="guide_filter_keyword" x-model="guideFilter.keyword" placeholder="例: 買い物 代筆" aria-label="自己PRのキーワードで検索">
+                        </div>
+                        <div class="guide-filter-actions">
+                            <button type="button" class="btn-search-guide" @click="fetchGuidesSearch(1)" :disabled="guideSearchLoading" aria-label="ガイドを検索">
+                                <span x-show="!guideSearchLoading">検索</span>
+                                <span x-show="guideSearchLoading">検索中...</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <template x-if="guideSearchResults.length > 0">
+                        <div class="guide-search-results" role="list">
+                            <p class="guide-search-summary" x-text="`${guideSearchTotal}件中 ${guideSearchResults.length}件を表示`"></p>
+                            <template x-for="guide in guideSearchResults" :key="guide.id">
+                                <div class="guide-result-card" role="listitem">
+                                    <div class="guide-result-main">
+                                        <span class="guide-result-name" x-text="guide.name"></span>
+                                        <span class="guide-result-meta">
+                                            <span x-text="getGenderLabel(guide.gender)"></span>
+                                            <template x-if="guide.age !== null"><span x-text="`${guide.age}歳`"></span></template>
+                                            <template x-if="guide.available_areas && guide.available_areas.length"><span x-text="guide.available_areas.join('・')"></span></template>
+                                        </span>
+                                        <template x-if="guide.introduction">
+                                            <p class="guide-result-intro" x-text="(guide.introduction || '').substring(0, 80) + ((guide.introduction || '').length > 80 ? '...' : '')"></p>
+                                        </template>
+                                    </div>
+                                    <button type="button" class="btn-select-guide" @click="selectGuide(guide)" aria-label="このガイドを指名する">選択</button>
+                                </div>
+                            </template>
+                            <template x-if="guideSearchPage < guideSearchLastPage">
+                                <button type="button" class="btn-load-more-guides" @click="fetchGuidesSearch(guideSearchPage + 1)">もっと見る</button>
+                            </template>
+                        </div>
+                    </template>
+
+                    <template x-if="guideSearchDone && guideSearchResults.length === 0">
+                        <p class="guide-search-empty">条件に合うガイドがいません。条件を変えて検索してください。</p>
+                    </template>
+                </div>
+            </template>
+
+            <input type="hidden" name="nominated_guide_id" :value="formData.nominated_guide_id">
         </div>
 
         <template x-if="formData.request_type === 'outing'">
@@ -135,6 +254,7 @@
                         placeholder="例: 渋谷駅ハチ公前"
                         aria-required="true"
                         class="@if($errors->has('meeting_place')) is-invalid @endif"
+                        @if($errors->has('meeting_place')) aria-invalid="true" aria-describedby="meeting_place-error" @endif
                     />
                     <small>ガイドとの待ち合わせ場所を入力してください</small>
                 </div>
@@ -144,17 +264,17 @@
         {{-- エラーメッセージはtemplateの外に配置 --}}
         @if($errors->has('prefecture'))
             <div class="form-group" x-show="formData.request_type === 'outing' || formData.request_type === 'home'">
-                <div class="field-error" role="alert">{{ $errors->first('prefecture') }}</div>
+                <div id="prefecture-error" class="field-error" role="alert" aria-live="polite">{{ $errors->first('prefecture') }}</div>
             </div>
         @endif
         @if($errors->has('destination_address'))
             <div class="form-group" x-show="formData.request_type === 'outing' || formData.request_type === 'home'">
-                <div class="field-error" role="alert">{{ $errors->first('destination_address') }}</div>
+                <div id="destination_address-error" class="field-error" role="alert" aria-live="polite">{{ $errors->first('destination_address') }}</div>
             </div>
         @endif
         @if($errors->has('meeting_place'))
             <div class="form-group" x-show="formData.request_type === 'outing'">
-                <div class="field-error" role="alert">{{ $errors->first('meeting_place') }}</div>
+                <div id="meeting_place-error" class="field-error" role="alert" aria-live="polite">{{ $errors->first('meeting_place') }}</div>
             </div>
         @endif
 
@@ -278,6 +398,7 @@
                     placeholder="『買い物』『代筆』など、具体的なサービス内容を記載してください"
                     aria-required="true"
                     class="@if($errors->has('service_content')) is-invalid @endif"
+                    @if($errors->has('service_content')) aria-invalid="true" aria-describedby="service_content-error" @endif
                 ></textarea>
                 <button
                     type="button"
@@ -310,7 +431,7 @@
                 </div>
             </template>
             @if($errors->has('service_content'))
-                <div class="field-error" role="alert">{{ $errors->first('service_content') }}</div>
+                <div id="service_content-error" class="field-error" role="alert" aria-live="polite">{{ $errors->first('service_content') }}</div>
             @endif
         </div>
 
@@ -364,6 +485,7 @@
                         aria-describedby="date-picker-help"
                         x-ref="dateInput"
                         class="@if($errors->has('request_date')) is-invalid @endif"
+                        @if($errors->has('request_date')) aria-invalid="true" aria-describedby="request_date-error" @endif
                     />
                     <button
                         type="button"
@@ -383,7 +505,7 @@
                 </div>
                 <small id="date-picker-help" class="form-help-text">カレンダーアイコンをクリックするか、キーボードで日付を入力してください</small>
                 @if($errors->has('request_date'))
-                    <div class="field-error" role="alert">{{ $errors->first('request_date') }}</div>
+                    <div id="request_date-error" class="field-error" role="alert" aria-live="polite">{{ $errors->first('request_date') }}</div>
                 @endif
             </div>
 
@@ -468,6 +590,8 @@
             </div>
         </div>
 
+        <input type="hidden" name="is_voice_input" :value="isVoiceInput ? 1 : 0">
+        <input type="hidden" name="notes" :value="isVoiceInput ? (formData.service_content || '') : ''">
         <div class="form-actions full-width">
             <button
                 type="submit"
@@ -574,10 +698,17 @@ function requestForm() {
         isRecording: false,
         isVoiceInputSupported: false,
         recognition: null,
-        availableGuides: [],
-        guidesLoading: false,
         processedResultIndices: new Set(), // 処理済みの結果インデックスを追跡
         interimText: '', // 中間結果を一時保存（表示用）
+        // 指名ガイド検索
+        guideFilter: { area: '', gender: '', age_range: '', keyword: '' },
+        guideSearchResults: [],
+        guideSearchTotal: 0,
+        guideSearchPage: 1,
+        guideSearchLastPage: 1,
+        guideSearchLoading: false,
+        guideSearchDone: false,
+        selectedGuide: null,
         openDatePicker() {
             // 日付入力フィールドをクリックしてカレンダーを開く
             const dateInput = this.$refs.dateInput;
@@ -635,31 +766,68 @@ function requestForm() {
                 this.isVoiceInputSupported = true;
                 this.initSpeechRecognition();
             }
-            
-            // ガイド一覧を取得
-            await this.fetchAvailableGuides();
         },
-        async fetchAvailableGuides() {
-            this.guidesLoading = true;
+        getGenderLabel(gender) {
+            const map = { male: '男性', female: '女性', other: 'その他', prefer_not_to_say: '回答しない' };
+            return map[gender] || '—';
+        },
+        async fetchGuidesSearch(page) {
+            this.guideSearchLoading = true;
+            const isFirst = page === 1;
+            if (isFirst) {
+                this.guideSearchResults = [];
+                this.guideSearchDone = false;
+            }
             try {
-                const token = localStorage.getItem('token');
-                const response = await fetch('/api/guides/available', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/json'
+                const q = new URLSearchParams();
+                q.set('page', String(page));
+                q.set('per_page', '20');
+                if (this.guideFilter.area) q.set('area', this.guideFilter.area);
+                if (this.guideFilter.gender) q.set('gender', this.guideFilter.gender);
+                if (this.guideFilter.age_range) {
+                    if (this.guideFilter.age_range === '60-') {
+                        q.set('age_min', '60');
+                    } else {
+                        const [min, max] = this.guideFilter.age_range.split('-');
+                        q.set('age_min', min);
+                        if (max) q.set('age_max', max);
                     }
+                }
+                if (this.guideFilter.keyword && this.guideFilter.keyword.trim()) q.set('keyword', this.guideFilter.keyword.trim());
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/guides/available?' + q.toString(), {
+                    headers: { 'Authorization': 'Bearer ' + (token || ''), 'Accept': 'application/json' }
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    this.availableGuides = data.guides || [];
+                    const guides = data.guides || [];
+                    if (isFirst) {
+                        this.guideSearchResults = guides;
+                    } else {
+                        this.guideSearchResults = [...this.guideSearchResults, ...guides];
+                    }
+                    this.guideSearchTotal = data.total ?? 0;
+                    this.guideSearchPage = data.current_page ?? page;
+                    this.guideSearchLastPage = data.last_page ?? 1;
                 } else {
-                    console.error('ガイド一覧取得エラー:', response.statusText);
+                    if (isFirst) this.guideSearchResults = [];
+                    this.guideSearchTotal = 0;
                 }
-            } catch (error) {
-                console.error('ガイド一覧取得エラー:', error);
+            } catch (err) {
+                console.error('ガイド検索エラー:', err);
+                if (isFirst) this.guideSearchResults = [];
             } finally {
-                this.guidesLoading = false;
+                this.guideSearchLoading = false;
+                this.guideSearchDone = true;
             }
+        },
+        selectGuide(guide) {
+            this.formData.nominated_guide_id = String(guide.id);
+            this.selectedGuide = guide;
+        },
+        clearNominatedGuide() {
+            this.formData.nominated_guide_id = '';
+            this.selectedGuide = null;
         },
         initSpeechRecognition() {
             if (!this.isVoiceInputSupported) return;

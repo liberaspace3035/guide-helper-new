@@ -423,7 +423,6 @@ input::placeholder, textarea::placeholder {
 
 label {
   display: block;
-  margin-bottom: var(--spacing-xs);
   font-weight: 500;
   font-size: 14px;
   color: var(--text-primary);
@@ -974,4 +973,3 @@ small {
     min-width: 120px;
   }
 }
-

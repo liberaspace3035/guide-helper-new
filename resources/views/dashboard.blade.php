@@ -21,6 +21,22 @@
     <!-- メインコンテンツエリア -->
     <div class="dashboard-content">
 
+        @if($user->isUser() && !empty($introduction_required))
+            <!-- 自己PR未入力時の促し（ユーザーのみ） -->
+            <div class="dashboard-intro-required" role="alert">
+                <p class="dashboard-intro-required-text">依頼を作成するには、プロフィールの<strong>自己PR（自己紹介）</strong>の入力が必要です。下のボタンからプロフィールを開いて入力してください。</p>
+                <a href="{{ route('profile') }}" class="btn-primary dashboard-intro-required-btn">プロフィールで自己PRを入力する</a>
+            </div>
+        @endif
+
+        @if($user->isGuide() && !empty($introduction_required))
+            <!-- 自己PR未入力時の促し（ガイドのみ） -->
+            <div class="dashboard-intro-required" role="alert">
+                <p class="dashboard-intro-required-text">依頼に応募するには、プロフィールの<strong>自己PR（自己紹介）</strong>の入力が必要です。下のボタンからプロフィールを開いて入力してください。</p>
+                <a href="{{ route('profile') }}" class="btn-primary dashboard-intro-required-btn">プロフィールで自己PRを入力する</a>
+            </div>
+        @endif
+
         <!-- 重要情報セクション（通知・お知らせ） -->
         <div class="dashboard-alerts">
             <!-- 通知セクション -->
@@ -85,13 +101,23 @@
             <section class="quick-actions-section">
                 <h2 class="section-title">クイックアクション</h2>
                 <div class="quick-actions">
-                    <a href="{{ route('requests.create') }}" class="quick-action-btn primary">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        <span>新規依頼を作成</span>
-                    </a>
+                    @if(!empty($introduction_required))
+                        <a href="{{ route('profile') }}" class="quick-action-btn primary">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <span>自己PRを入力して依頼を可能にする</span>
+                        </a>
+                    @else
+                        <a href="{{ route('requests.create') }}" class="quick-action-btn primary">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>新規依頼を作成</span>
+                        </a>
+                    @endif
                     <a href="{{ route('requests.index') }}" class="quick-action-btn secondary">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -283,18 +309,11 @@
                         </svg>
                         <div class="limit-card-title-section">
                             <h3>月次限度時間</h3>
-                            <template x-if="monthlyLimit">
-                                <p class="limit-card-subtitle" x-text="`${monthlyLimit.year || new Date().getFullYear()}年${monthlyLimit.month || (new Date().getMonth() + 1)}月`"></p>
+                            <template x-if="monthlyLimits && (monthlyLimits.outing || monthlyLimits.home)">
+                                <p class="limit-card-subtitle" x-text="`${(monthlyLimits.outing || monthlyLimits.home).year || new Date().getFullYear()}年${(monthlyLimits.outing || monthlyLimits.home).month || (new Date().getMonth() + 1)}月`"></p>
                             </template>
                         </div>
                     </div>
-                    <button @click="fetchMonthlyLimit()" class="btn-icon-small" :aria-label="'限度時間を更新'">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 4 23 10 17 10"></polyline>
-                            <polyline points="1 20 1 14 7 14"></polyline>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
-                    </button>
                 </div>
                 <div class="limit-stats">
                     <template x-if="loadingMonthlyLimit">
@@ -302,49 +321,89 @@
                             <div class="loading-spinner small"></div>
                         </div>
                     </template>
-                    <template x-if="!loadingMonthlyLimit && monthlyLimit">
-                        <div class="limit-content">
-                            <div class="limit-summary">
-                                <div class="limit-summary-item remaining">
-                                    <div class="limit-summary-value">
-                                        <span class="limit-number" x-text="(monthlyLimit.remaining_hours || 0).toFixed(1)"></span>
-                                        <span class="limit-unit">時間</span>
+                    <template x-if="!loadingMonthlyLimit && monthlyLimits">
+                        <div class="limit-content limit-content-dual">
+                            <!-- 外出 -->
+                            <div class="limit-type-block" x-show="monthlyLimits.outing">
+                                <h4 class="limit-type-title">外出</h4>
+                                <div class="limit-summary">
+                                    <div class="limit-summary-item remaining">
+                                        <div class="limit-summary-value">
+                                            <span class="limit-number" x-text="(monthlyLimits.outing.remaining_hours || 0).toFixed(1)"></span>
+                                            <span class="limit-unit">時間</span>
+                                        </div>
+                                        <span class="limit-summary-label">残り</span>
                                     </div>
-                                    <span class="limit-summary-label">残り</span>
+                                    <div class="limit-summary-divider"></div>
+                                    <div class="limit-summary-item total">
+                                        <div class="limit-summary-value">
+                                            <span class="limit-number" x-text="(monthlyLimits.outing.limit_hours || 0).toFixed(1)"></span>
+                                            <span class="limit-unit">時間</span>
+                                        </div>
+                                        <span class="limit-summary-label">限度時間</span>
+                                    </div>
                                 </div>
-                                <div class="limit-summary-divider"></div>
-                                <div class="limit-summary-item total">
-                                    <div class="limit-summary-value">
-                                        <span class="limit-number" x-text="(monthlyLimit.limit_hours || 0).toFixed(1)"></span>
-                                        <span class="limit-unit">時間</span>
+                                <div class="limit-progress-section">
+                                    <div class="limit-progress-header">
+                                        <span class="limit-progress-label">使用状況</span>
+                                        <span class="limit-progress-percentage" x-text="monthlyLimits.outing.limit_hours > 0 ? `${Math.round(((monthlyLimits.outing.used_hours || 0) / monthlyLimits.outing.limit_hours) * 100)}%` : '0%'"></span>
                                     </div>
-                                    <span class="limit-summary-label">限度時間</span>
+                                    <div class="limit-progress-bar">
+                                        <div class="limit-progress-fill" 
+                                             :class="{
+                                               'progress-safe': monthlyLimits.outing.limit_hours <= 0 || ((monthlyLimits.outing.used_hours || 0) / monthlyLimits.outing.limit_hours) < 0.7,
+                                               'progress-warning': monthlyLimits.outing.limit_hours > 0 && ((monthlyLimits.outing.used_hours || 0) / monthlyLimits.outing.limit_hours) >= 0.7 && ((monthlyLimits.outing.used_hours || 0) / monthlyLimits.outing.limit_hours) < 0.9,
+                                               'progress-danger': monthlyLimits.outing.limit_hours > 0 && ((monthlyLimits.outing.used_hours || 0) / monthlyLimits.outing.limit_hours) >= 0.9
+                                             }"
+                                             :style="`width: ${monthlyLimits.outing.limit_hours > 0 ? Math.min(((monthlyLimits.outing.used_hours || 0) / monthlyLimits.outing.limit_hours) * 100, 100) : 0}%`"></div>
+                                    </div>
+                                    <div class="limit-progress-details">
+                                        <span class="limit-progress-used">使用: <strong x-text="(monthlyLimits.outing.used_hours || 0).toFixed(1) + '時間'"></strong></span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="limit-progress-section">
-                                <div class="limit-progress-header">
-                                    <span class="limit-progress-label">使用状況</span>
-                                    <span class="limit-progress-percentage" 
-                                          x-text="`${Math.round(((monthlyLimit.used_hours || 0) / Math.max(monthlyLimit.limit_hours || 1, 1)) * 100)}%`">
-                                    </span>
-                                </div>
-                                <div class="limit-progress-bar">
-                                    <div class="limit-progress-fill" 
-                                         :class="{
-                                           'progress-safe': ((monthlyLimit.used_hours || 0) / Math.max(monthlyLimit.limit_hours || 1, 1)) < 0.7,
-                                           'progress-warning': ((monthlyLimit.used_hours || 0) / Math.max(monthlyLimit.limit_hours || 1, 1)) >= 0.7 && ((monthlyLimit.used_hours || 0) / Math.max(monthlyLimit.limit_hours || 1, 1)) < 0.9,
-                                           'progress-danger': ((monthlyLimit.used_hours || 0) / Math.max(monthlyLimit.limit_hours || 1, 1)) >= 0.9
-                                         }"
-                                         :style="`width: ${Math.min(((monthlyLimit.used_hours || 0) / Math.max(monthlyLimit.limit_hours || 1, 1)) * 100, 100)}%`">
+                            <!-- 自宅 -->
+                            <div class="limit-type-block" x-show="monthlyLimits.home">
+                                <h4 class="limit-type-title">自宅</h4>
+                                <div class="limit-summary">
+                                    <div class="limit-summary-item remaining">
+                                        <div class="limit-summary-value">
+                                            <span class="limit-number" x-text="(monthlyLimits.home.remaining_hours || 0).toFixed(1)"></span>
+                                            <span class="limit-unit">時間</span>
+                                        </div>
+                                        <span class="limit-summary-label">残り</span>
+                                    </div>
+                                    <div class="limit-summary-divider"></div>
+                                    <div class="limit-summary-item total">
+                                        <div class="limit-summary-value">
+                                            <span class="limit-number" x-text="(monthlyLimits.home.limit_hours || 0).toFixed(1)"></span>
+                                            <span class="limit-unit">時間</span>
+                                        </div>
+                                        <span class="limit-summary-label">限度時間</span>
                                     </div>
                                 </div>
-                                <div class="limit-progress-details">
-                                    <span class="limit-progress-used">使用: <strong x-text="(monthlyLimit.used_hours || 0).toFixed(1) + '時間'"></strong></span>
+                                <div class="limit-progress-section">
+                                    <div class="limit-progress-header">
+                                        <span class="limit-progress-label">使用状況</span>
+                                        <span class="limit-progress-percentage" x-text="monthlyLimits.home.limit_hours > 0 ? `${Math.round(((monthlyLimits.home.used_hours || 0) / monthlyLimits.home.limit_hours) * 100)}%` : '0%'"></span>
+                                    </div>
+                                    <div class="limit-progress-bar">
+                                        <div class="limit-progress-fill" 
+                                             :class="{
+                                               'progress-safe': monthlyLimits.home.limit_hours <= 0 || ((monthlyLimits.home.used_hours || 0) / monthlyLimits.home.limit_hours) < 0.7,
+                                               'progress-warning': monthlyLimits.home.limit_hours > 0 && ((monthlyLimits.home.used_hours || 0) / monthlyLimits.home.limit_hours) >= 0.7 && ((monthlyLimits.home.used_hours || 0) / monthlyLimits.home.limit_hours) < 0.9,
+                                               'progress-danger': monthlyLimits.home.limit_hours > 0 && ((monthlyLimits.home.used_hours || 0) / monthlyLimits.home.limit_hours) >= 0.9
+                                             }"
+                                             :style="`width: ${monthlyLimits.home.limit_hours > 0 ? Math.min(((monthlyLimits.home.used_hours || 0) / monthlyLimits.home.limit_hours) * 100, 100) : 0}%`"></div>
+                                    </div>
+                                    <div class="limit-progress-details">
+                                        <span class="limit-progress-used">使用: <strong x-text="(monthlyLimits.home.used_hours || 0).toFixed(1) + '時間'"></strong></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </template>
-                    <template x-if="!loadingMonthlyLimit && !monthlyLimit">
+                    <template x-if="!loadingMonthlyLimit && !monthlyLimits">
                         <div class="limit-content">
                             <p class="limit-empty">限度時間の情報が取得できませんでした</p>
                         </div>
@@ -451,20 +510,30 @@
             <section class="quick-actions-section">
                 <h2 class="section-title">クイックアクション</h2>
                 <div class="quick-actions">
-            <a href="{{ route('guide.requests.index') }}" class="quick-action-btn secondary">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="8" y1="6" x2="21" y2="6"></line>
-                    <line x1="8" y1="12" x2="21" y2="12"></line>
-                    <line x1="8" y1="18" x2="21" y2="18"></line>
-                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
-                <span>依頼一覧</span>
-                <template x-if="stats?.availableRequests > 0">
-                    <span class="action-badge" x-text="stats.availableRequests"></span>
-                </template>
-            </a>
+                    @if(!empty($introduction_required))
+                        <a href="{{ route('profile') }}" class="quick-action-btn primary">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <span>自己PRを入力して依頼に応募可能にする</span>
+                        </a>
+                    @else
+                        <a href="{{ route('guide.requests.index') }}" class="quick-action-btn secondary">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                            <span>依頼一覧</span>
+                            <template x-if="stats?.availableRequests > 0">
+                                <span class="action-badge" x-text="stats.availableRequests"></span>
+                            </template>
+                        </a>
+                    @endif
             <template x-if="activeMatchings.length > 0">
                 <a :href="`{{ url('/guide/reports/new') }}/${activeMatchings[0].id}`" class="quick-action-btn primary">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -775,6 +844,7 @@ function dashboardData() {
         revisionRequestedReports: @json($revisionRequestedReports ?? []),
         usageStats: @json($usageStats ?? null),
         monthlyLimit: null,
+        monthlyLimits: null,
         loadingMonthlyLimit: false,
         get activeMatchings() {
             return this.matchings.filter(m => 
@@ -972,11 +1042,13 @@ function dashboardData() {
                 
                 const data = await this.apiFetch(`/api/users/me/monthly-limit?year=${year}&month=${month}`);
                 console.log('限度時間データ取得成功:', data);
+                this.monthlyLimits = data.limits || null;
                 this.monthlyLimit = data.limit || null;
             } catch (error) {
                 if (error.message !== '認証エラー') {
                     console.error('限度時間取得エラー:', error);
                 }
+                this.monthlyLimits = null;
                 this.monthlyLimit = null;
             } finally {
                 this.loadingMonthlyLimit = false;

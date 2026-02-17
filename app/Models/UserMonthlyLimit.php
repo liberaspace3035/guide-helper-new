@@ -15,6 +15,7 @@ class UserMonthlyLimit extends Model
         'user_id',
         'year',
         'month',
+        'request_type',
         'limit_hours',
         'used_hours',
     ];

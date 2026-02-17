@@ -29,11 +29,15 @@ class DashboardService
         ];
 
         if ($user->role === 'user') {
+            $user->load('userProfile');
+            $data['introduction_required'] = trim((string) ($user->userProfile->introduction ?? '')) === '';
             $data['stats'] = $this->getUserStats($user->id);
             $data['matchings'] = $this->getUserActiveMatchings($user->id);
             $data['pendingReports'] = $this->getUserPendingReports($user->id);
             $data['usageStats'] = $this->getUserUsageStats($user->id);
         } elseif ($user->role === 'guide') {
+            $user->load('guideProfile');
+            $data['introduction_required'] = !$user->guideProfile || trim((string) ($user->guideProfile->introduction ?? '')) === '';
             $data['stats'] = $this->getGuideStats($user->id);
             $data['matchings'] = $this->getGuideActiveMatchings($user->id);
             $data['revisionRequestedReports'] = $this->getGuideRevisionRequestedReports($user->id);

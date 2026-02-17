@@ -20,8 +20,8 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         
-        // セッション認証を使用（JWTトークンは不要）
-        $dashboardData = $this->adminService->getDashboardData();
+        // セッション認証を使用（JWTトークンは不要）。管理者の通知も取得
+        $dashboardData = $this->adminService->getDashboardData($user);
         
         return view('admin.dashboard', $dashboardData);
     }

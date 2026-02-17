@@ -417,3 +417,210 @@
   font-size: 13px;
   line-height: 1.4;
 }
+
+// 指名ガイド検索
+.guide-nomination-group {
+  grid-column: 1 / -1;
+}
+
+.guide-nomination-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+.nominated-guide-selected {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--surface-hover, #f8fafc);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.nominated-guide-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.btn-change-guide {
+  padding: 0.35rem 0.75rem;
+  font-size: 14px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--primary-color);
+  margin-left: auto;
+
+  &:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+  }
+}
+
+.guide-search-box {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  background: var(--surface-color);
+}
+
+.guide-search-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--spacing-md);
+  align-items: end;
+  margin-bottom: var(--spacing-lg);
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.guide-filter-item {
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+  }
+  select,
+  input {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+  }
+}
+
+.guide-filter-keyword {
+  grid-column: span 2;
+
+  @media (max-width: 768px) {
+    grid-column: 1 / -1;
+  }
+}
+
+.guide-filter-actions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.btn-search-guide {
+  padding: 0.5rem 1rem;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--primary-color);
+  color: var(--text-on-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--primary-hover);
+  }
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.guide-search-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+.guide-search-results {
+  margin-top: var(--spacing-md);
+}
+
+.guide-result-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-sm);
+  background: var(--surface-color);
+  flex-wrap: wrap;
+}
+
+.guide-result-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.guide-result-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.guide-result-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+
+  span + span::before {
+    content: '・';
+    margin: 0 2px;
+  }
+}
+
+.guide-result-intro {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.btn-select-guide {
+  flex-shrink: 0;
+  padding: 0.4rem 0.9rem;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--primary-color);
+  color: var(--text-on-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--primary-hover);
+  }
+}
+
+.btn-load-more-guides {
+  display: block;
+  width: 100%;
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm);
+  font-size: 14px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-secondary);
+
+  &:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+}
+
+.guide-search-empty {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: center;
+}
