@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
@@ -15,17 +16,54 @@ use App\Http\Controllers\ProfileController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// キャッシュクリア（Railway 等で環境変数変更後に設定を反映させる用・本番では削除またはアクセス制限を推奨）
+Route::get('/clear', function () {
+    Artisan::call('config:clear');
+    Artisan::call('cache:clear');
+    return 'Cache Cleared（config と cache をクリアしました）。環境変数を変更した場合はこのURLにアクセスしてから再度テストしてください。';
+});
+
 // メール設定確認用テスト送信（本番では削除またはアクセス制限を推奨）
 Route::get('/test-mail', function () {
     $to = env('MAIL_TEST_TO', config('mail.from.address'));
     if (empty($to) || $to === 'hello@example.com') {
         return '送信先を設定してください。.env に MAIL_TEST_TO=あなたのメールアドレス を追加するか、MAIL_FROM_ADDRESS を設定してください。';
     }
-    Mail::raw('ガイドヘルパーからのテストメールです。設定は正しく動作しています。', function ($message) use ($to) {
-        $message->to($to)
-                ->subject('テストメール（ガイドヘルパー）');
-    });
-    return 'メール送信完了！受信トレイ（または迷惑メール）を確認してください。送信先: ' . $to;
+    try {
+        Mail::raw('ガイドヘルパーからのテストメールです。設定は正しく動作しています。', function ($message) use ($to) {
+            $message->to($to)
+                    ->subject('テストメール（ガイドヘルパー）');
+        });
+        $driver = config('mail.default');
+        $msg = 'メール送信完了！受信トレイ（または迷惑メール）を確認してください。送信先: ' . $to . "\n\n現在のメールドライバー: " . $driver;
+        if ($driver === 'log') {
+            $msg .= "\n\n⚠️ log ドライバーのため、実際にはメールは送信されていません。storage/logs に出力されているだけです。届かない場合は Railway の Variables で MAIL_MAILER=resend（または smtp）に変更し、/clear にアクセスしてから再試行してください。";
+        }
+        return $msg;
+    } catch (\Throwable $e) {
+        return '送信失敗: ' . $e->getMessage() . "\n\n環境変数・MAIL_FROM_ADDRESS（Resendの場合は onboarding@resend.dev または認証済みドメイン）を確認し、/clear でキャッシュクリアしてから再試行してください。";
+    }
+});
+
+// メールデバッグ（送信試行し、失敗時は例外メッセージを表示・本番では削除またはアクセス制限を推奨）
+Route::get('/mail-debug', function () {
+    $to = env('MAIL_TEST_TO', config('mail.from.address'));
+    if (empty($to) || $to === 'hello@example.com') {
+        return '送信先を設定してください。MAIL_TEST_TO または MAIL_FROM_ADDRESS を設定してください。';
+    }
+    try {
+        Mail::raw('Railway Debug - メール設定のテスト送信です。', function ($message) use ($to) {
+            $message->to($to)->subject('Railway Debug');
+        });
+        $driver = config('mail.default');
+        $msg = '送信処理は成功しました。受信トレイを確認してください。送信先: ' . $to . "\n\n現在のメールドライバー: " . $driver;
+        if ($driver === 'log') {
+            $msg .= "\n\n⚠️ log ドライバーのため、実際にはメールは送信されていません。届かない場合は MAIL_MAILER=resend（または smtp）に変更し、/clear でキャッシュクリアしてから再試行してください。";
+        }
+        return $msg;
+    } catch (\Throwable $e) {
+        return '送信失敗: ' . $e->getMessage() . "\n\n例外: " . get_class($e);
+    }
 });
 
 // 認証ルート

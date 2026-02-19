@@ -8,6 +8,24 @@
 
 テストコマンド（`php artisan test:email`）と実際のマッチング成立時は、**完全に同じメール送信機能**（`EmailNotificationService::sendMatchingNotification()`）を使用しています。詳細は [EMAIL_CONFIRMATION.md](./EMAIL_CONFIRMATION.md) を参照してください。
 
+## メールが送信されないとき
+
+**まず診断コマンドを実行**してください。
+
+```bash
+# 現在のメール設定を表示
+php artisan mail:check
+
+# テスト送信（送信先を指定）
+php artisan mail:check あなたのメール@example.com
+```
+
+よくある原因:
+- **MAIL_MAILER=log のまま** → 実際には送信されず、`storage/logs/laravel.log` にのみ出力されます。送信したい場合は `resend` または `smtp` に変更。
+- **Resend 利用時**: `RESEND_API_KEY` 未設定、`MAIL_FROM_ADDRESS` が `onboarding@resend.dev` または認証済みドメインでない。→ [RESEND_SETUP.md](./RESEND_SETUP.md) を参照。
+- **SMTP 利用時**: `MAIL_HOST` / `MAIL_USERNAME` / `MAIL_PASSWORD` の誤り、Gmail の場合はアプリパスワードが必要。
+- **本番で設定を変えたあと** → `php artisan config:clear` のあと `php artisan config:cache` を実行していない。
+
 ## メールが実際に届くかどうか
 
 テストコマンド `php artisan test:email matching your@email.com` を実行した場合、**メールの届き先は`.env`ファイルの設定によって変わります**：

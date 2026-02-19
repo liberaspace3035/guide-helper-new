@@ -357,6 +357,22 @@ Railway（Nixpacks）は`package.json`を検知して自動的に`npm install &&
 - `AppServiceProvider.php`でHTTPSが強制されているか確認
 - `APP_URL`が`https://`で始まっているか確認
 
+### トップページ（/）で 404 になる
+
+**症状**: `https://あなたのアプリ.up.railway.app/` にアクセスすると 404 Not Found になる。
+
+**原因の例**:
+- 起動時の作業ディレクトリがプロジェクトルートでない
+- ルートキャッシュが古い・壊れていて `/` が解決されない
+
+**対応**（`scripts/start.sh` に以下が含まれていることを確認）:
+1. **起動時にプロジェクトルートへ移動**  
+   `cd "$(dirname "$0")/.."` で `scripts/start.sh` からプロジェクトルートに移動していること。
+2. **起動直前にルートキャッシュを更新**  
+   `php artisan route:clear` のあと、本番なら `php artisan route:cache` で再生成していること。
+
+修正後は再デプロイしてください。
+
 ### PostgreSQLのexplode()エラー（search_path関連）
 
 **エラーメッセージ**: `explode(): Argument #2 ($string) must be of type string, array given` in `PostgresBuilder.php`

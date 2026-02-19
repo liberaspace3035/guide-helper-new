@@ -2,6 +2,22 @@
 
 本番で Resend を使っているがメールが届かない場合の確認手順です。
 
+## 0. まず診断コマンドを実行する
+
+**メールが送信されない**ときは、次のコマンドで設定と送信を確認できます。
+
+```bash
+# 設定のみ表示（ドライバ・送信元・Resend キー有無など）
+php artisan mail:check
+
+# テスト送信まで実行（送信先を指定）
+php artisan mail:check あなたのメールアドレス@example.com
+```
+
+- ドライバが `log` のまま → 実際には送信されません。`MAIL_MAILER=resend`（または smtp）に変更してください。
+- Resend で「RESEND_API_KEY 未設定」と出る → `.env` に `RESEND_API_KEY=re_...` を追加し、`config:clear` / `config:cache` をやり直してください。
+- テスト送信で例外が出る → 表示されたエラーメッセージと [Resend ダッシュボード](https://resend.com/emails) の送信履歴を確認してください。
+
 ## 1. パッケージのインストール
 
 Resend を使うには **resend/resend-laravel** が必要です（未導入の場合は以下を実行）。
@@ -43,13 +59,32 @@ MAIL_FROM_NAME="${APP_NAME}"
 | **キー名の typo** | 正しくは **RESEND_API_KEY**（`RESEND_KEY` ではない）。`config/services.php` の `resend.key` は `env('RESEND_API_KEY')` を参照している。 |
 | **メールがキューに入ったまま** | キューで送信している場合は、ワーカーが動いていないと送信されない。`php artisan queue:work` を実行するか、Supervisor 等で常時起動する。 |
 
-## 4. 設定反映の確認（本番サーバーで実行）
+## 4. キャッシュクリア（最重要・Railway で環境変数変更後）
+
+Laravel は設定をキャッシュするため、**Railway の Variables を更新しても古いキャッシュが残っていると新しい設定が読み込まれません。**
+
+**方法 A: ブラウザから強制クリア**
+
+アプリに `/clear` ルートを追加済みの場合、以下にアクセスするだけです。
+
+```
+https://あなたのアプリ.up.railway.app/clear
+```
+
+→ 「Cache Cleared」と表示されれば config と cache がクリアされています。そのあと `/test-mail` や `/mail-debug` で再テストしてください。
+
+**方法 B: コマンドで実行（Web ターミナルやデプロイ後スクリプトで）**
 
 ```bash
-# キャッシュを消してから再度キャッシュ（本番で config:cache を使っている場合）
 php artisan config:clear
-php artisan config:cache
+php artisan cache:clear
+```
 
+本番で `config:cache` を使っている場合は、上記のあと `php artisan config:cache` をやり直すか、再デプロイしてください。
+
+## 5. 設定反映の確認（本番サーバーで実行）
+
+```bash
 # 現在のメールドライバーを確認（tinker で）
 php artisan tinker
 >>> config('mail.default')
@@ -60,7 +95,34 @@ php artisan tinker
 
 `mail.default` が `resend`、`services.resend.key` に API キーが出ていれば、Laravel 側の設定は問題ありません。
 
-## 5. テスト送信
+## 6. エラー内容の特定（デバッグ）
+
+「送信されない」のが **エラーで止まっている** のか **成功しているが届かない** のかを切り分けます。
+
+**ブラウザでデバッグ用 URL にアクセス:**
+
+```
+https://あなたのアプリ.up.railway.app/mail-debug
+```
+
+- **「送信処理は成功しました」** → 設定は通っている。届かない場合は迷惑メール・受信サーバーのブロックを確認。
+- **「送信失敗: ...」** → 表示されたエラーメッセージが重要です。
+  - `Connection could not be established` → MAIL_PORT・MAIL_ENCRYPTION（smtp の場合）を確認。
+  - `Authentication failed` → RESEND_API_KEY や MAIL_PASSWORD が正しいか、前後にスペースが入っていないか確認。
+  - Resend のエラー → [Resend ダッシュボード](https://resend.com/emails) の送信履歴も確認。
+
+**送信先について:** `/mail-debug` と `/test-mail` の送信先は **MAIL_TEST_TO**（未設定時は MAIL_FROM_ADDRESS）です。Railway の Variables に `MAIL_TEST_TO=受信確認用のあなたのメールアドレス` を設定してください。
+
+## 7. キュー（Queue）の設定確認
+
+メールを **キューで送信** している場合、Railway 上で **Worker（ワーカー）が動いていないとメールは送信されません。**
+
+- `.env` で `QUEUE_CONNECTION=database` や `redis` になっていないか確認。
+- **テストとして** 一時的に `QUEUE_CONNECTION=sync`（同期送信）に変えて試してみてください。届くようなら、ワーカーが動いていないことが原因です。
+
+※ このアプリでは `EmailNotificationService` は `Mail::raw()` をその場で実行しており、キューには入れていません。別の箇所でキューを使っている場合のみ上記を確認してください。
+
+## 8. テスト送信
 
 - ブラウザで `/test-mail` にアクセス（テスト用ルートが有効な場合）。
 - または `php artisan tinker` で:
@@ -73,12 +135,12 @@ Mail::raw('Resend テスト', function ($m) {
 
 エラーが出る場合は、表示されたメッセージと `storage/logs/laravel.log` を確認してください。
 
-## 6. Resend ダッシュボードで確認
+## 9. Resend ダッシュボードで確認
 
 - [Resend → Emails](https://resend.com/emails) で送信履歴とステータス（Sent / Bounced / など）を確認できます。
 - 送信は成功しているが「届かない」場合は、迷惑メールフォルダや受信サーバーのブロックを確認してください。
 
-## 7. まとめチェックリスト
+## 10. まとめチェックリスト
 
 - [ ] `composer require resend/resend-laravel` 済み
 - [ ] `.env` に `MAIL_MAILER=resend`
