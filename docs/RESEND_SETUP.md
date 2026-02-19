@@ -58,6 +58,7 @@ MAIL_FROM_NAME="${APP_NAME}"
 | **設定キャッシュが古い** | 本番で `php artisan config:cache` を使っている場合、環境変数変更後に必ず `php artisan config:clear` のあと `php artisan config:cache` を実行。 |
 | **キー名の typo** | 正しくは **RESEND_API_KEY**（`RESEND_KEY` ではない）。`config/services.php` の `resend.key` は `env('RESEND_API_KEY')` を参照している。 |
 | **メールがキューに入ったまま** | キューで送信している場合は、ワーカーが動いていないと送信されない。`php artisan queue:work` を実行するか、Supervisor 等で常時起動する。 |
+| **Connection timed out to smtp.resend.com:587** | Railway など多くの PaaS は**送信 SMTP（ポート 587）をブロック**します。`MAIL_MAILER=smtp` と `MAIL_HOST=smtp.resend.com` ではなく、**MAIL_MAILER=resend** と **RESEND_API_KEY** を使って Resend の **API 経由**で送信してください（HTTPS はブロックされません）。 |
 
 ## 4. キャッシュクリア（最重要・Railway で環境変数変更後）
 

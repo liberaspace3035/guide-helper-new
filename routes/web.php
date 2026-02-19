@@ -25,6 +25,7 @@ Route::get('/clear', function () {
 
 // メール設定確認用テスト送信（本番では削除またはアクセス制限を推奨）
 Route::get('/test-mail', function () {
+    set_time_limit(25); // 応答が返らないままハングしないよう 25 秒で打ち切り
     $to = env('MAIL_TEST_TO', config('mail.from.address'));
     if (empty($to) || $to === 'hello@example.com') {
         return '送信先を設定してください。.env に MAIL_TEST_TO=あなたのメールアドレス を追加するか、MAIL_FROM_ADDRESS を設定してください。';
@@ -47,6 +48,7 @@ Route::get('/test-mail', function () {
 
 // メールデバッグ（送信試行し、失敗時は例外メッセージを表示・本番では削除またはアクセス制限を推奨）
 Route::get('/mail-debug', function () {
+    set_time_limit(25); // 応答が返らないままハングしないよう 25 秒で打ち切り
     $to = env('MAIL_TEST_TO', config('mail.from.address'));
     if (empty($to) || $to === 'hello@example.com') {
         return '送信先を設定してください。MAIL_TEST_TO または MAIL_FROM_ADDRESS を設定してください。';
