@@ -102,6 +102,23 @@
   }
 }
 
+.input-with-voice {
+  position: relative;
+  display: block;
+
+  input[type="text"] {
+    padding-right: 48px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .voice-input-btn {
+    top: 50%;
+    transform: translateY(-50%);
+    right: var(--spacing-sm);
+  }
+}
+
 .voice-input-btn {
   position: absolute;
   top: var(--spacing-sm);

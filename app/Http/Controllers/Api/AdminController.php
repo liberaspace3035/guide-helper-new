@@ -856,5 +856,49 @@ class AdminController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * ユーザー・ガイドCSV一括登録用テンプレートをダウンロード
+     */
+    public function getBulkImportCsvTemplate()
+    {
+        try {
+            $csv = $this->adminService->getBulkImportCsvTemplate();
+            return response($csv, 200)
+                ->header('Content-Type', 'text/csv; charset=utf-8')
+                ->header('Content-Disposition', 'attachment; filename="bulk_import_template.csv"');
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * ユーザー・ガイドCSV一括登録を実行
+     */
+    public function processBulkImportCsv(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:5120',
+        ], [
+            'csv_file.required' => 'CSVファイルを選択してください。',
+            'csv_file.file' => 'CSVファイルをアップロードしてください。',
+            'csv_file.mimes' => 'CSVファイル（.csv または .txt）を指定してください。',
+            'csv_file.max' => 'ファイルサイズは5MB以内にしてください。',
+        ]);
+
+        try {
+            $result = $this->adminService->processBulkImportCsv($request->file('csv_file'));
+            return response()->json([
+                'created' => $result['created'],
+                'errors' => $result['errors'],
+                'message' => $result['created'] . '件登録しました。' . (count($result['errors']) > 0 ? 'エラー行: ' . count($result['errors']) . '件' : ''),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdminController::processBulkImportCsv error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }
 

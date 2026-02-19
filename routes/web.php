@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
@@ -13,6 +14,19 @@ use App\Http\Controllers\ProfileController;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// メール設定確認用テスト送信（本番では削除またはアクセス制限を推奨）
+Route::get('/test-mail', function () {
+    $to = env('MAIL_TEST_TO', config('mail.from.address'));
+    if (empty($to) || $to === 'hello@example.com') {
+        return '送信先を設定してください。.env に MAIL_TEST_TO=あなたのメールアドレス を追加するか、MAIL_FROM_ADDRESS を設定してください。';
+    }
+    Mail::raw('ガイドヘルパーからのテストメールです。設定は正しく動作しています。', function ($message) use ($to) {
+        $message->to($to)
+                ->subject('テストメール（ガイドヘルパー）');
+    });
+    return 'メール送信完了！受信トレイ（または迷惑メール）を確認してください。送信先: ' . $to;
+});
 
 // 認証ルート
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');

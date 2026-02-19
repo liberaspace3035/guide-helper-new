@@ -966,6 +966,80 @@
             </section>
         </template>
 
+        <!-- CSV一括登録タブ -->
+        <template x-if="activeTab === 'bulk-import'">
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2>
+                        <svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        ユーザー・ガイド CSV一括登録
+                    </h2>
+                </div>
+                <p class="section-description" style="margin-bottom: 1rem; color: var(--text-muted, #666); font-size: 0.9rem;">
+                    テンプレートをダウンロードし、必要項目を入力したCSVをアップロードしてください。ユーザー・ガイドの基本情報のほか、プロフィール・限度時間（ユーザーのみ）を含む全データを一括登録できます。
+                </p>
+                <div class="bulk-import-actions" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+                    <a
+                        href="/api/admin/bulk-import/template"
+                        download="bulk_import_template.csv"
+                        class="btn-primary"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        テンプレートをダウンロード
+                    </a>
+                </div>
+                <form @submit.prevent="submitBulkImportCsv()" class="bulk-import-form" style="max-width: 480px;">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="bulk-import-csv-file">CSVファイル</label>
+                        <input
+                            type="file"
+                            id="bulk-import-csv-file"
+                            accept=".csv,.txt"
+                            @change="bulkImportFile = $event.target.files?.[0] || null"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        class="btn-primary"
+                        :disabled="bulkImportSubmitting"
+                    >
+                        <span x-show="!bulkImportSubmitting">一括登録を実行</span>
+                        <span x-show="bulkImportSubmitting">登録中...</span>
+                    </button>
+                </form>
+                <template x-if="bulkImportResult !== null">
+                    <div class="bulk-import-result" style="margin-top: 1.5rem; padding: 1rem; border-radius: 8px; background: var(--surface-color, #f8fafc); border: 1px solid var(--border-color);">
+                        <p><strong x-text="bulkImportResult.message"></strong></p>
+                        <template x-if="bulkImportResult.created > 0">
+                            <p style="color: #16a34a;">登録件数: <span x-text="bulkImportResult.created"></span>件</p>
+                        </template>
+                        <template x-if="Object.keys(bulkImportResult.errors || {}).length > 0">
+                            <div style="margin-top: 0.75rem;">
+                                <p style="font-weight: 600;">エラー（行番号）:</p>
+                                <ul style="margin: 0.25rem 0 0 1rem; max-height: 200px; overflow-y: auto;">
+                                    <template x-for="(msgs, lineNo) in (bulkImportResult.errors || {})" :key="lineNo">
+                                        <li>
+                                            <span x-text="'行' + lineNo + ': '"></span>
+                                            <span x-text="(Array.isArray(msgs) ? msgs : [msgs]).join(', ')"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </section>
+        </template>
+
         <!-- メールテンプレート編集タブ -->
         <template x-if="activeTab === 'email-templates'">
             <section class="admin-section">
@@ -1924,6 +1998,9 @@ function adminDashboard() {
         userMonthlyLimits: {},
         userCurrentLimits: {}, // 現在の月の限度時間情報を保持
         notifications: @json($notifications ?? []),
+        bulkImportFile: null,
+        bulkImportSubmitting: false,
+        bulkImportResult: null,
 
         // セッション認証用の共通fetch関数
         async apiFetch(url, options = {}) {
@@ -3216,6 +3293,43 @@ function adminDashboard() {
             const year = now.getFullYear();
             const month = now.getMonth() + 1;
             return `/api/admin/users/monthly-limits-summary.csv?year=${year}&month=${month}`;
+        },
+
+        async submitBulkImportCsv() {
+            if (!this.bulkImportFile) {
+                alert('CSVファイルを選択してください');
+                return;
+            }
+            this.bulkImportSubmitting = true;
+            this.bulkImportResult = null;
+            try {
+                const formData = new FormData();
+                formData.append('csv_file', this.bulkImportFile);
+                const res = await fetch('/api/admin/bulk-import/csv', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    alert(data.error || data.message || '一括登録に失敗しました');
+                    return;
+                }
+                this.bulkImportResult = { created: data.created || 0, errors: data.errors || {}, message: data.message || '' };
+                if (data.created > 0) {
+                    if (this.users.length > 0) await this.fetchUsers();
+                    if (this.guides.length > 0) await this.fetchGuides();
+                }
+            } catch (e) {
+                console.error(e);
+                alert('一括登録の送信に失敗しました');
+            } finally {
+                this.bulkImportSubmitting = false;
+            }
         },
 
         filterOperationLogs(operationType) {

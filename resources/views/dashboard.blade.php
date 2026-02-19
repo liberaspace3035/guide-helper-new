@@ -170,6 +170,35 @@
                 </section>
             </template>
 
+            <!-- ガイドからの支援提案 -->
+            <template x-if="guideProposals && guideProposals.length > 0">
+                <section class="guide-proposals-section" aria-label="ガイドからの提案">
+                    <h2 class="guide-proposals-section__title">ガイドから支援の提案があります</h2>
+                    <p class="guide-proposals-section__desc">承諾するとマッチングが成立し、予定に追加されます。</p>
+                    <ul class="guide-proposals-list">
+                        <template x-for="p in guideProposals" :key="p.id">
+                            <li class="guide-proposal-card">
+                                <div class="guide-proposal-card__head">
+                                    <strong x-text="p.guide?.name || 'ガイド'"></strong>
+                                    <span x-text="p.request_type_label || ''"></span>
+                                    <span x-text="(p.proposed_date || '') + (p.start_time ? ' ' + p.start_time + '〜' + (p.end_time || '') : '')"></span>
+                                </div>
+                                <template x-if="p.service_content">
+                                    <p class="guide-proposal-card__content" x-text="p.service_content"></p>
+                                </template>
+                                <template x-if="p.message">
+                                    <p class="guide-proposal-card__message" x-text="p.message"></p>
+                                </template>
+                                <div class="guide-proposal-card__actions">
+                                    <button type="button" @click="acceptProposal(p.id)" class="btn-primary btn-sm">承諾する</button>
+                                    <button type="button" @click="rejectProposal(p.id)" class="btn-secondary btn-sm">辞退する</button>
+                                </div>
+                            </li>
+                        </template>
+                    </ul>
+                </section>
+            </template>
+
             <!-- 統計・利用状況カード -->
             <div class="dashboard-cards" x-show="stats">
             <div class="card stats-card">
@@ -843,6 +872,8 @@ function dashboardData() {
         pendingReports: @json($pendingReports ?? []),
         revisionRequestedReports: @json($revisionRequestedReports ?? []),
         usageStats: @json($usageStats ?? null),
+        guideProposals: [],
+        isUser: @json($user->isUser() ?? false),
         monthlyLimit: null,
         monthlyLimits: null,
         loadingMonthlyLimit: false,
@@ -857,10 +888,54 @@ function dashboardData() {
             if (hour < 12) this.greeting = 'おはようございます';
             else if (hour < 18) this.greeting = 'こんにちは';
             else this.greeting = 'こんばんは';
+            if (this.isUser) this.fetchGuideProposals();
             // 月次限度時間を取得
             this.fetchMonthlyLimit();
             // 選択された月の統計を取得（初期表示時は現在の月）
             this.fetchMonthStats(this.selectedMonth);
+        },
+        async fetchGuideProposals() {
+            try {
+                const res = await fetch('/api/proposals?pending_only=1', { credentials: 'include', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.guideProposals = data.proposals || [];
+                }
+            } catch (e) { console.error('提案一覧取得エラー:', e); }
+        },
+        async acceptProposal(id) {
+            try {
+                const res = await fetch('/api/proposals/' + id + '/accept', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    alert(data.message || 'マッチングが成立しました。予定に追加されています。');
+                    this.fetchGuideProposals();
+                    if (this.matchings) window.location.reload();
+                } else {
+                    alert(data.error || '承諾に失敗しました');
+                }
+            } catch (e) { alert('承諾に失敗しました'); }
+        },
+        async rejectProposal(id) {
+            if (!confirm('この提案を辞退しますか？')) return;
+            try {
+                const res = await fetch('/api/proposals/' + id + '/reject', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' }
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    alert(data.message || '辞退しました');
+                    this.fetchGuideProposals();
+                } else {
+                    alert(data.error || '辞退に失敗しました');
+                }
+            } catch (e) { alert('辞退に失敗しました'); }
         },
         formatDate(dateStr) {
             if (!dateStr) return '';

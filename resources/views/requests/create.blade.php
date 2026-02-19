@@ -120,7 +120,25 @@
                         </div>
                         <div class="guide-filter-item guide-filter-keyword">
                             <label for="guide_filter_keyword">キーワード（自己PR）</label>
-                            <input type="text" id="guide_filter_keyword" x-model="guideFilter.keyword" placeholder="例: 買い物 代筆" aria-label="自己PRのキーワードで検索">
+                            <div class="input-with-voice">
+                                <input type="text" id="guide_filter_keyword" x-model="guideFilter.keyword" placeholder="例: 買い物 代筆" aria-label="自己PRのキーワードで検索">
+                                <button
+                                    type="button"
+                                    class="voice-input-btn"
+                                    :class="{ 'recording': isRecording && voiceTargetField === 'guide_filter_keyword' }"
+                                    @click="toggleVoiceInput('guide_filter_keyword')"
+                                    :disabled="!isVoiceInputSupported"
+                                    title="音声入力"
+                                    aria-label="キーワードを音声入力"
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="guide-filter-actions">
                             <button type="button" class="btn-search-guide" @click="fetchGuidesSearch(1)" :disabled="guideSearchLoading" aria-label="ガイドを検索">
@@ -231,31 +249,67 @@
                 </div>
                 <div class="form-group">
                     <label for="destination_address">市区町村・番地 <span class="required">*</span></label>
-                    <input
-                        type="text"
-                        id="destination_address"
-                        name="destination_address"
-                        x-model="formData.destination_address"
-                        required
-                        placeholder="例: 渋谷区青山１－１－１"
-                        aria-required="true"
-                        class="@if($errors->has('destination_address')) is-invalid @endif"
-                    />
+                    <div class="input-with-voice">
+                        <input
+                            type="text"
+                            id="destination_address"
+                            name="destination_address"
+                            x-model="formData.destination_address"
+                            required
+                            placeholder="例: 渋谷区青山１－１－１"
+                            aria-required="true"
+                            class="@if($errors->has('destination_address')) is-invalid @endif"
+                        />
+                        <button
+                            type="button"
+                            class="voice-input-btn"
+                            :class="{ 'recording': isRecording && voiceTargetField === 'destination_address' }"
+                            @click="toggleVoiceInput('destination_address')"
+                            :disabled="!isVoiceInputSupported"
+                            :title="isRecording ? '音声入力を停止' : '音声入力'"
+                            aria-label="市区町村・番地を音声入力"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
                     <small>市区町村・番地を入力してください（ガイドには大まかな地域のみ表示されます）</small>
                 </div>
                 <div class="form-group">
                     <label for="meeting_place">待ち合わせ場所 <span class="required">*</span></label>
-                    <input
-                        type="text"
-                        id="meeting_place"
-                        name="meeting_place"
-                        x-model="formData.meeting_place"
-                        required
-                        placeholder="例: 渋谷駅ハチ公前"
-                        aria-required="true"
-                        class="@if($errors->has('meeting_place')) is-invalid @endif"
-                        @if($errors->has('meeting_place')) aria-invalid="true" aria-describedby="meeting_place-error" @endif
-                    />
+                    <div class="input-with-voice">
+                        <input
+                            type="text"
+                            id="meeting_place"
+                            name="meeting_place"
+                            x-model="formData.meeting_place"
+                            required
+                            placeholder="例: 渋谷駅ハチ公前"
+                            aria-required="true"
+                            class="@if($errors->has('meeting_place')) is-invalid @endif"
+                            @if($errors->has('meeting_place')) aria-invalid="true" aria-describedby="meeting_place-error" @endif
+                        />
+                        <button
+                            type="button"
+                            class="voice-input-btn"
+                            :class="{ 'recording': isRecording && voiceTargetField === 'meeting_place' }"
+                            @click="toggleVoiceInput('meeting_place')"
+                            :disabled="!isVoiceInputSupported"
+                            :title="isRecording ? '音声入力を停止' : '音声入力'"
+                            aria-label="待ち合わせ場所を音声入力"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
                     <small>ガイドとの待ち合わせ場所を入力してください</small>
                 </div>
             </div>
@@ -344,31 +398,67 @@
                     @endif
                 </div>
                 <div class="form-group">
-                    <label for="destination_address">市区町村・番地 <span class="required">*</span></label>
-                    <input
-                        type="text"
-                        id="destination_address"
-                        name="destination_address"
-                        x-model="formData.destination_address"
-                        required
-                        placeholder="例: 渋谷区青山１－１－１"
-                        aria-required="true"
-                        class="@if($errors->has('destination_address')) is-invalid @endif"
-                    />
+                    <label for="destination_address_home">市区町村・番地 <span class="required">*</span></label>
+                    <div class="input-with-voice">
+                        <input
+                            type="text"
+                            id="destination_address_home"
+                            name="destination_address"
+                            x-model="formData.destination_address"
+                            required
+                            placeholder="例: 渋谷区青山１－１－１"
+                            aria-required="true"
+                            class="@if($errors->has('destination_address')) is-invalid @endif"
+                        />
+                        <button
+                            type="button"
+                            class="voice-input-btn"
+                            :class="{ 'recording': isRecording && voiceTargetField === 'destination_address' }"
+                            @click="toggleVoiceInput('destination_address')"
+                            :disabled="!isVoiceInputSupported"
+                            :title="isRecording ? '音声入力を停止' : '音声入力'"
+                            aria-label="市区町村・番地を音声入力"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
                     <small>市区町村・番地を入力してください（ガイドには大まかな地域のみ表示されます）</small>
                 </div>
                 <div class="form-group">
-                    <label for="meeting_place">集合場所 <span class="required">*</span></label>
-                    <input
-                        type="text"
-                        id="meeting_place"
-                        name="meeting_place"
-                        x-model="formData.meeting_place"
-                        required
-                        placeholder="例: 玄関前"
-                        aria-required="true"
-                        class="@if($errors->has('meeting_place')) is-invalid @endif"
-                    />
+                    <label for="meeting_place_home">集合場所 <span class="required">*</span></label>
+                    <div class="input-with-voice">
+                        <input
+                            type="text"
+                            id="meeting_place_home"
+                            name="meeting_place"
+                            x-model="formData.meeting_place"
+                            required
+                            placeholder="例: 玄関前"
+                            aria-required="true"
+                            class="@if($errors->has('meeting_place')) is-invalid @endif"
+                        />
+                        <button
+                            type="button"
+                            class="voice-input-btn"
+                            :class="{ 'recording': isRecording && voiceTargetField === 'meeting_place' }"
+                            @click="toggleVoiceInput('meeting_place')"
+                            :disabled="!isVoiceInputSupported"
+                            :title="isRecording ? '音声入力を停止' : '音声入力'"
+                            aria-label="集合場所を音声入力"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
                     <small>ガイドとの集合場所を入力してください</small>
                 </div>
             </div>
@@ -403,11 +493,11 @@
                 <button
                     type="button"
                     class="voice-input-btn"
-                    :class="{ 'recording': isRecording }"
-                    @click="toggleVoiceInput"
+                    :class="{ 'recording': isRecording && voiceTargetField === 'service_content' }"
+                    @click="toggleVoiceInput('service_content')"
                     :disabled="!isVoiceInputSupported"
                     :title="isRecording ? '音声入力を停止' : '音声入力'"
-                    aria-label="音声入力"
+                    aria-label="サービス内容を音声入力"
                 >
                     <template x-if="!isRecording">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -697,6 +787,7 @@ function requestForm() {
         isVoiceInput: false,
         isRecording: false,
         isVoiceInputSupported: false,
+        voiceTargetField: 'service_content', // 音声入力の反映先: service_content | destination_address | meeting_place
         recognition: null,
         processedResultIndices: new Set(), // 処理済みの結果インデックスを追跡
         interimText: '', // 中間結果を一時保存（表示用）
@@ -860,16 +951,22 @@ function requestForm() {
                 
                 // 確定結果のみを追加（スペースを適切に追加）
                 if (finalTranscript) {
-                    const currentText = this.formData.service_content;
-                    // 既存のテキストの末尾が空白でない場合、スペースを追加
-                    const separator = currentText && 
-                        !currentText.endsWith(' ') && 
-                        !currentText.endsWith('\n') && 
-                        !currentText.endsWith('。') && 
-                        !currentText.endsWith('、') 
-                        ? ' ' : '';
-                    this.formData.service_content = currentText + separator + finalTranscript;
-                    // 中間結果をクリア
+                    const field = this.voiceTargetField || 'service_content';
+                    let currentText = '';
+                    if (field === 'guide_filter_keyword') {
+                        currentText = this.guideFilter.keyword || '';
+                        const separator = currentText && !currentText.endsWith(' ') && !currentText.endsWith('、') ? ' ' : '';
+                        this.guideFilter.keyword = currentText + separator + finalTranscript;
+                    } else {
+                        currentText = this.formData[field] || '';
+                        const separator = currentText && 
+                            !currentText.endsWith(' ') && 
+                            !currentText.endsWith('\n') && 
+                            !currentText.endsWith('。') && 
+                            !currentText.endsWith('、') 
+                            ? ' ' : '';
+                        this.formData[field] = currentText + separator + finalTranscript;
+                    }
                     this.interimText = '';
                 }
             };
@@ -898,12 +995,12 @@ function requestForm() {
                 this.interimText = '';
             };
         },
-        toggleVoiceInput() {
+        toggleVoiceInput(field) {
             if (!this.isVoiceInputSupported) {
                 alert('お使いのブラウザは音声認識に対応していません');
                 return;
             }
-            
+            this.voiceTargetField = field || 'service_content';
             if (this.isRecording) {
                 this.stopRecording();
             } else {

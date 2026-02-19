@@ -14,6 +14,9 @@ use App\Models\Notification;
 use App\Models\UserMonthlyLimit;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\UploadedFile;
+use App\Services\UserMonthlyLimitService;
 
 class AdminService
 {
@@ -839,6 +842,247 @@ class AdminService
             'message' => '申し訳ございませんが、あなたのアカウントは承認されませんでした。',
             'related_id' => $guideId,
         ]);
+    }
+
+    /**
+     * CSV一括登録で使用するヘッダー（テンプレート用）
+     */
+    public static function getBulkImportCsvHeaders(): array
+    {
+        return [
+            'role', 'email', 'password', 'name', 'last_name', 'first_name', 'last_name_kana', 'first_name_kana',
+            'birth_date', 'age', 'gender', 'address', 'postal_code', 'phone',
+            'is_allowed', 'email_confirmed',
+            'recipient_number', 'contact_method', 'notes', 'introduction', 'admin_comment',
+            'interview_date_1', 'interview_date_2', 'interview_date_3', 'application_reason', 'visual_disability_status', 'disability_support_level', 'daily_life_situation',
+            'employee_number', 'available_areas', 'available_days', 'available_times', 'goal', 'qualifications', 'preferred_work_hours',
+            'limit_year', 'limit_month', 'limit_outing_hours', 'limit_home_hours',
+        ];
+    }
+
+    /**
+     * CSV一括登録テンプレート（BOM付きUTF-8）を返す
+     */
+    public function getBulkImportCsvTemplate(): string
+    {
+        $headers = self::getBulkImportCsvHeaders();
+        $comment = '# role: user または guide。ユーザーは recipient_number 等・限度時間、ガイドは employee_number 等を記載。日付は Y-m-d または Y-m-d H:i:s。available_areas/days/times はカンマ区切り。';
+        $csv = "\xEF\xBB\xBF" . $comment . "\n" . implode(',', array_map(function ($h) {
+            return '"' . str_replace('"', '""', $h) . '"';
+        }, $headers)) . "\n";
+        $exampleUser = [
+            'user', 'user@example.com', 'password6', '山田 太郎', '山田', '太郎', 'ヤマダ', 'タロウ',
+            '1990-01-15', '34', 'male', '東京都渋谷区', '150-0000', '090-1234-5678',
+            '0', '0',
+            '12345678', '', '', 'よろしくお願いします', '',
+            '', '', '', '知人の紹介', '', '', '',
+            '', '', '', '', '', '', '',
+            (string) date('Y'), (string) date('n'), '50', '40',
+        ];
+        $csv .= implode(',', array_map(function ($v) {
+            return '"' . str_replace('"', '""', (string) $v) . '"';
+        }, $exampleUser)) . "\n";
+        return $csv;
+    }
+
+    /**
+     * CSV一括登録を処理する。戻り値: ['created' => int, 'errors' => [行番号 => [メッセージ]]]
+     *
+     * @param UploadedFile $file CSVファイル
+     * @return array{created: int, errors: array<int, array<string>>}
+     */
+    public function processBulkImportCsv(UploadedFile $file): array
+    {
+        $created = 0;
+        $errors = [];
+        $limitService = app(UserMonthlyLimitService::class);
+        $stream = fopen($file->getRealPath(), 'r');
+        if ($stream === false) {
+            return ['created' => 0, 'errors' => [0 => ['CSVファイルを開けませんでした。']]];
+        }
+        $bom = fread($stream, 3);
+        if ($bom !== "\xEF\xBB\xBF") {
+            rewind($stream);
+        }
+        $firstRow = fgetcsv($stream, 0, ',', '"', '');
+        if ($firstRow === false) {
+            fclose($stream);
+            return ['created' => 0, 'errors' => [0 => ['CSVのヘッダーを読み取れませんでした。']]];
+        }
+        $firstCol = isset($firstRow[0]) ? trim((string) $firstRow[0]) : '';
+        if ($firstCol === '' || strpos($firstCol, '#') === 0) {
+            $headerRow = fgetcsv($stream, 0, ',', '"', '');
+            if ($headerRow === false) {
+                fclose($stream);
+                return ['created' => 0, 'errors' => [0 => ['CSVのヘッダーを読み取れませんでした。']]];
+            }
+        } else {
+            $headerRow = $firstRow;
+        }
+        $headerRow = array_map(function ($c) {
+            return trim(preg_replace('/^#.*/', '', (string) $c));
+        }, $headerRow);
+        $expectedHeaders = self::getBulkImportCsvHeaders();
+        $colIndex = [];
+        foreach ($expectedHeaders as $i => $key) {
+            $colIndex[$key] = array_search($key, $headerRow, true);
+            if ($colIndex[$key] === false && in_array($key, ['role', 'email', 'password', 'name'], true)) {
+                fclose($stream);
+                return ['created' => 0, 'errors' => [0 => ['必須列が見つかりません: ' . $key]]];
+            }
+        }
+        $lineNo = 1;
+        while (($row = fgetcsv($stream, 0, ',', '"', '')) !== false) {
+            $lineNo++;
+            $get = function ($key) use ($row, $colIndex) {
+                $i = $colIndex[$key] ?? -1;
+                if ($i < 0 || !isset($row[$i])) {
+                    return '';
+                }
+                return trim((string) $row[$i]);
+            };
+            $role = $get('role');
+            if ($role === '' || (strtolower($role) !== 'user' && strtolower($role) !== 'guide')) {
+                $errors[$lineNo] = ['role は user または guide を指定してください。'];
+                continue;
+            }
+            $role = strtolower($role);
+            $email = $get('email');
+            $password = $get('password');
+            $name = $get('name');
+            if ($email === '') {
+                $errors[$lineNo] = ['email は必須です。'];
+                continue;
+            }
+            if (User::where('email', $email)->exists()) {
+                $errors[$lineNo] = ['このメールアドレスは既に登録されています。'];
+                continue;
+            }
+            if (strlen($password) < 6) {
+                $errors[$lineNo] = ['password は6文字以上で入力してください。'];
+                continue;
+            }
+            $fullName = $name !== '' ? $name : trim($get('last_name') . ' ' . $get('first_name'));
+            if ($fullName === '') {
+                $errors[$lineNo] = ['name または last_name/first_name を入力してください。'];
+                continue;
+            }
+            $today = new \DateTime();
+            $birthDate = $get('birth_date');
+            $age = $get('age');
+            if ($birthDate !== '') {
+                $d = \DateTime::createFromFormat('Y-m-d', $birthDate);
+                if ($d) {
+                    $age = (string) (int) $today->diff($d)->y;
+                }
+            }
+            $gender = $get('gender');
+            if (!in_array($gender, ['male', 'female', 'other', 'prefer_not_to_say'], true)) {
+                $gender = null;
+            }
+            try {
+                DB::beginTransaction();
+                $user = User::create([
+                    'email' => $email,
+                    'password_hash' => Hash::make($password),
+                    'name' => $fullName,
+                    'last_name' => $get('last_name') ?: null,
+                    'first_name' => $get('first_name') ?: null,
+                    'last_name_kana' => $get('last_name_kana') ?: null,
+                    'first_name_kana' => $get('first_name_kana') ?: null,
+                    'birth_date' => $birthDate !== '' ? $birthDate : null,
+                    'age' => $age !== '' ? (int) $age : null,
+                    'gender' => $gender,
+                    'address' => $get('address') ?: null,
+                    'postal_code' => $get('postal_code') ?: null,
+                    'phone' => $get('phone') ?: null,
+                    'role' => $role,
+                    'is_allowed' => (int) $get('is_allowed') === 1,
+                    'email_confirmed' => (int) $get('email_confirmed') === 1,
+                ]);
+                if ($role === 'user') {
+                    $interview1 = $this->parseDateTime($get('interview_date_1'));
+                    $interview2 = $this->parseDateTime($get('interview_date_2'));
+                    $interview3 = $this->parseDateTime($get('interview_date_3'));
+                    UserProfile::create([
+                        'user_id' => $user->id,
+                        'recipient_number' => $get('recipient_number') ?: null,
+                        'contact_method' => $get('contact_method') ?: null,
+                        'notes' => $get('notes') ?: null,
+                        'introduction' => $get('introduction') ?: null,
+                        'admin_comment' => $get('admin_comment') ?: null,
+                        'interview_date_1' => $interview1,
+                        'interview_date_2' => $interview2,
+                        'interview_date_3' => $interview3,
+                        'application_reason' => $get('application_reason') ?: null,
+                        'visual_disability_status' => $get('visual_disability_status') ?: null,
+                        'disability_support_level' => $get('disability_support_level') ?: null,
+                        'daily_life_situation' => $get('daily_life_situation') ?: null,
+                    ]);
+                    $limitYear = $get('limit_year') !== '' ? (int) $get('limit_year') : (int) date('Y');
+                    $limitMonth = $get('limit_month') !== '' ? (int) $get('limit_month') : (int) date('n');
+                    $outingHours = $get('limit_outing_hours') !== '' ? (float) $get('limit_outing_hours') : 0;
+                    $homeHours = $get('limit_home_hours') !== '' ? (float) $get('limit_home_hours') : 0;
+                    if ($outingHours > 0 || $homeHours > 0) {
+                        $limitService->setLimit($user->id, $outingHours, $limitYear, $limitMonth, 'outing');
+                        $limitService->setLimit($user->id, $homeHours, $limitYear, $limitMonth, 'home');
+                    }
+                } else {
+                    $areas = $get('available_areas') !== '' ? array_map('trim', explode(',', $get('available_areas'))) : [];
+                    $days = $get('available_days') !== '' ? array_map('trim', explode(',', $get('available_days'))) : [];
+                    $times = $get('available_times') !== '' ? array_map('trim', explode(',', $get('available_times'))) : [];
+                    $qualRaw = $get('qualifications');
+                    $qualifications = [];
+                    if ($qualRaw !== '') {
+                        $decoded = json_decode($qualRaw, true);
+                        if (is_array($decoded)) {
+                            $qualifications = $decoded;
+                        } else {
+                            foreach (array_map('trim', explode(',', $qualRaw)) as $q) {
+                                if ($q !== '') {
+                                    $qualifications[] = ['name' => $q, 'obtained_date' => null];
+                                }
+                            }
+                        }
+                    }
+                    GuideProfile::create([
+                        'user_id' => $user->id,
+                        'introduction' => $get('introduction') ?: null,
+                        'available_areas' => $areas,
+                        'available_days' => $days,
+                        'available_times' => $times,
+                        'employee_number' => $get('employee_number') ?: null,
+                        'admin_comment' => $get('admin_comment') ?: null,
+                        'application_reason' => $get('application_reason') ?: null,
+                        'goal' => $get('goal') ?: null,
+                        'qualifications' => $qualifications,
+                        'preferred_work_hours' => $get('preferred_work_hours') ?: null,
+                    ]);
+                }
+                DB::commit();
+                $created++;
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                $errors[$lineNo] = [$e->getMessage()];
+            }
+        }
+        fclose($stream);
+        return ['created' => $created, 'errors' => $errors];
+    }
+
+    private function parseDateTime(?string $value): ?\DateTime
+    {
+        if ($value === null || trim($value) === '') {
+            return null;
+        }
+        $formats = ['Y-m-d H:i:s', 'Y-m-d H:i', 'Y-m-d'];
+        foreach ($formats as $f) {
+            $d = \DateTime::createFromFormat($f, trim($value));
+            if ($d) {
+                return $d;
+            }
+        }
+        return null;
     }
 }
 

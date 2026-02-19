@@ -61,6 +61,130 @@
   line-height: 1.5;
 }
 
+// 支援を提案するセクション（ガイド依頼一覧）
+.proposal-section {
+  margin-bottom: 2rem;
+  padding: 1.25rem;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+
+  h2 {
+    font-size: 1.1rem;
+    margin: 0 0 0.75rem 0;
+  }
+
+  .proposal-section-desc {
+    font-size: 0.9rem;
+    color: #166534;
+    margin-bottom: 1rem;
+  }
+
+  .proposal-toggle-btn {
+    margin-bottom: 1rem;
+  }
+
+  .proposal-form-wrap {
+    max-width: 400px;
+  }
+
+  .proposal-form-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+
+    .form-group {
+      flex: 1;
+    }
+  }
+
+  .proposal-my-list {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #86efac;
+
+    h3 {
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #dcfce7;
+    }
+  }
+
+  @media (min-width: 769px) {
+    padding: 1.5rem 1.75rem;
+
+    h2 {
+      font-size: 1.2rem;
+    }
+
+    .proposal-section-desc {
+      font-size: 0.95rem;
+    }
+
+    .proposal-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .proposal-form-column {
+      min-width: 0;
+
+      &--full {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .proposal-form-wrap {
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    .proposal-form-row {
+      margin-bottom: 1rem;
+    }
+
+    .proposal-my-list {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+      border-left: 1px solid #86efac;
+      padding-left: 1.5rem;
+
+      h3 {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      li {
+        padding: 0.6rem 0;
+      }
+
+      &--full {
+        grid-column: 1 / -1;
+        border-left: none;
+        padding-left: 0;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
 .success-message {
   background-color: #e8f5e9;
   color: #2e7d32;

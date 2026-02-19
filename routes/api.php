@@ -30,6 +30,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/requests/{id}/cancel', [RequestController::class, 'cancel']);
     Route::get('/guides/available', [RequestController::class, 'availableGuides']); // 指名用ガイド一覧
     
+    // ガイドの支援提案（ガイド→利用者）
+    Route::get('/guide/proposals', [\App\Http\Controllers\Api\GuideProposalController::class, 'indexForGuide'])->middleware('role:guide');
+    Route::get('/guide/proposals/users', [\App\Http\Controllers\Api\GuideProposalController::class, 'usersForProposal'])->middleware('role:guide');
+    Route::post('/guide/proposals', [\App\Http\Controllers\Api\GuideProposalController::class, 'store'])->middleware('role:guide');
+    // 利用者: 届いた提案の確認・承諾・拒否
+    Route::get('/proposals', [\App\Http\Controllers\Api\GuideProposalController::class, 'indexForUser'])->middleware('role:user');
+    Route::post('/proposals/{id}/accept', [\App\Http\Controllers\Api\GuideProposalController::class, 'accept'])->middleware('role:user');
+    Route::post('/proposals/{id}/reject', [\App\Http\Controllers\Api\GuideProposalController::class, 'reject'])->middleware('role:user');
+
     // マッチング関連
     Route::post('/matchings/accept', [MatchingController::class, 'accept']);
     Route::post('/matchings/decline', [MatchingController::class, 'decline']);
@@ -94,6 +103,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/users/{id}/monthly-limits', [\App\Http\Controllers\Api\AdminController::class, 'getUserMonthlyLimits']);
         Route::put('/guides/{id}/approve', [\App\Http\Controllers\Api\AdminController::class, 'approveGuide']);
         Route::put('/guides/{id}/reject', [\App\Http\Controllers\Api\AdminController::class, 'rejectGuide']);
+        Route::get('/bulk-import/template', [\App\Http\Controllers\Api\AdminController::class, 'getBulkImportCsvTemplate']);
+        Route::post('/bulk-import/csv', [\App\Http\Controllers\Api\AdminController::class, 'processBulkImportCsv']);
     });
 
     // 管理者向けお知らせ管理

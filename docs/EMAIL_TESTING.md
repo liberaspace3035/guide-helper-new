@@ -18,6 +18,7 @@
 | `MAIL_MAILER=smtp` (Mailtrap) | ❌ 届かない | MailtrapのWebインターフェースで確認 |
 | `MAIL_MAILER=smtp` (Gmail設定) | ✅ **届く** | 実際のGmailメールボックスで確認 |
 | `MAIL_MAILER=smtp` (その他のSMTP) | ✅ 届く（設定による） | 実際のメールボックスで確認 |
+| `MAIL_MAILER=resend` (Resend) | ✅ 届く（設定による） | [RESEND_SETUP.md](./RESEND_SETUP.md) 参照 |
 
 **実際のGmailに届けたい場合**は、[GmailのSMTP設定](#gmailを使用する場合)を行ってください。
 

@@ -7,6 +7,76 @@
         依頼が承認されるまでは利用者の個人情報は表示されません。依頼に積極的に応募してください。
     </p>
 
+    <!-- 支援を提案する（ガイド→利用者） -->
+    <section class="proposal-section">
+        <h2>支援を提案する</h2>
+        <p class="proposal-section-desc">利用者に外出支援・自宅支援を提案できます。承諾されるとマッチングが成立します。</p>
+        <button type="button" @click="showProposalForm = !showProposalForm" class="btn-primary proposal-toggle-btn">
+            <span x-text="showProposalForm ? 'フォームを閉じる' : '支援を提案する'"></span>
+        </button>
+        <div class="proposal-body" x-show="showProposalForm || myProposals.length > 0">
+            <div class="proposal-form-column" :class="{ 'proposal-form-column--full': myProposals.length === 0 }">
+                <form x-show="showProposalForm" @submit.prevent="submitProposal()" class="proposal-form-wrap" x-transition>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="proposal-user">提案先の利用者 *</label>
+                        <select id="proposal-user" x-model="proposalForm.user_id" required>
+                            <option value="">選択してください</option>
+                            <template x-for="u in proposalUsers" :key="u.id">
+                                <option :value="u.id" x-text="u.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label>支援種別 *</label>
+                        <select x-model="proposalForm.request_type" required>
+                            <option value="outing">外出支援</option>
+                            <option value="home">自宅支援</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="proposal-date">希望日 *</label>
+                        <input type="date" id="proposal-date" x-model="proposalForm.proposed_date" required>
+                    </div>
+                    <div class="proposal-form-row">
+                        <div class="form-group">
+                            <label for="proposal-start">開始時刻</label>
+                            <input type="time" id="proposal-start" x-model="proposalForm.start_time">
+                        </div>
+                        <div class="form-group">
+                            <label for="proposal-end">終了時刻</label>
+                            <input type="time" id="proposal-end" x-model="proposalForm.end_time">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="proposal-content">支援内容（任意）</label>
+                        <textarea id="proposal-content" rows="2" x-model="proposalForm.service_content" placeholder="例：買い物同行"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="proposal-message">利用者へのメッセージ（任意）</label>
+                        <textarea id="proposal-message" rows="2" x-model="proposalForm.message" placeholder="一言メッセージ"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary" :disabled="proposalSubmitting">
+                        <span x-show="!proposalSubmitting">提案を送信</span>
+                        <span x-show="proposalSubmitting">送信中...</span>
+                    </button>
+                </form>
+            </div>
+            <template x-if="myProposals.length > 0">
+                <div class="proposal-my-list" :class="{ 'proposal-my-list--full': !showProposalForm }">
+                    <h3>送った提案</h3>
+                    <ul>
+                        <template x-for="p in myProposals" :key="p.id">
+                            <li>
+                                <span x-text="(p.user?.name || '') + ' へ ' + (p.request_type_label || '') + ' · ' + (p.proposed_date || '')"></span>
+                                <span class="status-badge" :class="p.status === 'accepted' ? 'status-matched' : p.status === 'rejected' ? 'status-cancelled' : ''" x-text="p.status === 'pending' ? '待機中' : p.status === 'accepted' ? '承諾済み' : '辞退'"></span>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+            </template>
+        </div>
+    </section>
+
     <template x-if="loading">
         <div class="loading-container" aria-busy="true" aria-live="polite">
             <div class="loading-spinner" aria-hidden="true"></div>
@@ -98,8 +168,62 @@ function guideRequestsData() {
         requests: [],
         loading: true,
         error: '',
+        proposalUsers: [],
+        myProposals: [],
+        showProposalForm: false,
+        proposalForm: { user_id: '', request_type: 'outing', proposed_date: '', start_time: '', end_time: '', service_content: '', message: '' },
+        proposalSubmitting: false,
         init() {
             this.fetchRequests();
+            this.fetchProposalUsers();
+            this.fetchMyProposals();
+        },
+        async fetchProposalUsers() {
+            try {
+                const res = await fetch('/api/guide/proposals/users', { credentials: 'include', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.proposalUsers = data.users || [];
+                }
+            } catch (e) { console.error('提案先一覧取得エラー:', e); }
+        },
+        async fetchMyProposals() {
+            try {
+                const res = await fetch('/api/guide/proposals', { credentials: 'include', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.myProposals = data.proposals || [];
+                }
+            } catch (e) { console.error('提案一覧取得エラー:', e); }
+        },
+        async submitProposal() {
+            if (!this.proposalForm.user_id || !this.proposalForm.proposed_date) {
+                alert('提案先と希望日を入力してください');
+                return;
+            }
+            this.proposalSubmitting = true;
+            try {
+                const res = await fetch('/api/guide/proposals', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' },
+                    body: JSON.stringify(this.proposalForm)
+                });
+                if (window.handleApiResponse) await window.handleApiResponse(res);
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    alert(data.message || '提案を送信しました');
+                    this.proposalForm = { user_id: '', request_type: 'outing', proposed_date: '', start_time: '', end_time: '', service_content: '', message: '' };
+                    this.showProposalForm = false;
+                    this.fetchMyProposals();
+                } else {
+                    alert(data.error || '送信に失敗しました');
+                }
+            } catch (e) {
+                alert('送信に失敗しました');
+            } finally {
+                this.proposalSubmitting = false;
+            }
         },
         async fetchRequests() {
             try {
