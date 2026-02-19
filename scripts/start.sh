@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# プロジェクトルートに移動（Railway 等で CWD が不定な場合に備える）
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/.."
+echo "📂 Working directory: $(pwd)"
+
 echo "🚀 Starting Laravel application..."
 
 # キャッシュファイルを物理削除（artisanコマンドが失敗しても確実に消す）
@@ -87,11 +92,18 @@ php artisan db:seed --class=EmailTemplatesSeeder --force || {
 if [ "$APP_ENV" = "production" ]; then
     echo "⚡ Optimizing for production..."
     php artisan config:cache
-    php artisan route:cache
+    php artisan route:cache || true   # 失敗しても起動は続行（後で route:clear で再生成する）
     php artisan view:cache
 fi
 
-# アプリケーションの起動
+# ルートキャッシュが 404 の原因になることがあるため、起動直前にクリアしてから再生成
+echo "🔄 Refreshing route cache..."
+php artisan route:clear || true
+if [ "$APP_ENV" = "production" ]; then
+    php artisan route:cache || true
+fi
+
+# アプリケーションの起動（artisan serve は public をドキュメントルートにする）
 echo "✅ Starting PHP server..."
 exec php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
 
