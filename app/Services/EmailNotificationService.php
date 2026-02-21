@@ -44,14 +44,24 @@ class EmailNotificationService
      */
     public function sendNotification(string $templateKey, User $user, array $variables = []): bool
     {
+        $notificationType = $this->getNotificationType($templateKey);
         // 通知が有効かチェック
-        if (!$this->isNotificationEnabled($this->getNotificationType($templateKey))) {
+        if (!$this->isNotificationEnabled($notificationType)) {
+            \Log::info('メール送信スキップ: 通知が無効です', [
+                'template_key' => $templateKey,
+                'notification_type' => $notificationType,
+                'user_id' => $user->id,
+            ]);
             return false;
         }
 
         $template = $this->getTemplate($templateKey);
         if (!$template) {
-            \Log::warning("メールテンプレートが見つかりません: {$templateKey}");
+            \Log::warning('メール送信スキップ: テンプレートが見つからないか無効です', [
+                'template_key' => $templateKey,
+                'user_id' => $user->id,
+                'hint' => 'php artisan db:seed --class=EmailTemplatesSeeder でテンプレートを投入してください',
+            ]);
             return false;
         }
 

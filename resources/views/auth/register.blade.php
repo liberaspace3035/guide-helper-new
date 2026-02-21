@@ -22,7 +22,19 @@
             <div x-show="error" class="error-message" id="register-error-client" role="alert" aria-live="polite" aria-atomic="true" x-text="error"></div>
             @if($errors->any())
                 <div class="error-message" id="register-error-summary" role="alert" aria-live="polite" aria-atomic="true">
-                    <span class="sr-only">入力内容に誤りがあります。</span>{{ $errors->first() }}
+                    <p><span class="sr-only">入力内容に誤りがあります。該当する項目は以下のとおりです。</span></p>
+                    <ul class="error-summary-list" aria-label="誤りがある項目">
+                        @foreach($errors->keys() as $key)
+                            @php
+                                $attrLabel = __("validation.attributes.{$key}");
+                                if (str_starts_with($attrLabel, 'validation.')) {
+                                    $attrLabel = preg_replace('/\.\d+\./', ' ', $key);
+                                    $attrLabel = str_replace('_', ' ', $attrLabel);
+                                }
+                            @endphp
+                            <li><span class="error-summary-field">{{ $attrLabel }}</span>：{{ $errors->first($key) }}</li>
+                        @endforeach
+                    </ul>
                 </div>
             @endif
 
@@ -45,8 +57,11 @@
                                     required
                                     placeholder="姓"
                                     aria-required="true"
+                                    :aria-invalid="!!fieldErrors.last_name"
+                                    :aria-describedby="fieldErrors.last_name ? 'last_name-error' : null"
                                 />
                                 <label for="last_name" class="input-label">姓</label>
+                                <span id="last_name-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.last_name" x-text="fieldErrors.last_name"></span>
                             </div>
                             <div class="name-input-item">
                                 <input
@@ -57,8 +72,11 @@
                                     required
                                     placeholder="名"
                                     aria-required="true"
+                                    :aria-invalid="!!fieldErrors.first_name"
+                                    :aria-describedby="fieldErrors.first_name ? 'first_name-error' : null"
                                 />
                                 <label for="first_name" class="input-label">名</label>
+                                <span id="first_name-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.first_name" x-text="fieldErrors.first_name"></span>
                             </div>
                         </div>
                     </div>
@@ -126,6 +144,8 @@
                                 x-model="formData.gender"
                                 required
                                 aria-required="true"
+                                :aria-invalid="!!fieldErrors.gender"
+                                :aria-describedby="fieldErrors.gender ? 'gender-error' : null"
                             >
                                 <option value="">選択してください</option>
                                 <option value="male">男性</option>
@@ -133,6 +153,7 @@
                                 <option value="other">その他</option>
                                 <option value="prefer_not_to_say">回答しない</option>
                             </select>
+                            <span id="gender-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.gender" x-text="fieldErrors.gender"></span>
                         </div>
                     </div>
                     <div class="form-row">
@@ -165,7 +186,10 @@
                                 placeholder="都道府県、市区町村、番地などを入力"
                                 required
                                 aria-required="true"
+                                :aria-invalid="!!fieldErrors.address"
+                                :aria-describedby="fieldErrors.address ? 'address-error' : null"
                             ></textarea>
+                            <span id="address-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.address" x-text="fieldErrors.address"></span>
                         </div>
                     </div>
                 </div>
@@ -225,7 +249,10 @@
                                 placeholder="例: 090-1234-5678"
                                 pattern="[\d\-\+\(\)\s]+"
                                 aria-required="true"
+                                :aria-invalid="!!fieldErrors.phone"
+                                :aria-describedby="fieldErrors.phone ? 'phone-error' : null"
                             />
+                            <span id="phone-error" class="error-message-field" role="alert" aria-live="polite" x-show="fieldErrors.phone" x-text="fieldErrors.phone"></span>
                         </div>
                     </div>
 
@@ -755,45 +782,160 @@ function registerForm() {
         },
         validateAndGoToConfirm() {
             this.error = '';
-            this.validatePostalCode();
+            this.fieldErrors = {};
+            // 必須項目（サーバー側と同一）
+            if (!this.formData.last_name?.trim()) { this.fieldErrors.last_name = '姓を入力してください'; }
+            if (!this.formData.first_name?.trim()) { this.fieldErrors.first_name = '名を入力してください'; }
+            if (!this.formData.gender) { this.fieldErrors.gender = '性別を選択してください'; }
+            this.validateKana();
+            this.validateBirthDate();
+            if (!this.formData.postal_code?.trim()) { this.fieldErrors.postal_code = '郵便番号を入力してください'; }
+            else { this.validatePostalCode(); }
+            if (!this.formData.address?.trim()) { this.fieldErrors.address = '住所を入力してください'; }
+            if (!this.formData.phone?.trim()) { this.fieldErrors.phone = '電話番号を入力してください'; }
+            else { this.validatePhone(); }
+            if (!this.formData.email?.trim()) { this.fieldErrors.email = 'メールアドレスを入力してください'; }
+            if (!this.formData.email_confirmation?.trim()) { this.fieldErrors.email_confirmation = 'メールアドレス（確認）を入力してください'; }
+            if (!this.formData.password) { this.fieldErrors.password = 'パスワードを入力してください'; }
+            if (!this.formData.confirmPassword) { this.fieldErrors.confirmPassword = 'パスワード（確認）を入力してください'; }
             this.validateEmail();
             this.validateEmailConfirmation();
             this.validatePassword();
             this.validatePasswordConfirmation();
-            if (Object.keys(this.fieldErrors).length > 0) return;
+            if (Object.keys(this.fieldErrors).length > 0) {
+                this.scrollToFirstError();
+                return;
+            }
             if (this.formData.email !== this.formData.email_confirmation) {
                 this.fieldErrors.email_confirmation = 'メールアドレスが一致しません';
+                this.scrollToFirstError();
                 return;
             }
             if (this.formData.password !== this.formData.confirmPassword) {
                 this.fieldErrors.confirmPassword = 'パスワードが一致しません';
+                this.scrollToFirstError();
                 return;
             }
             if (this.formData.password.length < 6) {
                 this.fieldErrors.password = 'パスワードは6文字以上で入力してください';
+                this.scrollToFirstError();
                 return;
             }
             if (this.formData.role === 'user') {
-                if (!this.formData.interview_date_1) { this.error = '面談希望日時（第1希望）を入力してください'; return; }
-                if (!this.formData.application_reason) { this.error = '応募のきっかけを選択してください'; return; }
-                if (this.formData.application_reason === 'その他（自由記述）' && !this.formData.application_reason_other?.trim()) { this.error = 'その他の内容を記入してください'; return; }
-                if (!this.formData.visual_disability_status) { this.error = '視覚障害の状況を入力してください'; return; }
-                if (!this.formData.disability_support_level) { this.error = '障害支援区分を選択してください'; return; }
-                if (!this.formData.daily_life_situation) { this.error = '普段の生活状況を入力してください'; return; }
+                if (!this.formData.interview_date_1) { this.error = '面談希望日時（第1希望）を入力してください'; this.scrollToFirstError(); return; }
+                if (!this.formData.application_reason) { this.error = '応募のきっかけを選択してください'; this.scrollToFirstError(); return; }
+                if (this.formData.application_reason === 'その他（自由記述）' && !this.formData.application_reason_other?.trim()) { this.error = 'その他の内容を記入してください'; this.scrollToFirstError(); return; }
+                if (!this.formData.visual_disability_status) { this.error = '視覚障害の状況を入力してください'; this.scrollToFirstError(); return; }
+                if (!this.formData.disability_support_level) { this.error = '障害支援区分を選択してください'; this.scrollToFirstError(); return; }
+                if (!this.formData.daily_life_situation) { this.error = '普段の生活状況を入力してください'; this.scrollToFirstError(); return; }
             } else if (this.formData.role === 'guide') {
-                if (!this.formData.application_reason) { this.error = '応募理由を入力してください'; return; }
-                if (!this.formData.goal) { this.error = '実現したいことを入力してください'; return; }
-                if (!this.formData.qualifications || this.formData.qualifications.length === 0) { this.error = '保有資格を1件以上入力してください'; return; }
+                if (!this.formData.application_reason) { this.error = '応募理由を入力してください'; this.scrollToFirstError(); return; }
+                if (!this.formData.goal) { this.error = '実現したいことを入力してください'; this.scrollToFirstError(); return; }
+                if (!this.formData.qualifications || this.formData.qualifications.length === 0) { this.error = '保有資格を1件以上入力してください'; this.scrollToFirstError(); return; }
                 for (let i = 0; i < this.formData.qualifications.length; i++) {
                     if (!this.formData.qualifications[i].name || !this.formData.qualifications[i].obtained_date) {
                         this.error = '保有資格の資格名と取得年月日を入力してください';
+                        this.scrollToFirstError();
                         return;
                     }
                 }
-                if (!this.formData.preferred_work_hours) { this.error = '希望勤務時間を入力してください'; return; }
+                if (!this.formData.preferred_work_hours) { this.error = '希望勤務時間を入力してください'; this.scrollToFirstError(); return; }
             }
             this.step = 'confirm';
             this.$el.querySelector('.confirm-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+        validateKana() {
+            const kanaPattern = /^[ァ-ヶー\s]+$/;
+            if (this.formData.last_name_kana !== undefined && this.formData.last_name_kana !== null) {
+                if (!String(this.formData.last_name_kana).trim()) {
+                    this.fieldErrors.last_name_kana = '【名前の読み・姓（カナ）】を入力してください。';
+                } else if (!kanaPattern.test(String(this.formData.last_name_kana))) {
+                    this.fieldErrors.last_name_kana = '【名前の読み・姓（カナ）】全角カタカナで入力してください。';
+                } else {
+                    delete this.fieldErrors.last_name_kana;
+                }
+            }
+            if (this.formData.first_name_kana !== undefined && this.formData.first_name_kana !== null) {
+                if (!String(this.formData.first_name_kana).trim()) {
+                    this.fieldErrors.first_name_kana = '【名前の読み・名（カナ）】を入力してください。';
+                } else if (!kanaPattern.test(String(this.formData.first_name_kana))) {
+                    this.fieldErrors.first_name_kana = '【名前の読み・名（カナ）】全角カタカナで入力してください。';
+                } else {
+                    delete this.fieldErrors.first_name_kana;
+                }
+            }
+        },
+        validateBirthDate() {
+            if (!this.formData.birth_date) {
+                this.fieldErrors.birth_date = '【生年月日】を入力してください。';
+                return;
+            }
+            const d = new Date(this.formData.birth_date);
+            if (isNaN(d.getTime())) {
+                this.fieldErrors.birth_date = '【生年月日】は正しい日付を入力してください。';
+                return;
+            }
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const birth = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            if (birth >= today) {
+                this.fieldErrors.birth_date = '【生年月日】未来の日付は入力できません。今日より前の日付を入力してください。';
+                return;
+            }
+            const age = Math.floor((today - birth) / (365.25 * 24 * 60 * 60 * 1000));
+            if (age < 18) {
+                this.fieldErrors.birth_date = '【生年月日】から計算した年齢は18歳以上である必要があります。';
+                return;
+            }
+            if (age > 120) {
+                this.fieldErrors.birth_date = '【生年月日】から計算した年齢は120歳以下である必要があります。';
+                return;
+            }
+            delete this.fieldErrors.birth_date;
+        },
+        validatePhone() {
+            const pattern = /^[\d\-\+\(\)\s]+$/;
+            if (this.formData.phone !== undefined && this.formData.phone !== null && String(this.formData.phone).trim()) {
+                if (!pattern.test(String(this.formData.phone))) {
+                    this.fieldErrors.phone = '電話番号は数字・ハイフン・+()のみで入力してください。';
+                } else {
+                    delete this.fieldErrors.phone;
+                }
+            }
+        },
+        scrollToFirstError() {
+            // 一般エラー（this.error）のみの場合はそのメッセージへスクロール（読み上げは role="alert" aria-live で行われる）
+            if (this.error) {
+                const alertEl = document.getElementById('register-error-client');
+                if (alertEl) {
+                    alertEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                if (Object.keys(this.fieldErrors).length === 0) return;
+            }
+            const firstErrorId = Object.keys(this.fieldErrors)[0];
+            if (firstErrorId) {
+                const idMap = {
+                    last_name: 'last_name',
+                    first_name: 'first_name',
+                    last_name_kana: 'last_name_kana',
+                    first_name_kana: 'first_name_kana',
+                    birth_date: 'birth_date',
+                    gender: 'gender',
+                    postal_code: 'postal_code',
+                    address: 'address',
+                    phone: 'phone',
+                    email: 'email',
+                    email_confirmation: 'email_confirmation',
+                    password: 'password',
+                    confirmPassword: 'confirmPassword'
+                };
+                const id = idMap[firstErrorId] || firstErrorId;
+                const el = document.getElementById(id);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.focus();
+                }
+            }
         },
         submitForm() {
             const form = this.$el.querySelector('form');
@@ -834,7 +976,8 @@ function registerForm() {
         },
         validatePostalCode() {
             const pattern = /^\d{3}-\d{4}$/;
-            if (this.formData.postal_code && !pattern.test(this.formData.postal_code)) {
+            if (!this.formData.postal_code?.trim()) return;
+            if (!pattern.test(this.formData.postal_code)) {
                 this.fieldErrors.postal_code = '郵便番号は「123-4567」の形式で入力してください（ハイフンを含む7桁）';
             } else {
                 delete this.fieldErrors.postal_code;
@@ -842,7 +985,8 @@ function registerForm() {
         },
         validateEmail() {
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (this.formData.email && !emailPattern.test(this.formData.email)) {
+            if (!this.formData.email?.trim()) return; // 必須は validateAndGoToConfirm で設定済み
+            if (!emailPattern.test(this.formData.email)) {
                 this.fieldErrors.email = 'メールアドレスの形式が正しくありません';
             } else {
                 delete this.fieldErrors.email;
@@ -862,7 +1006,8 @@ function registerForm() {
             }
         },
         validatePassword() {
-            if (this.formData.password && this.formData.password.length < 6) {
+            if (!this.formData.password) return; // 必須は validateAndGoToConfirm で設定済み
+            if (this.formData.password.length < 6) {
                 this.fieldErrors.password = 'パスワードは6文字以上で入力してください';
             } else {
                 delete this.fieldErrors.password;
