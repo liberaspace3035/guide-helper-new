@@ -83,22 +83,22 @@
                 </template>
                 <template x-for="announcement in announcements" :key="announcement.id">
                     <tr>
-                        <td class="title-cell">
+                        <td class="title-cell target-cell">
                             <strong class="announcement-title-bold" x-text="announcement.title"></strong>
                         </td>
-                        <td>
+                        <td text-align="center">
                             <span class="target-badge" :class="announcement.target_audience" x-text="getTargetLabel(announcement.target_audience)"></span>
                         </td>
-                        <td>
+                        <td text-align="center">
                             <div class="datetime-cell-vertical">
                                 <span class="datetime-date" x-text="formatDateOnly(announcement.created_at)"></span>
                                 <span class="datetime-time" x-text="formatTimeOnly(announcement.created_at)"></span>
                             </div>
                         </td>
-                        <td>
+                        <td text-align="center">
                             <span class="announcement-creator-name" x-text="announcement.created_by_name || '不明'"></span>
                         </td>
-                        <td>
+                        <td text-align="center">
                             <button
                                 type="button"
                                 @click="fetchReadStatus(announcement.id)"
@@ -108,7 +108,7 @@
                                 既読状況
                             </button>
                         </td>
-                        <td>
+                        <td text-align="center">
                             <div class="action-buttons">
                                 <button
                                     @click="handleEdit(announcement)"
