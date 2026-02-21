@@ -182,6 +182,9 @@ class AuthController extends Controller
             $emailService->sendAdminNewRegistrationNotification($admin, $fullName, $isGuide);
         }
 
+        // 登録者本人に案内メールを送信
+        $emailService->sendRegistrationThanksNotification($user, $isGuide);
+
         // APIリクエストの場合はJSONレスポンスを返す
         if ($request->expectsJson() || $request->is('api/*')) {
             // APIリクエストの場合はログインしてJSONレスポンスを返す

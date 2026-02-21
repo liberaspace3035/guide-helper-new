@@ -11,6 +11,7 @@ use App\Models\Notification;
 use App\Models\AdminSetting;
 use App\Services\UserMonthlyLimitService;
 use App\Services\AIInputService;
+use App\Services\EmailNotificationService;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -19,12 +20,14 @@ class RequestService
     protected $maskAddressService;
     protected $limitService;
     protected $aiService;
+    protected $emailService;
 
-    public function __construct(MaskAddressService $maskAddressService, UserMonthlyLimitService $limitService, AIInputService $aiService)
+    public function __construct(MaskAddressService $maskAddressService, UserMonthlyLimitService $limitService, AIInputService $aiService, EmailNotificationService $emailService)
     {
         $this->maskAddressService = $maskAddressService;
         $this->limitService = $limitService;
         $this->aiService = $aiService;
+        $this->emailService = $emailService;
     }
 
     /**
@@ -238,6 +241,7 @@ class RequestService
                     'message' => "あなたが指名された依頼が作成されました。{$request->masked_address}で{$request->request_date} {$time}の依頼です。",
                     'related_id' => $request->id,
                 ]);
+                $this->emailService->sendRequestNotification($nominatedGuide, $this->buildRequestDataForEmail($request));
                 // 指名ガイドが指定されている場合は、そのガイドのみに通知して終了
                 return;
             }
@@ -308,8 +312,35 @@ class RequestService
                     'message' => "新しい依頼が作成されました。{$request->masked_address}で{$request->request_date} {$time}の依頼です。",
                     'related_id' => $request->id,
                 ]);
+                $this->emailService->sendRequestNotification($guide, $this->buildRequestDataForEmail($request));
             }
         }
+    }
+
+    /**
+     * 依頼通知メール用のデータ配列を組み立て
+     */
+    protected function buildRequestDataForEmail(Request $request): array
+    {
+        $requestDate = $request->request_date;
+        if ($requestDate instanceof \Carbon\Carbon) {
+            $requestDate = $requestDate->format('Y-m-d');
+        } elseif ($requestDate instanceof \DateTimeInterface) {
+            $requestDate = $requestDate->format('Y-m-d');
+        } else {
+            $requestDate = (string) $requestDate;
+        }
+        $requestTime = $request->request_time ?? $request->start_time ?? '';
+        if ($requestTime instanceof \DateTimeInterface) {
+            $requestTime = $requestTime->format('H:i');
+        }
+        return [
+            'id' => $request->id,
+            'request_type' => $request->request_type === 'outing' ? '外出' : '自宅',
+            'request_date' => $requestDate,
+            'request_time' => (string) $requestTime,
+            'masked_address' => $request->masked_address ?? '',
+        ];
     }
 
     public function getUserRequests(int $userId)

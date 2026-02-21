@@ -9,6 +9,7 @@ use App\Models\Request;
 use App\Models\User;
 use App\Models\Announcement;
 use App\Models\AnnouncementRead;
+use App\Models\Matching;
 use Carbon\Carbon;
 
 class SendReminderEmails extends Command
@@ -52,6 +53,71 @@ class SendReminderEmails extends Command
             }
         }
 
+        // 報告書未提出リマインド（ガイド向け）
+        $matchingsWithoutReport = Matching::with(['guide', 'request'])
+            ->whereNull('report_completed_at')
+            ->where('status', '!=', 'cancelled')
+            ->where('matched_at', '<=', $targetDate)
+            ->where(function ($q) {
+                $q->whereDoesntHave('report')
+                    ->orWhereHas('report', function ($r) {
+                        $r->whereIn('status', ['draft', 'revision_requested']);
+                    });
+            })
+            ->get();
+
+        foreach ($matchingsWithoutReport as $matching) {
+            if ($matching->guide) {
+                $requestDate = $matching->request && $matching->request->request_date
+                    ? $matching->request->request_date->format('Y-m-d')
+                    : '';
+                if ($this->emailService->sendReportMissingReminderNotification($matching->guide, [
+                    'matching_id' => $matching->id,
+                    'request_date' => $requestDate,
+                ])) {
+                    $sentCount++;
+                }
+            }
+        }
+
+        // 当日リマインド（依頼日が今日のマッチング・ユーザーとガイドに送信）
+        $matchingsSameDay = Matching::with(['user', 'guide', 'request'])
+            ->whereNull('report_completed_at')
+            ->where('status', '!=', 'cancelled')
+            ->whereHas('request', function ($q) {
+                $q->whereDate('request_date', Carbon::today());
+            })
+            ->get();
+
+        foreach ($matchingsSameDay as $matching) {
+            $data = $this->buildReminderRequestData($matching->request);
+            if ($matching->user && $this->emailService->sendReminderSameDayNotification($matching->user, $data)) {
+                $sentCount++;
+            }
+            if ($matching->guide && $this->emailService->sendReminderSameDayNotification($matching->guide, $data)) {
+                $sentCount++;
+            }
+        }
+
+        // 前日リマインド（依頼日が明日のマッチング・ユーザーとガイドに送信）
+        $matchingsDayBefore = Matching::with(['user', 'guide', 'request'])
+            ->whereNull('report_completed_at')
+            ->where('status', '!=', 'cancelled')
+            ->whereHas('request', function ($q) {
+                $q->whereDate('request_date', Carbon::tomorrow());
+            })
+            ->get();
+
+        foreach ($matchingsDayBefore as $matching) {
+            $data = $this->buildReminderRequestData($matching->request);
+            if ($matching->user && $this->emailService->sendReminderDayBeforeNotification($matching->user, $data)) {
+                $sentCount++;
+            }
+            if ($matching->guide && $this->emailService->sendReminderDayBeforeNotification($matching->guide, $data)) {
+                $sentCount++;
+            }
+        }
+
         // お知らせ未読リマインド（ユーザー・ガイド向け）
         $announcementReminderSetting = EmailNotificationSetting::where('notification_type', 'announcement_reminder')->first();
         if ($announcementReminderSetting && $announcementReminderSetting->is_enabled) {
@@ -87,6 +153,41 @@ class SendReminderEmails extends Command
 
         $this->info("リマインドメールを {$sentCount} 件送信しました");
         return 0;
+    }
+
+    /**
+     * 当日・前日リマインド用の依頼データを組み立て
+     */
+    protected function buildReminderRequestData(?\App\Models\Request $request): array
+    {
+        if (!$request) {
+            return [
+                'request_id' => '',
+                'request_type' => '',
+                'request_date' => '',
+                'request_time' => '',
+                'masked_address' => '',
+            ];
+        }
+        $requestDate = $request->request_date;
+        if ($requestDate instanceof \Carbon\Carbon) {
+            $requestDate = $requestDate->format('Y-m-d');
+        } elseif ($requestDate instanceof \DateTimeInterface) {
+            $requestDate = $requestDate->format('Y-m-d');
+        } else {
+            $requestDate = (string) $requestDate;
+        }
+        $requestTime = $request->request_time ?? $request->start_time ?? '';
+        if ($requestTime instanceof \DateTimeInterface) {
+            $requestTime = $requestTime->format('H:i');
+        }
+        return [
+            'request_id' => (string) $request->id,
+            'request_type' => $request->request_type === 'outing' ? '外出' : '自宅',
+            'request_date' => $requestDate,
+            'request_time' => (string) $requestTime,
+            'masked_address' => $request->masked_address ?? '',
+        ];
     }
 }
 

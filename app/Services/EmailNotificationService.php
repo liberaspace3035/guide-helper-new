@@ -57,6 +57,8 @@ class EmailNotificationService
 
         $subject = $this->replaceVariables($template->subject, $variables);
         $body = $this->replaceVariables($template->body, $variables);
+        // テンプレートに literal \n が入っている場合に改行に変換（メールで \n がそのまま表示されるのを防ぐ）
+        $body = str_replace(["\\n", "\\r"], ["\n", "\r"], $body);
 
         try {
             Mail::raw($body, function ($message) use ($user, $subject) {
@@ -91,6 +93,8 @@ class EmailNotificationService
             'reminder_day_before' => 'reminder',
             'reminder_report_missing' => 'reminder',
             'announcement_reminder_unread' => 'announcement_reminder',
+            'report_revision_requested' => 'report',
+            'report_admin_revision_requested' => 'report',
         ];
         return $mapping[$templateKey] ?? 'request';
     }
@@ -172,6 +176,85 @@ class EmailNotificationService
     {
         return $this->sendNotification('reminder_pending_request', $user, [
             'request_id' => $reminderData['id'] ?? '',
+        ]);
+    }
+
+    /**
+     * 報告書未提出リマインドを送信（ガイド向け）
+     */
+    public function sendReportMissingReminderNotification(User $guide, array $data): bool
+    {
+        return $this->sendNotification('reminder_report_missing', $guide, [
+            'user_name' => $guide->name ?? '',
+            'matching_id' => $data['matching_id'] ?? '',
+            'request_date' => $data['request_date'] ?? '',
+        ]);
+    }
+
+    /**
+     * 当日リマインドを送信（ユーザー・ガイド向け）
+     */
+    public function sendReminderSameDayNotification(User $user, array $data): bool
+    {
+        return $this->sendNotification('reminder_same_day', $user, [
+            'user_name' => $user->name ?? '',
+            'request_id' => $data['request_id'] ?? '',
+            'request_type' => $data['request_type'] ?? '',
+            'request_date' => $data['request_date'] ?? '',
+            'request_time' => $data['request_time'] ?? '',
+            'masked_address' => $data['masked_address'] ?? '',
+        ]);
+    }
+
+    /**
+     * 前日リマインドを送信（ユーザー・ガイド向け）
+     */
+    public function sendReminderDayBeforeNotification(User $user, array $data): bool
+    {
+        return $this->sendNotification('reminder_day_before', $user, [
+            'user_name' => $user->name ?? '',
+            'request_id' => $data['request_id'] ?? '',
+            'request_type' => $data['request_type'] ?? '',
+            'request_date' => $data['request_date'] ?? '',
+            'request_time' => $data['request_time'] ?? '',
+            'masked_address' => $data['masked_address'] ?? '',
+        ]);
+    }
+
+    /**
+     * 報告書修正依頼通知を送信（ユーザー→ガイド）
+     */
+    public function sendReportRevisionRequestedNotification(User $guide, array $data): bool
+    {
+        return $this->sendNotification('report_revision_requested', $guide, [
+            'user_name' => $guide->name ?? '',
+            'report_id' => $data['report_id'] ?? '',
+            'actual_date' => $data['actual_date'] ?? '',
+            'revision_notes' => $data['revision_notes'] ?? '',
+        ]);
+    }
+
+    /**
+     * 報告書管理者差し戻し通知を送信（管理者→ガイド）
+     */
+    public function sendReportAdminRevisionRequestedNotification(User $guide, array $data): bool
+    {
+        return $this->sendNotification('report_admin_revision_requested', $guide, [
+            'user_name' => $guide->name ?? '',
+            'report_id' => $data['report_id'] ?? '',
+            'actual_date' => $data['actual_date'] ?? '',
+            'revision_notes' => $data['revision_notes'] ?? '',
+        ]);
+    }
+
+    /**
+     * 登録者本人へ登録完了案内メールを送信（ユーザー/ガイド別テンプレート）
+     */
+    public function sendRegistrationThanksNotification(User $user, bool $isGuide): bool
+    {
+        $templateKey = $isGuide ? 'guide_registration_thanks' : 'user_registration_thanks';
+        return $this->sendNotification($templateKey, $user, [
+            'user_name' => $user->name ?? '',
         ]);
     }
 

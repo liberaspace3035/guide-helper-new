@@ -45,9 +45,57 @@ class EmailTemplatesSeeder extends Seeder
                 'is_active' => true,
             ],
             [
+                'template_key' => 'reminder_report_missing',
+                'subject' => '報告書の提出のお願い',
+                'body' => "{{user_name}} 様\n\n以下の依頼について、報告書が未提出です。\nお手数ですが、報告書の提出をお願いいたします。\n\nマッチングID: {{matching_id}}\n依頼日: {{request_date}}\n\nログインのうえ、報告書の作成・提出をお願いいたします。",
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'reminder_same_day',
+                'subject' => '本日の依頼のご案内',
+                'body' => "{{user_name}} 様\n\n本日は以下の依頼が予定されています。\n\n依頼ID: {{request_id}}\n依頼タイプ: {{request_type}}\n依頼日時: {{request_date}} {{request_time}}\n場所: {{masked_address}}\n\nご確認のうえ、よろしくお願いいたします。",
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'reminder_day_before',
+                'subject' => '明日の依頼のご案内',
+                'body' => "{{user_name}} 様\n\n明日は以下の依頼が予定されています。\n\n依頼ID: {{request_id}}\n依頼タイプ: {{request_type}}\n依頼日時: {{request_date}} {{request_time}}\n場所: {{masked_address}}\n\nご確認のうえ、よろしくお願いいたします。",
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'password_reset',
+                'subject' => 'パスワードリセットのご案内',
+                'body' => "{{user_name}} 様\n\nパスワードリセットのリクエストを受け付けました。\n\n以下のリンクをクリックして、新しいパスワードを設定してください。\nこのリンクは60分間有効です。\n\n{{reset_url}}\n\nこのリクエストをしていない場合は、このメールを無視してください。\n\nガイドヘルパーマッチングサービス",
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'report_revision_requested',
+                'subject' => '報告書に修正依頼がありました',
+                'body' => "{{user_name}} 様\n\n報告書に修正依頼がありました。\n\n報告書ID: {{report_id}}\n実施日: {{actual_date}}\n\n修正内容:\n{{revision_notes}}\n\nログインのうえ、報告書を修正のうえ再提出をお願いいたします。",
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'report_admin_revision_requested',
+                'subject' => '報告書が管理者により差し戻されました',
+                'body' => "{{user_name}} 様\n\n報告書が管理者により差し戻されました。\n\n報告書ID: {{report_id}}\n実施日: {{actual_date}}\n\n修正内容:\n{{revision_notes}}\n\nログインのうえ、報告書を修正のうえ再提出をお願いいたします。",
+                'is_active' => true,
+            ],
+            [
                 'template_key' => 'announcement_reminder_unread',
                 'subject' => '未読のお知らせがあります',
                 'body' => '{{user_name}} 様\n\n以下のお知らせが未読です。ご確認ください。\n\n{{unread_list}}\n\nログインのうえ、お知らせ一覧からご確認をお願いいたします。',
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'user_registration_thanks',
+                'subject' => 'ユーザー登録のご案内',
+                'body' => "{{user_name}} 様\n\nこの度は、ガイドヘルパーマッチングサービスにご登録いただき、誠にありがとうございます。\n\nご登録いただいた内容を確認させていただき、審査を実施いたします。\n審査完了後、改めてご連絡させていただきます。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\n今後ともよろしくお願いいたします。",
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'guide_registration_thanks',
+                'subject' => 'ガイド登録のご案内',
+                'body' => "{{user_name}} 様\n\nこの度は、ガイドヘルパーマッチングサービスにガイドとしてご登録いただき、誠にありがとうございます。\n\nご登録いただいた内容を確認させていただき、審査を実施いたします。\n審査完了後、改めてご連絡させていただきます。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\n今後ともよろしくお願いいたします。",
                 'is_active' => true,
             ],
         ];
@@ -83,6 +131,16 @@ class EmailTemplatesSeeder extends Seeder
             ],
             [
                 'notification_type' => 'announcement_reminder',
+                'is_enabled' => true,
+                'reminder_days' => null,
+            ],
+            [
+                'notification_type' => 'registration',
+                'is_enabled' => true,
+                'reminder_days' => null,
+            ],
+            [
+                'notification_type' => 'password_reset',
                 'is_enabled' => true,
                 'reminder_days' => null,
             ],

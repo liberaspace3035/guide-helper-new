@@ -299,13 +299,18 @@ class ReportService
             'related_id' => $reportId,
         ]);
 
-        // メール通知を送信
+        // メール通知を送信（ガイド・ユーザー双方）
+        $reportApprovedData = [
+            'id' => $report->id,
+            'actual_date' => $report->actual_date ? (\Carbon\Carbon::parse($report->actual_date)->format('Y-m-d')) : '',
+        ];
         $guide = User::find($report->guide_id);
         if ($guide) {
-            $this->emailService->sendReportApprovedNotification($guide, [
-                'id' => $report->id,
-                'actual_date' => $report->actual_date,
-            ]);
+            $this->emailService->sendReportApprovedNotification($guide, $reportApprovedData);
+        }
+        $user = User::find($report->user_id);
+        if ($user) {
+            $this->emailService->sendReportApprovedNotification($user, $reportApprovedData);
         }
 
         return $report;
@@ -335,6 +340,16 @@ class ReportService
             'related_id' => $reportId,
         ]);
 
+        // ガイドにメール送信
+        $guide = User::find($report->guide_id);
+        if ($guide) {
+            $this->emailService->sendReportRevisionRequestedNotification($guide, [
+                'report_id' => $report->id,
+                'actual_date' => $report->actual_date ? (\Carbon\Carbon::parse($report->actual_date)->format('Y-m-d')) : '',
+                'revision_notes' => $revisionNotes,
+            ]);
+        }
+
         return $report;
     }
 
@@ -362,6 +377,16 @@ class ReportService
             'message' => "報告書が管理者により差し戻されました。\n修正内容: {$revisionNotes}",
             'related_id' => $reportId,
         ]);
+
+        // ガイドにメール送信
+        $guide = User::find($report->guide_id);
+        if ($guide) {
+            $this->emailService->sendReportAdminRevisionRequestedNotification($guide, [
+                'report_id' => $report->id,
+                'actual_date' => $report->actual_date ? (\Carbon\Carbon::parse($report->actual_date)->format('Y-m-d')) : '',
+                'revision_notes' => $revisionNotes,
+            ]);
+        }
 
         return $report;
     }

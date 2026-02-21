@@ -3383,7 +3383,10 @@ function adminDashboard() {
                 'guide_registration_thanks': 'ガイド登録お礼',
                 'reminder_same_day': '当日リマインド',
                 'reminder_day_before': '前日リマインド',
-                'reminder_report_missing': '報告書未提出リマインド'
+                'reminder_report_missing': '報告書未提出リマインド',
+                'announcement_reminder_unread': 'お知らせ未読リマインド',
+                'report_revision_requested': '報告書修正依頼（ユーザー→ガイド）',
+                'report_admin_revision_requested': '報告書差し戻し（管理者→ガイド）'
             };
             return labels[key] || key;
         },
@@ -3401,7 +3404,10 @@ function adminDashboard() {
                 'guide_registration_thanks': 'ガイド',
                 'reminder_same_day': 'ユーザー・ガイド',
                 'reminder_day_before': 'ユーザー・ガイド',
-                'reminder_report_missing': 'ガイド'
+                'reminder_report_missing': 'ガイド',
+                'announcement_reminder_unread': 'ユーザー・ガイド',
+                'report_revision_requested': 'ガイド',
+                'report_admin_revision_requested': 'ガイド'
             };
             return recipients[key] || '不明';
         },
@@ -3419,7 +3425,10 @@ function adminDashboard() {
                 'guide_registration_thanks': 'recipient-guide',
                 'reminder_same_day': 'recipient-both',
                 'reminder_day_before': 'recipient-both',
-                'reminder_report_missing': 'recipient-guide'
+                'reminder_report_missing': 'recipient-guide',
+                'announcement_reminder_unread': 'recipient-both',
+                'report_revision_requested': 'recipient-guide',
+                'report_admin_revision_requested': 'recipient-guide'
             };
             return classes[key] || '';
         },
@@ -3437,7 +3446,10 @@ function adminDashboard() {
                 'guide_registration_thanks': 'ガイド登録が完了した時',
                 'reminder_same_day': '依頼当日のリマインド',
                 'reminder_day_before': '依頼前日のリマインド',
-                'reminder_report_missing': '報告書が未提出の場合のリマインド'
+                'reminder_report_missing': '報告書が未提出の場合のリマインド',
+                'announcement_reminder_unread': '未読お知らせがある場合のリマインド',
+                'report_revision_requested': 'ユーザーが報告書に修正依頼した時',
+                'report_admin_revision_requested': '管理者が報告書を差し戻した時'
             };
             return descriptions[key] || '';
         },
