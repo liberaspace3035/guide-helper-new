@@ -3685,15 +3685,72 @@ function announcementManagement() {
                 const data = await api(`/api/announcements/admin/${announcementId}/read-status`);
                 this.readStatus = data;
                 this.showReadStatusModal = true;
+                this._showReadStatusModalInBody(data);
             } catch (e) {
                 console.error(e);
                 alert('既読状況の取得に失敗しました');
             }
         },
 
+        _showReadStatusModalInBody(data) {
+            const esc = (s) => {
+                if (s == null) return '';
+                const d = document.createElement('div');
+                d.textContent = s;
+                return d.innerHTML;
+            };
+            const readCount = data.read_count ?? 0;
+            const totalTarget = data.total_target ?? 0;
+            const unreadCount = data.unread_count ?? 0;
+            let readersHtml = '';
+            if (data.readers && data.readers.length > 0) {
+                readersHtml = '<div class="read-status-section"><h3 class="read-status-section-title">既読者</h3><div class="read-status-list-scroll"><ul class="read-status-list">' +
+                    data.readers.map(r => '<li><span>' + esc(r.name) + '</span><span class="read-at">' + esc(r.read_at ? new Date(r.read_at).toLocaleString('ja-JP') : '') + '</span></li>').join('') +
+                    '</ul></div></div>';
+            }
+            let nonReadersHtml = '';
+            if (data.non_readers && data.non_readers.length > 0) {
+                nonReadersHtml = '<div class="read-status-section"><h3 class="read-status-section-title">未読者</h3><div class="read-status-list-scroll"><ul class="read-status-list read-status-non-readers">' +
+                    data.non_readers.map(u => '<li><span>' + esc(u.name) + '</span></li>').join('') +
+                    '</ul></div></div>';
+            }
+            const emptyMsg = (!data.readers || data.readers.length === 0) && (!data.non_readers || data.non_readers.length === 0)
+                ? '<p class="read-status-empty">まだ誰も既読にしていません</p>' : '';
+            const unreadLine = data.unread_count !== undefined
+                ? '<p class="read-status-summary read-status-unread">未読: ' + unreadCount + ' 人</p>' : '';
+            const root = document.createElement('div');
+            root.id = 'read-status-modal-root';
+            root.className = 'read-status-modal-overlay';
+            root.setAttribute('role', 'dialog');
+            root.setAttribute('aria-modal', 'true');
+            root.setAttribute('aria-labelledby', 'read-status-title');
+            root.innerHTML = '<div class="read-status-modal-content" id="read-status-modal-content">' +
+                '<div class="read-status-modal-header">' +
+                '<h2 id="read-status-title">既読状況</h2>' +
+                '<button type="button" class="read-status-modal-close" aria-label="閉じる">&times;</button>' +
+                '</div>' +
+                '<div class="read-status-modal-body">' +
+                '<p class="read-status-title">' + esc(data.title) + '</p>' +
+                '<div class="read-status-summaries">' +
+                '<p class="read-status-summary">既読: ' + readCount + ' / ' + totalTarget + ' 人</p>' + unreadLine +
+                '</div>' + readersHtml + emptyMsg + nonReadersHtml +
+                '</div></div>';
+            const self = this;
+            const close = () => {
+                root.remove();
+                self.showReadStatusModal = false;
+                self.readStatus = null;
+            };
+            root.addEventListener('click', (e) => { if (e.target === root) close(); });
+            root.querySelector('.read-status-modal-close').addEventListener('click', close);
+            root.querySelector('.read-status-modal-content').addEventListener('click', (e) => e.stopPropagation());
+            document.body.appendChild(root);
+        },
+
         closeReadStatusModal() {
             this.showReadStatusModal = false;
             this.readStatus = null;
+            document.getElementById('read-status-modal-root')?.remove();
         },
 
         async fetchAnnouncements() {

@@ -49,10 +49,10 @@ class AuthController extends Controller
                 function ($attribute, $value, $fail) {
                     $age = Carbon::parse($value)->age;
                     if ($age < 18) {
-                        $fail('生年月日から計算した年齢は18歳以上である必要があります。');
+                        $fail('【生年月日】から計算した年齢は18歳以上である必要があります。');
                     }
                     if ($age > 120) {
-                        $fail('生年月日から計算した年齢は120歳以下である必要があります。');
+                        $fail('【生年月日】から計算した年齢は120歳以下である必要があります。');
                     }
                 },
             ],
@@ -82,11 +82,11 @@ class AuthController extends Controller
         }
 
         $validator = Validator::make($request->all(), $rules, [
-            'last_name_kana.regex' => '姓（カナ）は全角カタカナで入力してください。名前の読み方の部分です。',
-            'first_name_kana.regex' => '名（カナ）は全角カタカナで入力してください。名前の読み方の部分です。',
-            'birth_date.required' => '生年月日を入力してください。',
-            'birth_date.date' => '生年月日は正しい日付を入力してください。',
-            'birth_date.before' => '生年月日は未来の日付にはできません。今日より前の日付を入力してください。',
+            'last_name_kana.regex' => '【名前の読み・姓（カナ）】全角カタカナで入力してください。',
+            'first_name_kana.regex' => '【名前の読み・名（カナ）】全角カタカナで入力してください。',
+            'birth_date.required' => '【生年月日】を入力してください。',
+            'birth_date.date' => '【生年月日】は正しい日付を入力してください。',
+            'birth_date.before' => '【生年月日】未来の日付は入力できません。今日より前の日付を入力してください。',
             'disability_support_level.required' => '障害支援区分を選択してください。',
             'disability_support_level.in' => '障害支援区分は選択肢から選んでください。',
         ]);

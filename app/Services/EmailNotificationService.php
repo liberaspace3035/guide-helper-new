@@ -90,8 +90,29 @@ class EmailNotificationService
             'reminder_same_day' => 'reminder',
             'reminder_day_before' => 'reminder',
             'reminder_report_missing' => 'reminder',
+            'announcement_reminder_unread' => 'announcement_reminder',
         ];
         return $mapping[$templateKey] ?? 'request';
+    }
+
+    /**
+     * お知らせ未読リマインドを送信（未読お知らせ一覧を記載）
+     *
+     * @param  array<int, array{title: string, id?: int}>  $unreadList  [ ['title' => '...', 'id' => ...], ... ]
+     */
+    public function sendAnnouncementReminderNotification(User $user, array $unreadList): bool
+    {
+        $lines = [];
+        foreach ($unreadList as $item) {
+            $title = $item['title'] ?? '';
+            $lines[] = '・' . $title;
+        }
+        $unreadListText = implode("\n", $lines);
+
+        return $this->sendNotification('announcement_reminder_unread', $user, [
+            'user_name' => $user->name ?? '',
+            'unread_list' => $unreadListText,
+        ]);
     }
 
     /**

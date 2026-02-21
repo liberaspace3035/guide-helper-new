@@ -130,34 +130,7 @@
         </table>
     </div>
 
-    <!-- 既読状況モーダル -->
-    <template x-if="showReadStatusModal && readStatus">
-        <div class="modal-overlay" @click.self="closeReadStatusModal()" role="dialog" aria-modal="true" aria-labelledby="read-status-title">
-            <div class="modal-content read-status-modal">
-                <div class="modal-header">
-                    <h2 id="read-status-title">既読状況</h2>
-                    <button type="button" class="modal-close" @click="closeReadStatusModal()" aria-label="閉じる">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p class="read-status-title" x-text="readStatus.title"></p>
-                    <p class="read-status-summary" x-text="`既読: ${readStatus.read_count} / ${readStatus.total_target} 人`"></p>
-                    <template x-if="readStatus.readers && readStatus.readers.length > 0">
-                        <ul class="read-status-list">
-                            <template x-for="r in readStatus.readers" :key="r.user_id">
-                                <li>
-                                    <span x-text="r.name"></span>
-                                    <span class="read-at" x-text="r.read_at ? new Date(r.read_at).toLocaleString('ja-JP') : ''"></span>
-                                </li>
-                            </template>
-                        </ul>
-                    </template>
-                    <template x-if="!readStatus.readers || readStatus.readers.length === 0">
-                        <p class="read-status-empty">まだ誰も既読にしていません</p>
-                    </template>
-                </div>
-            </div>
-        </div>
-    </template>
+    <!-- 既読状況モーダルは dashboard の fetchReadStatus 内で body に直接挿入 -->
 </div>
 
 @push('scripts')

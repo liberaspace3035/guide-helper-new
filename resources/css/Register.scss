@@ -340,6 +340,21 @@ small {
   line-height: 1.4;
 }
 
+.error-summary-list {
+  margin: var(--spacing-sm) 0 0;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.error-summary-list li {
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.5;
+}
+
+.error-summary-field {
+  font-weight: 600;
+}
+
 .login-link {
   text-align: center;
   margin-top: var(--spacing-md);

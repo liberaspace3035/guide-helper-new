@@ -137,7 +137,7 @@ class AnnouncementService
 
     /**
      * お知らせの既読状況を取得（管理者用）
-     * 対象者数・既読数・既読者一覧を返す
+     * 対象者数・既読数・既読者一覧・未読者数・未読者一覧を返す
      */
     public function getReadStatus(int $announcementId): array
     {
@@ -148,7 +148,8 @@ class AnnouncementService
             'guide' => ['guide'],
             default => ['user', 'guide'],
         };
-        $totalTarget = User::whereIn('role', $roleCondition)->count();
+        $targetUsers = User::whereIn('role', $roleCondition)->select('id', 'name')->get();
+        $totalTarget = $targetUsers->count();
 
         $reads = AnnouncementRead::where('announcement_id', $announcementId)
             ->with('user:id,name')
@@ -163,6 +164,15 @@ class AnnouncementService
             ];
         })->values()->toArray();
 
+        $readUserIds = $reads->pluck('user_id')->all();
+        $nonReaders = $targetUsers->whereNotIn('id', $readUserIds)->map(function ($u) {
+            return [
+                'user_id' => $u->id,
+                'name' => $u->name ?? '',
+            ];
+        })->values()->toArray();
+        $unreadCount = count($nonReaders);
+
         return [
             'announcement_id' => $announcementId,
             'title' => $announcement->title,
@@ -170,6 +180,8 @@ class AnnouncementService
             'total_target' => $totalTarget,
             'read_count' => $reads->count(),
             'readers' => $readers,
+            'unread_count' => $unreadCount,
+            'non_readers' => $nonReaders,
         ];
     }
 }

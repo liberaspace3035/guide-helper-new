@@ -317,6 +317,141 @@
   }
 }
 
+// 既読状況モーダル（body 直下に挿入するため .announcement-management 外で定義）
+.read-status-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  min-width: 100vw;
+  min-height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483647;
+  padding: var(--spacing-md);
+  box-sizing: border-box;
+}
+
+.read-status-modal-content {
+  background: var(--surface-color);
+  border-radius: var(--radius-lg);
+  max-width: 480px;
+  width: 100%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+}
+
+.read-status-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.read-status-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.read-status-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.read-status-modal-close:hover {
+  color: var(--text-primary);
+}
+
+.read-status-modal-body {
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.read-status-modal-body .read-status-title {
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+}
+
+.read-status-summaries {
+  margin-bottom: var(--spacing-md);
+}
+
+.read-status-modal-body .read-status-summary {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.read-status-modal-body .read-status-summary:last-child {
+  margin-bottom: 0;
+}
+
+.read-status-modal-body .read-status-unread {
+  margin-top: 0;
+}
+
+.read-status-modal-body .read-status-section {
+  margin-top: var(--spacing-lg);
+}
+
+.read-status-modal-body .read-status-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+
+.read-status-list-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+.read-status-modal-body .read-status-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--spacing-sm);
+}
+
+.read-status-modal-body .read-status-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+}
+
+.read-status-modal-body .read-status-list li:last-child {
+  border-bottom: none;
+}
+
+.read-status-modal-body .read-at {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.read-status-modal-body .read-status-non-readers li {
+  justify-content: flex-start;
+}
+
+.read-status-modal-body .read-status-empty {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+
 .announcement-management .modal-overlay {
   position: fixed;
   inset: 0;
