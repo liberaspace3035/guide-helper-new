@@ -86,19 +86,19 @@
                         <td class="title-cell target-cell">
                             <strong class="announcement-title-bold" x-text="announcement.title"></strong>
                         </td>
-                        <td text-align="center">
+                        <td class="target-cell">
                             <span class="target-badge" :class="announcement.target_audience" x-text="getTargetLabel(announcement.target_audience)"></span>
                         </td>
-                        <td text-align="center">
+                        <td class="target-cell">
                             <div class="datetime-cell-vertical">
                                 <span class="datetime-date" x-text="formatDateOnly(announcement.created_at)"></span>
                                 <span class="datetime-time" x-text="formatTimeOnly(announcement.created_at)"></span>
                             </div>
                         </td>
-                        <td text-align="center">
+                        <td class="target-cell">
                             <span class="announcement-creator-name" x-text="announcement.created_by_name || '不明'"></span>
                         </td>
-                        <td text-align="center">
+                        <td class="target-cell">
                             <button
                                 type="button"
                                 @click="fetchReadStatus(announcement.id)"
@@ -108,7 +108,7 @@
                                 既読状況
                             </button>
                         </td>
-                        <td text-align="center">
+                        <td class="target-cell">
                             <div class="action-buttons">
                                 <button
                                     @click="handleEdit(announcement)"
