@@ -6,6 +6,13 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/.."
 echo "📂 Working directory: $(pwd)"
 
+# Railway でスケジューラ用サービスでは環境変数 RAILWAY_SCHEDULER=1 を設定し、
+# railway.json の Start Command は start.sh のままにしておく
+if [ "${RAILWAY_SCHEDULER}" = "1" ]; then
+    echo "⏰ Scheduler mode: starting schedule loop..."
+    exec bash "$SCRIPT_DIR/scheduler.sh"
+fi
+
 echo "🚀 Starting Laravel application..."
 
 # キャッシュファイルを物理削除（artisanコマンドが失敗しても確実に消す）
