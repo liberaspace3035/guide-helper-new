@@ -17,9 +17,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\UploadedFile;
 use App\Services\UserMonthlyLimitService;
+use App\Services\EmailNotificationService;
 
 class AdminService
 {
+    protected EmailNotificationService $emailService;
+
+    public function __construct(EmailNotificationService $emailService)
+    {
+        $this->emailService = $emailService;
+    }
+
     public function getDashboardData(?User $adminUser = null): array
     {
         $data = [
@@ -786,7 +794,7 @@ class AdminService
         
         $user->update(['is_allowed' => true]);
 
-        // 通知を送信
+        // 画面上の通知を送信
         Notification::create([
             'user_id' => $userId,
             'type' => 'approval',
@@ -794,6 +802,9 @@ class AdminService
             'message' => 'あなたのアカウントが承認されました。ログインできるようになりました。',
             'related_id' => $userId,
         ]);
+
+        // メール通知を送信
+        $this->emailService->sendAccountApprovedNotification($user, false);
     }
 
     public function approveGuide(int $guideId): void
@@ -802,7 +813,7 @@ class AdminService
         
         $guide->update(['is_allowed' => true]);
 
-        // 通知を送信
+        // 画面上の通知を送信
         Notification::create([
             'user_id' => $guideId,
             'type' => 'approval',
@@ -810,6 +821,9 @@ class AdminService
             'message' => 'あなたのアカウントが承認されました。ログインできるようになりました。',
             'related_id' => $guideId,
         ]);
+
+        // メール通知を送信
+        $this->emailService->sendAccountApprovedNotification($guide, true);
     }
 
     public function rejectUser(int $userId): void

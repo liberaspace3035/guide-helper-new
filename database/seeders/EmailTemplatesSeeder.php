@@ -98,6 +98,18 @@ class EmailTemplatesSeeder extends Seeder
                 'body' => "{{user_name}} 様\n\nこの度は、ガイドヘルパーマッチングサービスにガイドとしてご登録いただき、誠にありがとうございます。\n\nご登録いただいた内容を確認させていただき、審査を実施いたします。\n審査完了後、改めてご連絡させていただきます。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\n今後ともよろしくお願いいたします。",
                 'is_active' => true,
             ],
+            [
+                'template_key' => 'user_account_approved',
+                'subject' => 'アカウントが承認されました（利用者）',
+                'body' => "{{user_name}} 様\n\nお知らせいたします。\n\nご登録いただいていた利用者アカウントが承認されました。\nログインのうえ、サービスをご利用いただけます。\n\n今後ともよろしくお願いいたします。\n\nガイドヘルパーマッチングサービス",
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'guide_account_approved',
+                'subject' => 'アカウントが承認されました（ガイド）',
+                'body' => "{{user_name}} 様\n\nお知らせいたします。\n\nご登録いただいていたガイドアカウントが承認されました。\nログインのうえ、依頼の確認や承諾などを行っていただけます。\n\n今後ともよろしくお願いいたします。\n\nガイドヘルパーマッチングサービス",
+                'is_active' => true,
+            ],
         ];
 
         foreach ($templates as $template) {
@@ -141,6 +153,11 @@ class EmailTemplatesSeeder extends Seeder
             ],
             [
                 'notification_type' => 'password_reset',
+                'is_enabled' => true,
+                'reminder_days' => null,
+            ],
+            [
+                'notification_type' => 'approval',
                 'is_enabled' => true,
                 'reminder_days' => null,
             ],

@@ -3386,7 +3386,9 @@ function adminDashboard() {
                 'reminder_report_missing': '報告書未提出リマインド',
                 'announcement_reminder_unread': 'お知らせ未読リマインド',
                 'report_revision_requested': '報告書修正依頼（ユーザー→ガイド）',
-                'report_admin_revision_requested': '報告書差し戻し（管理者→ガイド）'
+                'report_admin_revision_requested': '報告書差し戻し（管理者→ガイド）',
+                'user_account_approved': 'アカウント承認通知（利用者）',
+                'guide_account_approved': 'アカウント承認通知（ガイド）'
             };
             return labels[key] || key;
         },
@@ -3407,7 +3409,9 @@ function adminDashboard() {
                 'reminder_report_missing': 'ガイド',
                 'announcement_reminder_unread': 'ユーザー・ガイド',
                 'report_revision_requested': 'ガイド',
-                'report_admin_revision_requested': 'ガイド'
+                'report_admin_revision_requested': 'ガイド',
+                'user_account_approved': 'ユーザー',
+                'guide_account_approved': 'ガイド'
             };
             return recipients[key] || '不明';
         },
@@ -3428,7 +3432,9 @@ function adminDashboard() {
                 'reminder_report_missing': 'recipient-guide',
                 'announcement_reminder_unread': 'recipient-both',
                 'report_revision_requested': 'recipient-guide',
-                'report_admin_revision_requested': 'recipient-guide'
+                'report_admin_revision_requested': 'recipient-guide',
+                'user_account_approved': 'recipient-user',
+                'guide_account_approved': 'recipient-guide'
             };
             return classes[key] || '';
         },
@@ -3449,7 +3455,9 @@ function adminDashboard() {
                 'reminder_report_missing': '報告書が未提出の場合のリマインド',
                 'announcement_reminder_unread': '未読お知らせがある場合のリマインド',
                 'report_revision_requested': 'ユーザーが報告書に修正依頼した時',
-                'report_admin_revision_requested': '管理者が報告書を差し戻した時'
+                'report_admin_revision_requested': '管理者が報告書を差し戻した時',
+                'user_account_approved': '管理者が利用者を承認した時',
+                'guide_account_approved': '管理者がガイドを承認した時'
             };
             return descriptions[key] || '';
         },

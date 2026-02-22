@@ -105,8 +105,21 @@ class EmailNotificationService
             'announcement_reminder_unread' => 'announcement_reminder',
             'report_revision_requested' => 'report',
             'report_admin_revision_requested' => 'report',
+            'user_account_approved' => 'approval',
+            'guide_account_approved' => 'approval',
         ];
         return $mapping[$templateKey] ?? 'request';
+    }
+
+    /**
+     * 管理者によるアカウント承認通知を送信（利用者・ガイド宛）
+     */
+    public function sendAccountApprovedNotification(User $user, bool $isGuide): bool
+    {
+        $templateKey = $isGuide ? 'guide_account_approved' : 'user_account_approved';
+        return $this->sendNotification($templateKey, $user, [
+            'user_name' => $user->name ?? '',
+        ]);
     }
 
     /**
