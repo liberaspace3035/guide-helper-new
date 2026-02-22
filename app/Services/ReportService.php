@@ -98,7 +98,7 @@ class ReportService
             'related_id' => $reportId,
         ]);
 
-        // メール通知を送信
+        // メール通知を送信（送信先は依頼主。ガイドが提出したので依頼主に「承認または修正依頼を」案内する）
         $user = User::find($report->user_id);
         $guide = User::find($report->guide_id);
         if ($user && $guide) {
@@ -152,15 +152,7 @@ class ReportService
             ]);
         }
 
-        // メール通知を送信（ユーザー承認時）
-        $guide = User::find($report->guide_id);
-        if ($guide) {
-            $this->emailService->sendReportSubmittedNotification($guide, [
-                'id' => $report->id,
-                'actual_date' => $report->actual_date,
-            ]);
-        }
-
+        // ユーザー承認時はガイドへのメールは送らない（報告書提出通知は依頼主向けのため、ここでは送信しない）
         return $report;
     }
 

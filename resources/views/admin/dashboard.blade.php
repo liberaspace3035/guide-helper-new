@@ -1003,14 +1003,14 @@
                             type="file"
                             id="bulk-import-csv-file"
                             accept=".csv,.txt"
-                            @change="bulkImportFile = $event.target.files?.[0] || null"
+                            @change="onBulkImportFileChange($event)"
                             required
                         />
                     </div>
                     <button
                         type="submit"
                         class="btn-primary"
-                        :disabled="bulkImportSubmitting"
+                        :disabled="bulkImportSubmitting || (bulkImportFile && !bulkImportFileSnapshot)"
                     >
                         <span x-show="!bulkImportSubmitting">一括登録を実行</span>
                         <span x-show="bulkImportSubmitting">登録中...</span>
@@ -1999,6 +1999,7 @@ function adminDashboard() {
         userCurrentLimits: {}, // 現在の月の限度時間情報を保持
         notifications: @json($notifications ?? []),
         bulkImportFile: null,
+        bulkImportFileSnapshot: null,
         bulkImportSubmitting: false,
         bulkImportResult: null,
 
@@ -3295,8 +3296,25 @@ function adminDashboard() {
             return `/api/admin/users/monthly-limits-summary.csv?year=${year}&month=${month}`;
         },
 
+        onBulkImportFileChange(ev) {
+            const file = ev.target.files?.[0] || null;
+            this.bulkImportFile = file;
+            this.bulkImportFileSnapshot = null;
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                this.bulkImportFileSnapshot = { name: file.name, content: reader.result };
+            };
+            reader.onerror = () => {
+                this.bulkImportFileSnapshot = { name: file.name, content: '' };
+            };
+            reader.readAsText(file, 'UTF-8');
+        },
+
         async submitBulkImportCsv() {
-            if (!this.bulkImportFile) {
+            const snapshot = this.bulkImportFileSnapshot;
+            const file = this.bulkImportFile;
+            if (!file && !snapshot) {
                 alert('CSVファイルを選択してください');
                 return;
             }
@@ -3304,7 +3322,10 @@ function adminDashboard() {
             this.bulkImportResult = null;
             try {
                 const formData = new FormData();
-                formData.append('csv_file', this.bulkImportFile);
+                const fileToSend = snapshot
+                    ? new File([snapshot.content], snapshot.name, { type: file?.type || 'text/csv' })
+                    : file;
+                formData.append('csv_file', fileToSend);
                 const res = await fetch('/api/admin/bulk-import/csv', {
                     method: 'POST',
                     body: formData,
