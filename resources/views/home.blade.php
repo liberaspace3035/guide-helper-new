@@ -126,7 +126,7 @@
                     </div>
                     <h3 class="feature-title">詳細レポート</h3>
                     <p class="feature-description">
-                        ガイドヘルパーが活動内容をレポートとして記録し、安心して利用できます。
+                        活動後にガイドが報告書を作成し、利用者が承認して確定されます。
                     </p>
                 </div>
                 <div class="feature-card">
@@ -137,15 +137,15 @@
                     </div>
                     <h3 class="feature-title">安全・安心</h3>
                     <p class="feature-description">
-                        認証されたガイドヘルパーとガイド確定し、安全にサービスを利用できます。
+                        登録されている利用者と全ガイドとの面談は必ず実施して、双方の要望を事前に確認した上で利用していただいています。ガイドに対する研修や教育はどこよりも力をいれています。
                     </p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 使い方セクション -->
-    <section class="how-it-works-section" aria-label="ご利用までの流れ">
+    <!-- 使い方セクション（利用者向け） -->
+    <section class="how-it-works-section" aria-label="利用までの流れ（利用者向け）">
         <!-- 波形SVGデコレーション -->
         <div class="steps-wave-bg" aria-hidden="true">
             <svg viewBox="0 0 1200 120" preserveAspectRatio="none" class="wave-svg">
@@ -153,7 +153,13 @@
             </svg>
         </div>
         <div class="container">
-            <h2 class="section-title">ご利用までの流れ</h2>
+            <h2 class="section-title">利用までの流れ（利用者向け）</h2>
+            <p class="how-it-works-intro">
+                本サービスは、障害福祉サービスの一つとして運営しています。
+                視覚障害当事者が中心となって運営しているため、制度の説明だけでなく、「実際の生活にどう役立つか」という視点を大切にしています。
+            </p>
+
+            <h3 class="flow-subsection-title">【初回ご利用時】</h3>
             <div class="steps-container">
                 <div class="step-item">
                     <div class="step-number-wrapper">
@@ -167,9 +173,9 @@
                             <use href="{{ asset('images/icons-sprite.svg#illustration-register') }}"></use>
                         </svg>
                     </div>
-                    <h3 class="step-title">アカウント登録</h3>
+                    <h4 class="step-title">アカウント登録（仮登録）</h4>
                     <p class="step-description">
-                        メールアドレスと基本情報を入力してアカウントを作成します。
+                        メールアドレスと基本情報をご入力いただきます。
                     </p>
                     <div class="step-connector" aria-hidden="true">
                         <svg viewBox="0 0 100 20" class="step-arrow">
@@ -189,16 +195,22 @@
                             <use href="{{ asset('images/icons-sprite.svg#illustration-request') }}"></use>
                         </svg>
                     </div>
-                    <h3 class="step-title">リクエスト作成</h3>
+                    <h4 class="step-title">面談の実施（本登録）</h4>
                     <p class="step-description">
-                        日時、場所、必要なサポート内容を指定してリクエストを作成します。
+                        利用希望の方は、まずオンライン等で面談を行います。
+                        制度の内容を具体的にご説明し、ニーズを確認したうえで、本サービスを一緒に作り上げていただける方かを確認します。
+                        本制度は公的な障害福祉サービスとして実施しているため、適正な運営と不正防止の観点から、内容をご理解いただいたうえで本登録となります。
+                        制度の趣旨やルールへのご理解が難しい場合には、登録を見送らせていただくことがありますので、あらかじめご了承ください。
                     </p>
-                    <div class="step-connector" aria-hidden="true">
-                        <svg viewBox="0 0 100 20" class="step-arrow">
-                            <path d="M 0 10 L 80 10 M 70 5 L 80 10 L 70 15" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
                 </div>
+            </div>
+
+            <h3 class="flow-subsection-title">【2回目以降のご利用】</h3>
+            <p class="flow-subsection-note">
+                本登録完了後は面談は不要です。
+                ログイン後、ご自身でリクエストを作成し、いつでもご利用いただけます。
+            </p>
+            <div class="steps-container">
                 <div class="step-item">
                     <div class="step-number-wrapper">
                         <div class="step-number">3</div>
@@ -208,12 +220,12 @@
                     </div>
                     <div class="step-illustration">
                         <svg class="step-illustration-svg" aria-hidden="true">
-                            <use href="{{ asset('images/icons-sprite.svg#illustration-matching') }}"></use>
+                            <use href="{{ asset('images/icons-sprite.svg#illustration-request') }}"></use>
                         </svg>
                     </div>
-                    <h3 class="step-title">ガイド確定</h3>
+                    <h4 class="step-title">リクエスト作成</h4>
                     <p class="step-description">
-                        ガイドヘルパーがリクエストに応募し、ガイドが確定します。
+                        ご自身で日時・場所・必要なサポート内容を入力します。
                     </p>
                     <div class="step-connector" aria-hidden="true">
                         <svg viewBox="0 0 100 20" class="step-arrow">
@@ -230,12 +242,34 @@
                     </div>
                     <div class="step-illustration">
                         <svg class="step-illustration-svg" aria-hidden="true">
+                            <use href="{{ asset('images/icons-sprite.svg#illustration-matching') }}"></use>
+                        </svg>
+                    </div>
+                    <h4 class="step-title">ガイド確定</h4>
+                    <p class="step-description">
+                        応募の中から条件が合うガイドが確定します。
+                    </p>
+                    <div class="step-connector" aria-hidden="true">
+                        <svg viewBox="0 0 100 20" class="step-arrow">
+                            <path d="M 0 10 L 80 10 M 70 5 L 80 10 L 70 15" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number-wrapper">
+                        <div class="step-number">5</div>
+                        <svg class="step-number-bg" viewBox="0 0 100 100" aria-hidden="true">
+                            <circle cx="50" cy="50" r="45" fill="#EBF8FF"/>
+                        </svg>
+                    </div>
+                    <div class="step-illustration">
+                        <svg class="step-illustration-svg" aria-hidden="true">
                             <use href="{{ asset('images/icons-sprite.svg#illustration-activity') }}"></use>
                         </svg>
                     </div>
-                    <h3 class="step-title">活動開始</h3>
+                    <h4 class="step-title">活動開始</h4>
                     <p class="step-description">
-                        チャットで詳細を確認し、当日ガイドヘルパーと活動を行います。
+                        当日ガイドヘルパーと活動を行います。当日までに待ち合わせ場所や要望についてメッセージ機能で詳細を確認することもできます。
                     </p>
                 </div>
             </div>
@@ -262,13 +296,7 @@
                         <svg class="cta-check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                        <span>月額0円</span>
-                    </div>
-                    <div class="cta-point">
-                        <svg class="cta-check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        <span>ご利用可否の確認</span>
+                        <span>利用に当たって</span>
                     </div>
                 </div>
                 <div class="cta-actions">
@@ -280,7 +308,7 @@
                     </a>
                 </div>
                 <p class="cta-note">
-                    新規会員登録後にはご利用可否の確認と契約が必要です。確認と契約には1週間程度が必要です。
+                    ご利用・ガイドとしてのご活動には、初回の面談および契約書の締結が必要です。詳細は新規登録後にご案内いたします。
                 </p>
             </div>
         </section>

@@ -79,6 +79,18 @@
   padding-bottom: var(--spacing-xs);
 }
 
+.form-block-full {
+  grid-column: 1 / -1;
+}
+
+.form-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+  margin-top: 0;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

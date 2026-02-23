@@ -247,7 +247,7 @@ html {
 }
 
 .step-item {
-  text-align: center;
+  text-align: left;
   position: relative;
   opacity: 0;
   animation: fadeInUp 0.6s ease-out forwards;
@@ -286,6 +286,7 @@ html {
 }
 
 .step-title {
+  text-align: center;
   font-size: 20px;
   font-weight: 500;
   margin-bottom: var(--spacing-sm);

@@ -190,8 +190,9 @@
         </div>
 
         <template x-if="formData.request_type === 'outing'">
-            <div>
-                <div class="form-group">
+            <div class="form-block form-block-full">
+                <h2 class="form-section-title" id="destination-heading-outing">目的地の入力</h2>
+                <div class="form-group" aria-labelledby="destination-heading-outing">
                     <label for="prefecture">都道府県 <span class="required">*</span></label>
                     <select
                         id="prefecture"
@@ -354,8 +355,9 @@
         @endif
 
         <template x-if="formData.request_type === 'home'">
-            <div>
-                <div class="form-group">
+            <div class="form-block form-block-full">
+                <h2 class="form-section-title" id="destination-heading-home">目的地の入力</h2>
+                <div class="form-group" aria-labelledby="destination-heading-home">
                     <label for="prefecture">都道府県 <span class="required">*</span></label>
                     <select
                         id="prefecture"

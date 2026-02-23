@@ -593,7 +593,7 @@
                 @yield('content')
             </main>
             <footer class="footer" role="contentinfo">
-                <p>&copy; {{ date('Y') }} One Step</p>
+                <p>&copy; 一般社団法人With Blind</p>
             </footer>
         </div>
     </div>

@@ -772,6 +772,33 @@ html {
   }
 }
 
+.how-it-works-intro {
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-2xl);
+  font-size: 16px;
+  line-height: 1.75;
+  color: $slate-700;
+}
+
+.flow-subsection-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: $slate-800;
+  margin-top: var(--spacing-2xl);
+  margin-bottom: var(--spacing-md);
+  
+  &:first-of-type {
+    margin-top: 0;
+  }
+}
+
+.flow-subsection-note {
+  font-size: 15px;
+  line-height: 1.7;
+  color: $slate-700;
+  margin-bottom: var(--spacing-lg);
+}
+
 // 波形SVGデコレーション
 .steps-wave-bg {
   position: absolute;
@@ -806,7 +833,7 @@ html {
 }
 
 .step-item {
-  text-align: center;
+  text-align: left;
   position: relative;
   background-color: #ffffff;
   padding: var(--spacing-xl);
@@ -877,6 +904,7 @@ html {
   font-weight: 600;
   margin-bottom: var(--spacing-sm);
   color: $slate-800;
+  text-align: center;
 }
 
 .step-description {
