@@ -138,7 +138,7 @@
                     </svg>
                     <div class="chat-info-content">
                         <p class="chat-info-title">チャットについて</p>
-                        <p class="chat-info-text">チャットはマッチング確定後から報告書承認完了まで利用できます。確定したガイドとの連絡にご利用ください。</p>
+                        <p class="chat-info-text">チャットはガイド確定後から報告書承認完了まで利用できます。確定したガイドとの連絡にご利用ください。</p>
                     </div>
                 </div>
             </div>

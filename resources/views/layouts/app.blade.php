@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="視覚障害者とガイドヘルパーのマッチングアプリケーション">
-    <title>ガイドマッチングアプリ</title>
+    <meta name="description" content="「One Step」視覚障害者向け外出・自宅での生活支援アプリ">
+    <title>「One Step」視覚障害者向け外出・自宅での生活支援アプリ</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#2563eb">
     @vite(['resources/css/app.scss'])
@@ -277,7 +277,7 @@
                         }
                     } catch (error) {
                         if (error.message !== '認証エラー') {
-                            console.error('アクティブマッチング取得エラー:', error);
+                            console.error('アクティブなガイド確定取得エラー:', error);
                         }
                     }
                 },
@@ -286,7 +286,7 @@
                         this.unreadCount = 0; // クリックしたら未読数をリセット
                         window.location.href = `/chat/${this.activeMatchingId}`;
                     } else {
-                        alert('マッチングが確定していません。');
+                        alert('ガイドが確定していません。');
                     }
                 }
             }
@@ -312,9 +312,9 @@
                     <a href="{{ route('home') }}" class="sidebar-logo" aria-label="ホームへ戻る">
                 @endauth
                     <div class="logo-icon-wrapper">
-                        <img src="{{ asset('images/logo.png') }}" alt="ガイドマッチ" class="logo-icon" />
+                        <img src="{{ asset('images/logo.png') }}" alt="One Step" class="logo-icon" />
                     </div>
-                    <span class="sidebar-logo-text">One Step</span>
+                    <span class="sidebar-logo-text">「One Step」視覚障害者向け<br>外出・自宅での生活支援アプリ</span>
                 </a>
             </div>
             <nav class="nav">

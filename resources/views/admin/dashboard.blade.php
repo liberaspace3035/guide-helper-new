@@ -87,16 +87,16 @@
                                     <span class="admin-stat-badge">承諾済み: <span x-text="stats.requests?.guide_accepted || 0"></span></span>
                                 </div>
                             </div>
-                            <!-- マッチング関連 -->
+                            <!-- ガイド確定関連 -->
                             <div class="admin-stat-card">
-                                <h3 class="admin-stat-title">進行中マッチング</h3>
+                                <h3 class="admin-stat-title">進行中のガイド確定</h3>
                                 <div class="admin-stat-value" x-text="stats.matchings?.in_progress || 0"></div>
                                 <div class="admin-stat-subtitle" x-show="stats.matchings?.matched > 0">
                                     <span class="admin-stat-badge">成立済み: <span x-text="stats.matchings?.matched || 0"></span></span>
                                 </div>
                             </div>
                             <div class="admin-stat-card">
-                                <h3 class="admin-stat-title">完了マッチング</h3>
+                                <h3 class="admin-stat-title">完了したガイド確定</h3>
                                 <div class="admin-stat-value" x-text="stats.matchings?.completed || 0"></div>
                                 <div class="admin-stat-subtitle">
                                     <span class="admin-stat-badge">総数: <span x-text="stats.matchings?.total || 0"></span></span>
@@ -138,9 +138,9 @@
                                 x-model="autoMatching"
                                 @change="toggleAutoMatching"
                             />
-                            自動マッチング
+                            自動ガイド確定
                         </label>
-                        <p class="setting-description" x-text="autoMatching ? 'ガイドが承諾すると自動的にマッチングが成立します' : 'ガイドが承諾しても管理者の承認が必要です'"></p>
+                        <p class="setting-description" x-text="autoMatching ? 'ガイドが承諾すると自動的にガイドが確定します' : 'ガイドが承諾しても管理者の承認が必要です'"></p>
                     </div>
                 </section>
 
@@ -1124,7 +1124,7 @@
                                     rows="10"
                                     placeholder="本文を入力"
                                 ></textarea>
-                                <small class="form-text">本文内で依頼情報やマッチング情報などを挿入する場合は、該当する項目名を波括弧で囲んでください</small>
+                                <small class="form-text">本文内で依頼情報やガイド確定情報などを挿入する場合は、該当する項目名を波括弧で囲んでください</small>
                             </div>
                             <div class="template-actions">
                                 <button
@@ -1197,7 +1197,7 @@
                                             rows="10"
                                             placeholder="本文を入力"
                                         ></textarea>
-                                        <small class="form-text">本文内で依頼情報やマッチング情報などを挿入する場合は、該当する項目名を波括弧で囲んでください</small>
+                                        <small class="form-text">本文内で依頼情報やガイド確定情報などを挿入する場合は、該当する項目名を波括弧で囲んでください</small>
                                     </div>
                                     <div class="template-actions">
                                         <button
@@ -1238,7 +1238,7 @@
                         設定
                     </h2>
                 </div>
-                <p class="setting-section-note">各通知のオン/オフは、依頼・マッチング・報告書・リマインドなどのメール送信時に反映されます。</p>
+                <p class="setting-section-note">各通知のオン/オフは、依頼・ガイド確定・報告書・リマインドなどのメール送信時に反映されます。</p>
                 <template x-if="emailSettings.length === 0">
                     <p>設定を読み込み中...</p>
                 </template>
@@ -1318,8 +1318,8 @@
                         <option value="user_reject">ユーザー拒否</option>
                         <option value="guide_approve">ガイド承認</option>
                         <option value="guide_reject">ガイド拒否</option>
-                        <option value="matching_approve">マッチング承認</option>
-                        <option value="matching_reject">マッチング却下</option>
+                        <option value="matching_approve">ガイド確定の承認</option>
+                        <option value="matching_reject">ガイド確定の却下</option>
                     </select>
                 </div>
                 <template x-if="operationLogs.length === 0">
@@ -2213,7 +2213,7 @@ function adminDashboard() {
                     method: 'PUT',
                     body: JSON.stringify({ auto_matching: this.autoMatching })
                 });
-                alert('自動マッチング設定を更新しました');
+                alert('自動ガイド確定設定を更新しました');
             } catch (error) {
                 alert('設定の更新に失敗しました');
                 this.autoMatching = !this.autoMatching;
@@ -2336,7 +2336,7 @@ function adminDashboard() {
                 return;
             }
 
-            if (!confirm(`選択した${validAcceptances.length}件のマッチングを承認しますか？`)) {
+            if (!confirm(`選択した${validAcceptances.length}件のガイド確定を承認しますか？`)) {
                 return;
             }
 
@@ -2351,7 +2351,7 @@ function adminDashboard() {
                 const successCount = response.results?.success?.length || 0;
                 const failedCount = response.results?.failed?.length || 0;
 
-                let message = `${successCount}件のマッチングを承認しました`;
+                let message = `${successCount}件のガイド確定を承認しました`;
                 if (failedCount > 0) {
                     message += `\n${failedCount}件の承認に失敗しました`;
                     if (response.results?.failed) {
@@ -2383,7 +2383,7 @@ function adminDashboard() {
                 return;
             }
 
-            if (!confirm('このマッチングを承認しますか？')) {
+            if (!confirm('このガイド確定を承認しますか？')) {
                 return;
             }
 
@@ -2395,16 +2395,16 @@ function adminDashboard() {
                         guide_id: guideId
                     })
                 });
-                alert('マッチングを承認しました');
+                alert('ガイド確定を承認しました');
                 await this.fetchDashboardData();
             } catch (error) {
-                alert('マッチング承認に失敗しました');
+                alert('ガイド確定の承認に失敗しました');
                 console.error(error);
             }
         },
 
         async rejectMatching(requestId, guideId) {
-            if (!confirm('このマッチングを却下しますか？')) {
+            if (!confirm('このガイド確定を却下しますか？')) {
                 return;
             }
 
@@ -2416,10 +2416,10 @@ function adminDashboard() {
                         guide_id: guideId
                     })
                 });
-                alert('マッチングを却下しました');
+                alert('ガイド確定を却下しました');
                 await this.fetchDashboardData();
             } catch (error) {
-                alert('マッチング却下に失敗しました');
+                alert('ガイド確定の却下に失敗しました');
                 console.error(error);
             }
         },
@@ -3363,8 +3363,8 @@ function adminDashboard() {
                 'user_reject': 'ユーザー拒否',
                 'guide_approve': 'ガイド承認',
                 'guide_reject': 'ガイド拒否',
-                'matching_approve': 'マッチング承認',
-                'matching_reject': 'マッチング却下',
+                'matching_approve': 'ガイド確定の承認',
+                'matching_reject': 'ガイド確定の却下',
                 'report_approve': '報告書承認',
                 'report_revision_request': '報告書修正依頼'
             };
@@ -3375,7 +3375,7 @@ function adminDashboard() {
             const labels = {
                 'user': 'ユーザー',
                 'guide': 'ガイド',
-                'matching': 'マッチング',
+                'matching': 'ガイド確定',
                 'report': '報告書'
             };
             return labels[type] || type;
@@ -3384,7 +3384,7 @@ function adminDashboard() {
         getNotificationTypeLabel(type) {
             const labels = {
                 'request': '依頼通知',
-                'matching': 'マッチング通知',
+                'matching': 'ガイド確定通知',
                 'report': '報告書通知',
                 'reminder': 'リマインド通知'
             };
@@ -3395,7 +3395,7 @@ function adminDashboard() {
             if (!key) return '';
             const labels = {
                 'request_notification': '依頼通知',
-                'matching_notification': 'マッチング成立通知',
+                'matching_notification': 'ガイド確定の通知',
                 'report_submitted': '報告書提出通知',
                 'report_approved': '報告書承認通知',
                 'reminder_pending_request': '承認待ち依頼リマインド',
@@ -3464,7 +3464,7 @@ function adminDashboard() {
             if (!key) return '';
             const descriptions = {
                 'request_notification': '新しい依頼が登録された時',
-                'matching_notification': 'マッチングが成立した時',
+                'matching_notification': 'ガイドが確定した時',
                 'report_submitted': '報告書が提出された時',
                 'report_approved': '報告書が承認された時',
                 'reminder_pending_request': '承認待ち依頼がある時（リマインド）',
@@ -3486,7 +3486,7 @@ function adminDashboard() {
         getNotificationDescription(type) {
             const descriptions = {
                 'request': '新しい依頼が登録された際に送信される通知',
-                'matching': 'マッチングが成立した際に送信される通知',
+                'matching': 'ガイドが確定した際に送信される通知',
                 'report': '報告書が提出・承認された際に送信される通知',
                 'reminder': '承認待ちの依頼がある場合に送信されるリマインド'
             };

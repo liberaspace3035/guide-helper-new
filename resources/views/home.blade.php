@@ -102,9 +102,9 @@
                             <use href="{{ asset('images/icons-sprite.svg#icon-matching') }}"></use>
                         </svg>
                     </div>
-                    <h3 class="feature-title">簡単マッチング</h3>
+                    <h3 class="feature-title">かんたんガイド確定</h3>
                     <p class="feature-description">
-                        必要な情報を入力するだけで、最適なガイドヘルパーとマッチングできます。
+                        必要な情報を入力するだけで、最適なガイドヘルパーとガイド確定ができます。
                     </p>
                 </div>
                 <div class="feature-card">
@@ -115,7 +115,7 @@
                     </div>
                     <h3 class="feature-title">リアルタイムチャット</h3>
                     <p class="feature-description">
-                        マッチング後は、アプリ内チャットで直接コミュニケーションが取れます。
+                        ガイド確定後は、アプリ内チャットで直接コミュニケーションが取れます。
                     </p>
                 </div>
                 <div class="feature-card">
@@ -137,7 +137,7 @@
                     </div>
                     <h3 class="feature-title">安全・安心</h3>
                     <p class="feature-description">
-                        認証されたガイドヘルパーとマッチングし、安全にサービスを利用できます。
+                        認証されたガイドヘルパーとガイド確定し、安全にサービスを利用できます。
                     </p>
                 </div>
             </div>
@@ -211,9 +211,9 @@
                             <use href="{{ asset('images/icons-sprite.svg#illustration-matching') }}"></use>
                         </svg>
                     </div>
-                    <h3 class="step-title">マッチング</h3>
+                    <h3 class="step-title">ガイド確定</h3>
                     <p class="step-description">
-                        ガイドヘルパーがリクエストに応募し、マッチングが成立します。
+                        ガイドヘルパーがリクエストに応募し、ガイドが確定します。
                     </p>
                     <div class="step-connector" aria-hidden="true">
                         <svg viewBox="0 0 100 20" class="step-arrow">
@@ -268,7 +268,7 @@
                         <svg class="cta-check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                        <span>安心の審査制</span>
+                        <span>ご利用可否の確認</span>
                     </div>
                 </div>
                 <div class="cta-actions">
@@ -280,7 +280,7 @@
                     </a>
                 </div>
                 <p class="cta-note">
-                    新規会員登録後には審査と契約が必要です。審査と契約には1週間程度が必要です。
+                    新規会員登録後にはご利用可否の確認と契約が必要です。確認と契約には1週間程度が必要です。
                 </p>
             </div>
         </section>

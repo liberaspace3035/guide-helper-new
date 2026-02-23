@@ -293,7 +293,7 @@ class RequestController extends Controller
             $matching = $matchingService->createMatching($id, $user->id, $guideId);
             
             return response()->json([
-                'message' => 'ガイドが選択されました。自動マッチングによりマッチングが成立しました。',
+                'message' => 'ガイドが選択されました。自動ガイド確定によりガイドが確定しました。',
                 'auto_matching' => true,
                 'matching_id' => $matching->id,
             ]);

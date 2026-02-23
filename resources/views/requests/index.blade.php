@@ -90,11 +90,11 @@
                                         <line x1="12" y1="16" x2="12" y2="12"></line>
                                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                     </svg>
-                                    <span class="chat-availability-text">チャットはマッチング確定後に利用可能になります</span>
+                                    <span class="chat-availability-text">チャットはガイド確定後に利用可能になります</span>
                                 </div>
                             </div>
                         </template>
-                        <!-- キャンセルボタン: マッチング成立していない依頼のみ表示 -->
+                        <!-- キャンセルボタン: ガイドが確定していない依頼のみ表示 -->
                         <template x-if="canCancelRequest(request)">
                             <button
                                 type="button"
@@ -371,7 +371,7 @@ function requestsData() {
                 this.selectedGuideMap = { ...this.selectedGuideMap, [requestId]: guideId };
                 const msg = data?.auto_matching
                     ? 'ガイドに選択されたことが通知されました。詳細な連絡はチャットでお願いします。'
-                    : '管理者が審査しています。完了までお待ちください。';
+                    : '管理者がご利用可否の確認を行っています。完了までお待ちください。';
                 this.selectMessageMap = { ...this.selectMessageMap, [requestId]: msg };
             } catch (err) {
                 console.error('ガイド選択エラー:', err);

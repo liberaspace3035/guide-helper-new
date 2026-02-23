@@ -158,14 +158,14 @@ class GuideProposalService
                 'user_id' => $proposal->guide_id,
                 'type' => 'guide_proposal',
                 'title' => '支援の提案が承諾されました',
-                'message' => 'あなたの支援提案が承諾されました。マッチングが成立しています。',
+                'message' => 'あなたの支援提案が承諾されました。ガイドが確定しています。',
                 'related_id' => $matching->id,
             ]);
 
             return [
                 'request_id' => $request->id,
                 'matching_id' => $matching->id,
-                'message' => '提案を承諾しました。マッチングが成立しています。',
+                'message' => '提案を承諾しました。ガイドが確定しています。',
             ];
         });
     }

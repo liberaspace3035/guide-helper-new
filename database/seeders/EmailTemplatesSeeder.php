@@ -22,8 +22,8 @@ class EmailTemplatesSeeder extends Seeder
             ],
             [
                 'template_key' => 'matching_notification',
-                'subject' => 'マッチングが成立しました',
-                'body' => 'マッチングが成立しました。チャットで詳細を確認してください。\n\nマッチングID: {{matching_id}}\n依頼タイプ: {{request_type}}\n依頼日時: {{request_date}} {{request_time}}',
+                'subject' => 'ガイドが確定しました',
+                'body' => 'ガイドが確定しました。チャットで詳細を確認してください。\n\nガイド確定ID: {{matching_id}}\n依頼タイプ: {{request_type}}\n依頼日時: {{request_date}} {{request_time}}',
                 'is_active' => true,
             ],
             [
@@ -47,7 +47,7 @@ class EmailTemplatesSeeder extends Seeder
             [
                 'template_key' => 'reminder_report_missing',
                 'subject' => '報告書の提出のお願い',
-                'body' => "{{user_name}} 様\n\n以下の依頼について、報告書が未提出です。\nお手数ですが、報告書の提出をお願いいたします。\n\nマッチングID: {{matching_id}}\n依頼日: {{request_date}}\n\nログインのうえ、報告書の作成・提出をお願いいたします。",
+                'body' => "{{user_name}} 様\n\n以下の依頼について、報告書が未提出です。\nお手数ですが、報告書の提出をお願いいたします。\n\nガイド確定ID: {{matching_id}}\n依頼日: {{request_date}}\n\nログインのうえ、報告書の作成・提出をお願いいたします。",
                 'is_active' => true,
             ],
             [
@@ -65,7 +65,7 @@ class EmailTemplatesSeeder extends Seeder
             [
                 'template_key' => 'password_reset',
                 'subject' => 'パスワードリセットのご案内',
-                'body' => "{{user_name}} 様\n\nパスワードリセットのリクエストを受け付けました。\n\n以下のリンクをクリックして、新しいパスワードを設定してください。\nこのリンクは60分間有効です。\n\n{{reset_url}}\n\nこのリクエストをしていない場合は、このメールを無視してください。\n\nガイドヘルパーマッチングサービス",
+                'body' => "{{user_name}} 様\n\nパスワードリセットのリクエストを受け付けました。\n\n以下のリンクをクリックして、新しいパスワードを設定してください。\nこのリンクは60分間有効です。\n\n{{reset_url}}\n\nこのリクエストをしていない場合は、このメールを無視してください。\n\n「One Step」視覚障害者向け外出・自宅での生活支援アプリ",
                 'is_active' => true,
             ],
             [
@@ -89,25 +89,25 @@ class EmailTemplatesSeeder extends Seeder
             [
                 'template_key' => 'user_registration_thanks',
                 'subject' => 'ユーザー登録のご案内',
-                'body' => "{{user_name}} 様\n\nこの度は、ガイドヘルパーマッチングサービスにご登録いただき、誠にありがとうございます。\n\nご登録いただいた内容を確認させていただき、審査を実施いたします。\n審査完了後、改めてご連絡させていただきます。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\n今後ともよろしくお願いいたします。",
+                'body' => "{{user_name}} 様\n\nこの度は、「One Step」視覚障害者向け外出・自宅での生活支援アプリにご登録いただき、誠にありがとうございます。\n\nご登録いただいた内容を確認させていただき、ご利用可否の確認を行います。\n確認完了後、改めてご連絡させていただきます。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\n今後ともよろしくお願いいたします。",
                 'is_active' => true,
             ],
             [
                 'template_key' => 'guide_registration_thanks',
                 'subject' => 'ガイド登録のご案内',
-                'body' => "{{user_name}} 様\n\nこの度は、ガイドヘルパーマッチングサービスにガイドとしてご登録いただき、誠にありがとうございます。\n\nご登録いただいた内容を確認させていただき、審査を実施いたします。\n審査完了後、改めてご連絡させていただきます。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\n今後ともよろしくお願いいたします。",
+                'body' => "{{user_name}} 様\n\nこの度は、「One Step」にガイドとしてご登録いただき、誠にありがとうございます。\n\nご登録いただいた内容を確認させていただき、ご利用可否の確認を行います。\n確認完了後、改めてご連絡させていただきます。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\n今後ともよろしくお願いいたします。",
                 'is_active' => true,
             ],
             [
                 'template_key' => 'user_account_approved',
                 'subject' => 'アカウントが承認されました（利用者）',
-                'body' => "{{user_name}} 様\n\nお知らせいたします。\n\nご登録いただいていた利用者アカウントが承認されました。\nログインのうえ、サービスをご利用いただけます。\n\n今後ともよろしくお願いいたします。\n\nガイドヘルパーマッチングサービス",
+                'body' => "{{user_name}} 様\n\nお知らせいたします。\n\nご登録いただいていた利用者アカウントが承認されました。\nログインのうえ、サービスをご利用いただけます。\n\n今後ともよろしくお願いいたします。\n\n「One Step」視覚障害者向け外出・自宅での生活支援アプリ",
                 'is_active' => true,
             ],
             [
                 'template_key' => 'guide_account_approved',
                 'subject' => 'アカウントが承認されました（ガイド）',
-                'body' => "{{user_name}} 様\n\nお知らせいたします。\n\nご登録いただいていたガイドアカウントが承認されました。\nログインのうえ、依頼の確認や承諾などを行っていただけます。\n\n今後ともよろしくお願いいたします。\n\nガイドヘルパーマッチングサービス",
+                'body' => "{{user_name}} 様\n\nお知らせいたします。\n\nご登録いただいていたガイドアカウントが承認されました。\nログインのうえ、依頼の確認や承諾などを行っていただけます。\n\n今後ともよろしくお願いいたします。\n\n「One Step」視覚障害者向け外出・自宅での生活支援アプリ",
                 'is_active' => true,
             ],
         ];

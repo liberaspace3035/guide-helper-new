@@ -31,9 +31,9 @@ Route::get('/test-mail', function () {
         return '送信先を設定してください。.env に MAIL_TEST_TO=あなたのメールアドレス を追加するか、MAIL_FROM_ADDRESS を設定してください。';
     }
     try {
-        Mail::raw('ガイドヘルパーからのテストメールです。設定は正しく動作しています。', function ($message) use ($to) {
+        Mail::raw('「One Step」からのテストメールです。設定は正しく動作しています。', function ($message) use ($to) {
             $message->to($to)
-                    ->subject('テストメール（ガイドヘルパー）');
+                    ->subject('テストメール（One Step）');
         });
         $driver = config('mail.default');
         $msg = 'メール送信完了！受信トレイ（または迷惑メール）を確認してください。送信先: ' . $to . "\n\n現在のメールドライバー: " . $driver;

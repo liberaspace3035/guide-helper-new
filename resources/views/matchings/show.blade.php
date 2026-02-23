@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="matching-detail-container" x-data="matchingData()" x-init="init()">
-    <h1>マッチング詳細</h1>
+    <h1>ガイド確定詳細</h1>
     
     <template x-if="loading">
         <div class="loading-container">
@@ -12,7 +12,7 @@
     </template>
 
     <template x-if="!loading && !matching">
-        <div class="error-message">マッチングが見つかりません</div>
+        <div class="error-message">ガイド確定が見つかりません</div>
     </template>
 
     <template x-if="!loading && matching">

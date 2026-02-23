@@ -10,7 +10,7 @@
     <!-- 支援を提案する（ガイド→利用者） -->
     <section class="proposal-section">
         <h2>支援を提案する</h2>
-        <p class="proposal-section-desc">利用者に外出支援・自宅支援を提案できます。承諾されるとマッチングが成立します。</p>
+        <p class="proposal-section-desc">利用者に外出支援・自宅支援を提案できます。承諾されるとガイドが確定します。</p>
         <button type="button" @click="showProposalForm = !showProposalForm" class="btn-primary proposal-toggle-btn">
             <span x-text="showProposalForm ? 'フォームを閉じる' : '支援を提案する'"></span>
         </button>
@@ -434,7 +434,7 @@ function guideRequestsData() {
                 if (request.acceptance_status === 'declined') {
                     return '辞退済み';
                 } else if (request.acceptance_status === 'matched') {
-                    return 'マッチング確定';
+                    return 'ガイド確定';
                 } else if (request.display_status === 'approval_pending') {
                     return '承認待ち';
                 } else {

@@ -4,12 +4,12 @@
 <div class="register-container" x-data="registerForm()" x-init="init()">
     <div class="register-card">
         <h1>新規登録</h1>
-        <!-- 審査に関する注意書き -->
+        <!-- ご利用可否の確認に関する注意書き -->
         <div class="registration-notice">
             <div class="notice-icon">⚠</div>
             <div class="notice-content">
                 <p class="notice-text">
-                    利用には審査があります。ユーザーは「利用契約書」、ガイドは「入社手続」の実施後、運営者による承認を経てご利用いただけます。
+                    ご利用にはご利用可否の確認があります。ユーザーは「利用契約書」、ガイドは「入社手続」の実施後、運営者による承認を経てご利用いただけます。
                 </p>
                 <p class="notice-text">
                     登録後に運営からメールでご連絡いたします。

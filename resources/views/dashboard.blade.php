@@ -174,7 +174,7 @@
             <template x-if="guideProposals && guideProposals.length > 0">
                 <section class="guide-proposals-section" aria-label="ガイドからの提案">
                     <h2 class="guide-proposals-section__title">ガイドから支援の提案があります</h2>
-                    <p class="guide-proposals-section__desc">承諾するとマッチングが成立し、予定に追加されます。</p>
+                    <p class="guide-proposals-section__desc">承諾するとガイドが確定し、予定に追加されます。</p>
                     <ul class="guide-proposals-list">
                         <template x-for="p in guideProposals" :key="p.id">
                             <li class="guide-proposal-card">
@@ -525,8 +525,8 @@
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    <h3>現在進行中のマッチングはありません</h3>
-                    <p>新しい依頼を作成して、ガイドとマッチングしましょう</p>
+                    <h3>現在進行中のガイド確定はありません</h3>
+                    <p>新しい依頼を作成して、ガイドを確定させましょう</p>
                     <a href="{{ route('requests.create') }}" class="btn-primary">
                         依頼を作成する
                     </a>
@@ -721,9 +721,9 @@
             </template>
             </div>
 
-            <!-- 進行中のマッチング一覧 -->
+            <!-- 進行中のガイド確定一覧 -->
             <template x-if="activeMatchings.length > 0">
-                <section class="matchings-section" aria-label="マッチング一覧">
+                <section class="matchings-section" aria-label="ガイド確定一覧">
                     <div class="section-header">
                         <h2>
                             <svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -732,7 +732,7 @@
                                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
-                            進行中のマッチング
+                            進行中のガイド確定
                         </h2>
                     </div>
                 <div class="matchings-list">
@@ -828,7 +828,7 @@
                         <line x1="3" y1="12" x2="3.01" y2="12"></line>
                         <line x1="3" y1="18" x2="3.01" y2="18"></line>
                     </svg>
-                    <h3>現在進行中のマッチングはありません</h3>
+                    <h3>現在進行中のガイド確定はありません</h3>
                     <p>新しい依頼を確認して、ガイドを始めましょう</p>
                     <a href="{{ route('guide.requests.index') }}" class="btn-primary">
                         依頼を探す
@@ -912,7 +912,7 @@ function dashboardData() {
                 });
                 const data = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    alert(data.message || 'マッチングが成立しました。予定に追加されています。');
+                    alert(data.message || 'ガイドが確定しました。予定に追加されています。');
                     this.fetchGuideProposals();
                     if (this.matchings) window.location.reload();
                 } else {

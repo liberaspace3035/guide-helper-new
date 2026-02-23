@@ -244,7 +244,7 @@ class AdminController extends Controller
             }
 
             return response()->json([
-                'message' => 'マッチングが承認されました',
+                'message' => 'ガイドが確定しました',
                 'matching_id' => $matching->id,
             ]);
         } catch (\Exception $e) {
@@ -276,7 +276,7 @@ class AdminController extends Controller
                 );
             }
 
-            return response()->json(['message' => 'マッチングが却下されました']);
+            return response()->json(['message' => 'ガイド確定が却下されました']);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -307,7 +307,7 @@ class AdminController extends Controller
             }
 
             $message = sprintf(
-                '%d件のマッチングを承認しました。%s',
+                '%d件のガイド確定を承認しました。%s',
                 count($results['success']),
                 count($results['failed']) > 0 ? sprintf('%d件の承認に失敗しました。', count($results['failed'])) : ''
             );

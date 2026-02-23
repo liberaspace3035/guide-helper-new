@@ -290,8 +290,8 @@ class EmailNotificationService
         $typeLabel = $isGuide ? 'ガイド' : 'ユーザー';
         $body = "管理者 様\n\n";
         $body .= "{$registrantName} さんが新規{$typeLabel}として登録しました。\n\n";
-        $body .= ($isGuide ? 'ガイド管理' : 'ユーザー管理') . "の承認待ち一覧で確認し、審査を行ってください。\n\n";
-        $body .= "ガイドマッチングアプリ 管理画面";
+        $body .= ($isGuide ? 'ガイド管理' : 'ユーザー管理') . "の承認待ち一覧で確認し、ご利用可否の確認を行ってください。\n\n";
+        $body .= "「One Step」視覚障害者向け外出・自宅での生活支援アプリ 管理画面";
 
         try {
             Mail::raw($body, function ($message) use ($admin, $subject) {
@@ -330,7 +330,7 @@ class EmailNotificationService
             $body .= "このリンクは60分間有効です。\n\n";
             $body .= "{$resetUrl}\n\n";
             $body .= "このリクエストをしていない場合は、このメールを無視してください。\n\n";
-            $body .= "ガイドマッチングアプリ";
+            $body .= "「One Step」視覚障害者向け外出・自宅での生活支援アプリ";
 
             Mail::raw($body, function ($message) use ($user, $subject) {
                 $message->to($user->email, $user->name)

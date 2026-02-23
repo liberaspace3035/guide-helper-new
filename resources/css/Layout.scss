@@ -90,11 +90,13 @@
   gap: var(--spacing-md);
   text-decoration: none;
   color: var(--text-primary);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
   transition: all var(--transition-fast);
   padding: var(--spacing-xs);
   border-radius: var(--radius-md);
+  flex-direction: column;
+  text-align: center;
 
   // .sidebar-logo:hover {
   //   background-color: var(--surface-hover);

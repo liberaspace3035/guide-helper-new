@@ -499,7 +499,7 @@ class RequestService
 
         // マッチング成立済み（matched または in_progress）の場合はキャンセル不可
         if (in_array($request->status, ['matched', 'in_progress'])) {
-            throw new \Exception('マッチング成立済みの依頼はキャンセルできません');
+            throw new \Exception('ガイド確定済みの依頼はキャンセルできません');
         }
 
         // マッチングが存在する場合は確認
@@ -508,7 +508,7 @@ class RequestService
             ->first();
 
         if ($matching) {
-            throw new \Exception('マッチング成立済みの依頼はキャンセルできません');
+            throw new \Exception('ガイド確定済みの依頼はキャンセルできません');
         }
 
         // 依頼をキャンセル状態に更新
