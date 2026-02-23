@@ -256,7 +256,7 @@
                     @endif
                 </div>
                 <div class="form-group">
-                    <label for="destination_address">市区町村・番地 <span class="required">*</span></label>
+                    <label for="destination_address">市区町村・番地又は目的地の名称 <span class="required">*</span></label>
                     <div class="input-with-voice">
                         <input
                             type="text"
@@ -264,7 +264,7 @@
                             name="destination_address"
                             x-model="formData.destination_address"
                             required
-                            placeholder="例: 渋谷区青山１－１－１"
+                            placeholder="例: 港区青山１－１－１又は代々木公園など"
                             aria-required="true"
                             class="@if($errors->has('destination_address')) is-invalid @endif"
                         />
@@ -275,7 +275,7 @@
                             @click="toggleVoiceInput('destination_address')"
                             :disabled="!isVoiceInputSupported"
                             :title="isRecording ? '音声入力を停止' : '音声入力'"
-                            aria-label="市区町村・番地を音声入力"
+                            aria-label="市区町村・番地又は目的地の名称を音声入力"
                         >
                             <template x-if="!isRecording">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -292,7 +292,7 @@
                             </template>
                         </button>
                     </div>
-                    <small>市区町村・番地を入力してください（ガイドには大まかな地域のみ表示されます）</small>
+                    <small>市区町村・番地又は目的地の名称を入力してください（ガイドには大まかな地域のみ表示されます）</small>
                 </div>
                 <div class="form-group">
                     <label for="meeting_place">待ち合わせ場所 <span class="required">*</span></label>
@@ -421,7 +421,7 @@
                     @endif
                 </div>
                 <div class="form-group">
-                    <label for="destination_address_home">市区町村・番地 <span class="required">*</span></label>
+                    <label for="destination_address_home">市区町村・番地又は目的地の名称 <span class="required">*</span></label>
                     <div class="input-with-voice">
                         <input
                             type="text"
@@ -429,7 +429,7 @@
                             name="destination_address"
                             x-model="formData.destination_address"
                             required
-                            placeholder="例: 渋谷区青山１－１－１"
+                            placeholder="例: 港区青山１－１－１又は代々木公園など"
                             aria-required="true"
                             class="@if($errors->has('destination_address')) is-invalid @endif"
                         />
@@ -440,7 +440,7 @@
                             @click="toggleVoiceInput('destination_address')"
                             :disabled="!isVoiceInputSupported"
                             :title="isRecording ? '音声入力を停止' : '音声入力'"
-                            aria-label="市区町村・番地を音声入力"
+                            aria-label="市区町村・番地又は目的地の名称を音声入力"
                         >
                             <template x-if="!isRecording">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -457,7 +457,7 @@
                             </template>
                         </button>
                     </div>
-                    <small>市区町村・番地を入力してください（ガイドには大まかな地域のみ表示されます）</small>
+                    <small>市区町村・番地又は目的地の名称を入力してください（ガイドには大まかな地域のみ表示されます）</small>
                 </div>
                 <div class="form-group">
                     <label for="meeting_place_home">集合場所 <span class="required">*</span></label>

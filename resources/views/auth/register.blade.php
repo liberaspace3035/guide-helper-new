@@ -412,14 +412,15 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="disability_support_level">障害支援区分 <span class="required">*</span></label>
+                        <label for="disability_support_level">
+                            障害支援区分 <span class="label-hint">（１から６、またはなしから選択）</span> <span class="required">*</span>
+                        </label>
                         <select
                             id="disability_support_level"
                             name="disability_support_level"
                             x-model="formData.disability_support_level"
                             required
                             aria-required="true"
-                            aria-describedby="disability_support_level-desc"
                         >
                             <option value="">選択してください</option>
                             <option value="１">１</option>
@@ -430,7 +431,6 @@
                             <option value="６">６</option>
                             <option value="なし">なし</option>
                         </select>
-                        <span id="disability_support_level-desc" class="sr-only">１から６、またはなしから選択</span>
                     </div>
 
                     <div class="form-group">

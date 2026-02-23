@@ -190,7 +190,7 @@ class AuthController extends Controller
             // APIリクエストの場合はログインしてJSONレスポンスを返す
             auth()->login($user);
             return response()->json([
-                'message' => 'ユーザー登録が完了しました。ご利用可否の確認完了後、運営からご連絡いたします。',
+                'message' => '登録が完了しました。内容を確認し、運営からメールでご連絡さしあげますので今しばらくお待ちください',
                 'user' => [
                     'id' => $user->id,
                     'email' => $user->email,
@@ -202,7 +202,7 @@ class AuthController extends Controller
 
         // Webリクエストの場合はログインせずにログインページにリダイレクト
         return redirect()->route('login')
-            ->with('success', 'ユーザー登録が完了しました。ご利用可否の確認完了後、運営からご連絡いたします。');
+            ->with('success', '登録が完了しました。内容を確認し、運営からメールでご連絡さしあげますので今しばらくお待ちください');
     }
 
     public function login(Request $request)

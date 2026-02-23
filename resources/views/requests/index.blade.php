@@ -90,7 +90,7 @@
                                         <line x1="12" y1="16" x2="12" y2="12"></line>
                                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                     </svg>
-                                    <span class="chat-availability-text">チャットはガイド確定後に利用可能になります</span>
+                                    <span class="chat-availability-text">ガイドが未確定のためメッセージが利用できません。</span>
                                 </div>
                             </div>
                         </template>

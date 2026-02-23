@@ -259,6 +259,12 @@
   color: var(--text-primary);
 }
 
+.label-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
 // 入力フィールドのスタイルはグローバルスタイルを使用 
 .form-group input,
 .form-group textarea,
