@@ -21,6 +21,16 @@
     transform: translateY(-2px);
   }
 
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    box-shadow: var(--shadow-md), 0 0 0 2px var(--primary-color);
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+
   @media (max-width: 768px) {
     padding: var(--spacing-md);
   }
@@ -72,6 +82,15 @@
   &:hover {
     border-color: var(--primary-color);
     color: var(--primary-color);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
   }
 }
 

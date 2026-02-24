@@ -12,18 +12,24 @@
         </template>
     </div>
 
-    <div class="announcements-filters">
+    <div class="announcements-filters" role="group" aria-label="表示フィルター">
         <button
+            type="button"
             class="filter-btn"
             :class="{ active: filter === 'all' }"
             @click="filter = 'all'"
+            aria-pressed="filter === 'all'"
+            aria-label="すべてのお知らせを表示"
         >
             すべて
         </button>
         <button
+            type="button"
             class="filter-btn"
             :class="{ active: filter === 'unread' }"
             @click="filter = 'unread'"
+            aria-pressed="filter === 'unread'"
+            :aria-label="'未読のみ表示' + (unreadCount > 0 ? '（' + unreadCount + '件）' : '')"
         >
             未読
             <template x-if="unreadCount > 0">
@@ -31,9 +37,12 @@
             </template>
         </button>
         <button
+            type="button"
             class="filter-btn"
             :class="{ active: filter === 'read' }"
             @click="filter = 'read'"
+            aria-pressed="filter === 'read'"
+            aria-label="既読のみ表示"
         >
             既読
         </button>
@@ -57,9 +66,12 @@
                 <article
                     class="announcement-card"
                     :class="{ 'unread': !announcement.is_read }"
-                    :aria-label="'お知らせ、' + (announcement.title || '') + '、' + (announcement.is_read ? '既読' : '未読')"
+                    :aria-label="'お知らせ、' + (announcement.title || '') + '、' + (announcement.is_read ? '既読' : '未読') + (!announcement.is_read ? '。Enterまたはスペースで既読にします' : '')"
                     role="article"
+                    tabindex="0"
                     @click="handleRead(announcement.id)"
+                    @keydown.enter="if ($event.target === $el) { $event.preventDefault(); handleRead(announcement.id); }"
+                    @keydown.space="if ($event.target === $el) { $event.preventDefault(); handleRead(announcement.id); }"
                 >
                     <div class="announcement-header">
                         <h3 x-text="announcement.title"></h3>
@@ -78,7 +90,7 @@
                                 type="button"
                                 class="btn-unread"
                                 @click.stop="handleUnread(announcement.id)"
-                                aria-label="このお知らせを未読に戻す"
+                                aria-label="このお知らせを未読に戻す。Enterで実行"
                             >
                                 未読に戻す
                             </button>

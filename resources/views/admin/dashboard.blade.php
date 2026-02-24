@@ -623,10 +623,11 @@
                                                     class="recipient-number-input"
                                                     :value="userMeta[user.id] || ''"
                                                     @input="userMeta[user.id] = $event.target.value.replace(/\D/g, '').slice(0, 10)"
+                                                    @keydown.enter.prevent="saveUserMeta(user.id)"
                                                     maxlength="10"
                                                     pattern="\d{10}"
                                                     placeholder="受給者証番号（10桁）"
-                                                    aria-label="受給者証番号（半角数字10桁）"
+                                                    aria-label="受給者証番号（半角数字10桁）。入力後Enterで保存"
                                                     :id="'recipient-number-' + user.id"
                                                 />
                                                 <button
@@ -1570,10 +1571,11 @@
                                             class="modal-input"
                                             x-model="editingUserProfileData.recipient_number"
                                             @input="editingUserProfileData.recipient_number = $event.target.value.replace(/\D/g, '').slice(0, 10)"
+                                            @keydown.enter.prevent="saveUserProfile(selectedUserProfile.id)"
                                             maxlength="10"
                                             pattern="\d{10}"
                                             placeholder="半角数字10桁"
-                                            aria-label="受給者証番号（半角数字10桁）"
+                                            aria-label="受給者証番号（半角数字10桁）。入力後Enterで保存"
                                         />
                                     </template>
                                 </div>
