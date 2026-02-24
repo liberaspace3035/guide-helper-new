@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\EmailTemplate;
 use App\Models\EmailNotificationSetting;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class EmailTemplateController extends Controller
 {
@@ -78,11 +79,14 @@ class EmailTemplateController extends Controller
     }
 
     /**
-     * 通知設定一覧取得
+     * 通知設定一覧取得（本番の読み込み遅延対策でキャッシュ利用）
      */
     public function settings()
     {
-        $settings = EmailNotificationSetting::orderBy('notification_type')->get();
+        $cacheKey = 'admin_email_notification_settings';
+        $settings = Cache::remember($cacheKey, 300, function () {
+            return EmailNotificationSetting::orderBy('notification_type')->get();
+        });
         return response()->json(['settings' => $settings]);
     }
 
@@ -101,6 +105,8 @@ class EmailTemplateController extends Controller
             'is_enabled' => $request->input('is_enabled'),
             'reminder_days' => $request->input('reminder_days'),
         ]);
+
+        Cache::forget('admin_email_notification_settings');
 
         return response()->json(['message' => '通知設定を更新しました', 'setting' => $setting]);
     }

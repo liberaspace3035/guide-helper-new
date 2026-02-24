@@ -13,6 +13,7 @@ use App\Models\Matching;
 use App\Models\Notification;
 use App\Models\UserMonthlyLimit;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\UploadedFile;
@@ -248,8 +249,11 @@ class AdminService
 
     public function getAutoMatchingSetting(): bool
     {
-        return AdminSetting::where('setting_key', 'auto_matching')
-            ->value('setting_value') === 'true';
+        $cacheKey = 'admin_auto_matching';
+        return (bool) Cache::remember($cacheKey, 300, function () {
+            return AdminSetting::where('setting_key', 'auto_matching')
+                ->value('setting_value') === 'true';
+        });
     }
 
     public function updateAutoMatching(bool $enabled): void
@@ -258,6 +262,7 @@ class AdminService
             ['setting_key' => 'auto_matching'],
             ['setting_value' => $enabled ? 'true' : 'false']
         );
+        Cache::forget('admin_auto_matching');
     }
 
     public function approveMatching(int $requestId, int $guideId): Matching

@@ -1084,12 +1084,12 @@
                         </div>
                         <div class="template-form">
                             <div class="form-group">
-                                <label class="form-label">テンプレートキー <span style="color: var(--error-color);">*</span></label>
+                                <label class="form-label">通知の種類（テンプレートキー） <span style="color: var(--error-color);">*</span></label>
                                 <input
                                     type="text"
                                     x-model="newTemplate.template_key"
                                     class="form-control"
-                                    placeholder="例: request_notification, matching_notification"
+                                    placeholder="例: 依頼通知(request_notification)、ガイド確定(matching_notification)"
                                     @input="updateRecipientFromKey()"
                                 />
                                 <small class="form-text">英数字とアンダースコアのみ使用可能です。既存のテンプレートキーを入力すると送信先が自動設定されます。</small>
@@ -3078,7 +3078,8 @@ function adminDashboard() {
             const template = this.emailTemplates.find(t => t.id === templateId);
             if (!template) return;
 
-            if (!confirm(`テンプレート「${template.template_key}」を削除しますか？この操作は取り消せません。`)) {
+            const displayName = this.getTemplateKeyLabel(template.template_key) || template.template_key;
+            if (!confirm(`テンプレート「${displayName}」を削除しますか？この操作は取り消せません。`)) {
                 return;
             }
 
@@ -3386,9 +3387,13 @@ function adminDashboard() {
                 'request': '依頼通知',
                 'matching': 'ガイド確定通知',
                 'report': '報告書通知',
-                'reminder': 'リマインド通知'
+                'reminder': 'リマインド通知',
+                'announcement_reminder': 'お知らせ未読リマインド',
+                'registration': '登録完了のお礼メール',
+                'password_reset': 'パスワードリセット',
+                'approval': 'アカウント承認通知'
             };
-            return labels[type] || type;
+            return labels[type] || (type ? 'その他の通知' : '');
         },
 
         getTemplateKeyLabel(key) {
@@ -3411,7 +3416,7 @@ function adminDashboard() {
                 'user_account_approved': 'アカウント承認通知（利用者）',
                 'guide_account_approved': 'アカウント承認通知（ガイド）'
             };
-            return labels[key] || key;
+            return labels[key] || 'その他の通知';
         },
 
         getRecipientLabel(key) {
@@ -3488,7 +3493,11 @@ function adminDashboard() {
                 'request': '新しい依頼が登録された際に送信される通知',
                 'matching': 'ガイドが確定した際に送信される通知',
                 'report': '報告書が提出・承認された際に送信される通知',
-                'reminder': '承認待ちの依頼がある場合に送信されるリマインド'
+                'reminder': '承認待ちの依頼がある場合に送信されるリマインド',
+                'announcement_reminder': '未読お知らせがある場合に送信されるリマインド',
+                'registration': 'ユーザー・ガイド登録完了時にお礼メールを送信',
+                'password_reset': 'パスワードリセット申請時に送信されるメール',
+                'approval': '利用者・ガイドのアカウント承認時に送信される通知'
             };
             return descriptions[type] || '';
         },

@@ -91,18 +91,22 @@ php artisan db:seed --class=AdminUserSeeder --force || {
 
 # 【一時的】管理者パスワード変更（Railway 等でシェルがない場合用）
 # Variables に ADMIN_NEW_PASSWORD を設定してデプロイすると実行される。完了したらこのブロックと ADMIN_NEW_PASSWORD を削除すること。
-if [ -n "${ADMIN_NEW_PASSWORD}" ]; then
-    echo "🔐 Running admin password reset (ADMIN_NEW_PASSWORD is set)..."
-    php artisan admin:reset-password || {
-        echo "⚠️  Admin password reset failed, but continuing..."
-    }
-fi
+# if [ -n "${ADMIN_NEW_PASSWORD}" ]; then
+#     echo "🔐 Running admin password reset (ADMIN_NEW_PASSWORD is set)..."
+#     php artisan admin:reset-password || {
+#         echo "⚠️  Admin password reset failed, but continuing..."
+#     }
+# fi
 
 # メールテンプレートと通知設定のシーダー実行
 echo "📧 Running email templates seeder..."
 php artisan db:seed --class=EmailTemplatesSeeder --force || {
     echo "⚠️  Email templates seeder failed, but continuing..."
 }
+
+# 管理者設定キャッシュをウォーム（初回リクエストの遅延対策）
+echo "🔥 Warming admin settings cache..."
+php artisan admin:warm-settings-cache || true
 
 # 本番環境での最適化
 if [ "$APP_ENV" = "production" ]; then
