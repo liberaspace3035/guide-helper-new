@@ -637,7 +637,7 @@
             </div>
 
             <div class="form-group">
-                <label for="start_time">希望時間 <span class="required" aria-label="必須項目">*</span></label>
+                <label for="start_hour">希望時間 <span class="required" aria-label="必須項目">*</span></label>
                 <div class="time-input-group">
                     <div class="time-input-item">
                         <label class="time-label" for="start_hour">開始時刻</label>
