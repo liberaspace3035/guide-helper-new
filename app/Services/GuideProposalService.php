@@ -33,9 +33,12 @@ class GuideProposalService
         if ($guide->role !== 'guide' || !$guide->is_allowed) {
             throw new \Exception('ガイドとして承認されていません');
         }
-        $user = User::findOrFail($data['user_id']);
+        $user = User::with('userProfile')->findOrFail($data['user_id']);
         if ($user->role !== 'user' || !$user->is_allowed) {
             throw new \Exception('提案先の利用者が見つかりません');
+        }
+        if ($user->userProfile && $user->userProfile->accept_guide_proposals === false) {
+            throw new \Exception('この利用者はガイドの提案を受け取らない設定です');
         }
         $requestType = $data['request_type'] ?? 'outing';
         if (!in_array($requestType, ['outing', 'home'], true)) {
@@ -70,16 +73,125 @@ class GuideProposalService
     }
 
     /**
-     * ガイドが送った提案一覧
+     * ガイドが全利用者に一斉提案する（提案を受け取る設定の利用者のみ）
+     *
+     * @return array 作成された提案の件数とメッセージ
+     */
+    public function createForAll(int $guideId, array $data): array
+    {
+        $guide = User::findOrFail($guideId);
+        if ($guide->role !== 'guide' || !$guide->is_allowed) {
+            throw new \Exception('ガイドとして承認されていません');
+        }
+        $requestType = $data['request_type'] ?? 'outing';
+        if (!in_array($requestType, ['outing', 'home'], true)) {
+            throw new \Exception('request_type は outing または home を指定してください');
+        }
+
+        $userIds = User::where('role', 'user')
+            ->where('is_allowed', true)
+            ->where(function ($q) {
+                $q->whereDoesntHave('userProfile')
+                    ->orWhereHas('userProfile', fn ($q2) => $q2->where('accept_guide_proposals', true));
+            })
+            ->pluck('id');
+
+        if ($userIds->isEmpty()) {
+            throw new \Exception('提案を受け取る設定の利用者がいません');
+        }
+
+        $bulkGroupId = \Illuminate\Support\Str::uuid()->toString();
+        $created = 0;
+        foreach ($userIds as $userId) {
+            $model = GuideProposal::create([
+                'guide_id' => $guideId,
+                'bulk_group_id' => $bulkGroupId,
+                'user_id' => $userId,
+                'request_type' => $requestType,
+                'proposed_date' => $data['proposed_date'],
+                'start_time' => $data['start_time'] ?? null,
+                'end_time' => $data['end_time'] ?? null,
+                'service_content' => $data['service_content'] ?? null,
+                'message' => $data['message'] ?? null,
+                'prefecture' => $data['prefecture'] ?? null,
+                'destination_address' => $data['destination_address'] ?? null,
+                'meeting_place' => $data['meeting_place'] ?? null,
+                'status' => 'pending',
+            ]);
+            Notification::create([
+                'user_id' => $userId,
+                'type' => 'guide_proposal',
+                'title' => 'ガイドから支援の提案がありました',
+                'message' => $guide->name . ' さんから' . ($requestType === 'home' ? '自宅' : '外出') . '支援の提案があります。ダッシュボードでご確認ください。',
+                'related_id' => $model->id,
+            ]);
+            $created++;
+        }
+
+        return [
+            'created_count' => $created,
+            'message' => '全体に一斉提案を送信しました',
+        ];
+    }
+
+    /**
+     * ガイドが送った提案一覧（一斉提案は bulk_group_id で1件にまとめて返す）
      */
     public function listForGuide(int $guideId): array
     {
-        return GuideProposal::where('guide_id', $guideId)
-            ->with('user:id,name')
+        $proposals = GuideProposal::where('guide_id', $guideId)
+            ->with(['user:id,name', 'user.userProfile:id,user_id,show_name_in_proposals'])
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(fn ($p) => $this->formatProposal($p))
-            ->toArray();
+            ->get();
+
+        $bulkGroups = [];
+        $result = [];
+
+        foreach ($proposals as $p) {
+            if ($p->bulk_group_id !== null) {
+                if (!isset($bulkGroups[$p->bulk_group_id])) {
+                    $bulkGroups[$p->bulk_group_id] = [
+                        'count' => 0,
+                        'accepted' => 0,
+                        'rejected' => 0,
+                        'pending' => 0,
+                        'first' => $p,
+                    ];
+                }
+                $bulkGroups[$p->bulk_group_id]['count']++;
+                if ($p->status === 'accepted') {
+                    $bulkGroups[$p->bulk_group_id]['accepted']++;
+                } elseif ($p->status === 'rejected') {
+                    $bulkGroups[$p->bulk_group_id]['rejected']++;
+                } else {
+                    $bulkGroups[$p->bulk_group_id]['pending']++;
+                }
+                continue;
+            }
+            $result[] = $this->formatProposal($p);
+        }
+
+        foreach ($bulkGroups as $gid => $g) {
+            $first = $g['first'];
+            $typeLabel = $first->request_type === 'home' ? '自宅支援' : '外出支援';
+            $result[] = [
+                'id' => null,
+                'bulk_group_id' => $gid,
+                'is_bulk' => true,
+                'request_type' => $first->request_type,
+                'request_type_label' => $typeLabel,
+                'proposed_date' => $first->proposed_date?->format('Y-m-d'),
+                'total_count' => $g['count'],
+                'accepted_count' => $g['accepted'],
+                'rejected_count' => $g['rejected'],
+                'pending_count' => $g['pending'],
+                'status' => $g['pending'] > 0 ? 'pending' : ($g['accepted'] > 0 ? 'accepted' : 'rejected'),
+                'created_at' => $first->created_at?->toIso8601String() ?? $first->created_at?->format(\DateTime::ATOM),
+            ];
+        }
+
+        usort($result, fn ($a, $b) => strcmp($b['created_at'] ?? '', $a['created_at'] ?? ''));
+        return $result;
     }
 
     /**
@@ -193,26 +305,36 @@ class GuideProposalService
 
     /**
      * 提案先にできる利用者一覧（id, name のみ。ガイドが提案フォームで選択用）
+     * 提案を受け取る設定の利用者のみ。氏名表示設定に応じて name または「利用者」を返す。
      */
     public function listUsersForProposal(int $guideId): array
     {
         return User::where('role', 'user')
             ->where('is_allowed', true)
+            ->with('userProfile:id,user_id,accept_guide_proposals,show_name_in_proposals')
             ->orderBy('name')
             ->get(['id', 'name'])
-            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name])
+            ->filter(fn ($u) => !$u->userProfile || $u->userProfile->accept_guide_proposals !== false)
+            ->map(fn ($u) => [
+                'id' => $u->id,
+                'name' => ($u->userProfile && $u->userProfile->show_name_in_proposals) ? $u->name : '利用者',
+            ])
+            ->values()
             ->toArray();
     }
 
     private function formatProposal(GuideProposal $p): array
     {
         $typeLabel = $p->request_type === 'home' ? '自宅支援' : '外出支援';
+        $user = $p->user;
+        $showName = $user && $user->userProfile && $user->userProfile->show_name_in_proposals;
+        $userDisplay = $user ? ['id' => $user->id, 'name' => $showName ? $user->name : '利用者'] : null;
         return [
             'id' => $p->id,
             'guide_id' => $p->guide_id,
             'guide' => $p->guide ? ['id' => $p->guide->id, 'name' => $p->guide->name] : null,
             'user_id' => $p->user_id,
-            'user' => $p->user ? ['id' => $p->user->id, 'name' => $p->user->name] : null,
+            'user' => $userDisplay,
             'request_type' => $p->request_type,
             'request_type_label' => $typeLabel,
             'proposed_date' => $p->proposed_date?->format('Y-m-d'),

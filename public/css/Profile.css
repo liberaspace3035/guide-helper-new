@@ -50,6 +50,41 @@
   transition: background-color var(--transition-fast);
 }
 
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+  margin-top: 0.25rem;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap; /* 利用する・表示しないなどの文言を1行で表示 */
+}
+
+.proposal-preference-group fieldset {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  margin: 0;
+}
+
+.proposal-preference-group legend {
+  font-weight: 600;
+  padding: 0 0.5rem;
+}
+
+.form-help-text--note {
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
 .checkbox-label:hover {
   background-color: var(--surface-hover);
 }

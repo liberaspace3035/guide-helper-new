@@ -40,7 +40,7 @@ class GuideProposalController extends Controller
     }
 
     /**
-     * ガイド: 支援を提案する
+     * ガイド: 支援を提案する（個別: user_id 指定 / 全体向け: target_all 指定）
      */
     public function store(Request $request)
     {
@@ -48,19 +48,29 @@ class GuideProposalController extends Controller
         if ($user->role !== 'guide') {
             return response()->json(['error' => 'ガイドのみ利用できます'], 403);
         }
-        $request->validate([
-            'user_id' => 'required|integer|exists:users,id',
+        $targetAll = $request->boolean('target_all');
+        $rules = [
             'request_type' => 'required|in:outing,home',
             'proposed_date' => 'required|date',
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i',
             'service_content' => 'nullable|string|max:2000',
             'message' => 'nullable|string|max:1000',
-            'prefecture' => 'nullable|string|max:10',
+            'prefecture' => 'nullable|string|max:20',
             'destination_address' => 'nullable|string|max:500',
             'meeting_place' => 'nullable|string|max:500',
-        ]);
+        ];
+        if ($targetAll) {
+            $rules['target_all'] = 'required|boolean';
+        } else {
+            $rules['user_id'] = 'required|integer|exists:users,id';
+        }
+        $request->validate($rules);
         try {
+            if ($targetAll) {
+                $result = $this->proposalService->createForAll($user->id, $request->all());
+                return response()->json(['created_count' => $result['created_count'], 'message' => $result['message']]);
+            }
             $proposal = $this->proposalService->create($user->id, $request->all());
             return response()->json(['proposal' => $proposal, 'message' => '提案を送信しました']);
         } catch (\Exception $e) {

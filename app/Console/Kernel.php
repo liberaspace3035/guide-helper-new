@@ -12,8 +12,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // リマインドメールを毎日1回送信（APP_TIMEZONE の 09:00。日本なら Asia/Tokyo にすること）
-        $schedule->command('emails:send-reminders')->dailyAt('09:00');
+        // リマインドメールは毎分実行し、コマンド内で管理者が設定した送信時刻と一致するときのみ送信
+        $schedule->command('emails:send-reminders')->everyMinute();
     }
 
     /**

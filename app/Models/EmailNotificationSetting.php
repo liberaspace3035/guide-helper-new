@@ -15,6 +15,7 @@ class EmailNotificationSetting extends Model
         'notification_type',
         'is_enabled',
         'reminder_days',
+        'scheduled_time',
     ];
 
     protected $casts = [

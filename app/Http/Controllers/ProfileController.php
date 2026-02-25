@@ -41,6 +41,8 @@ class ProfileController extends Controller
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
             'introduction' => ($user->isUser() || $user->isGuide()) ? 'required|string|max:2000' : 'nullable|string',
+            'accept_guide_proposals' => 'nullable|boolean',
+            'show_name_in_proposals' => 'nullable|boolean',
             'available_areas' => 'nullable|array',
             'available_days' => 'nullable|array',
             'available_times' => 'nullable|array',
@@ -66,6 +68,12 @@ class ProfileController extends Controller
             $profile = $user->userProfile ?? new \App\Models\UserProfile(['user_id' => $user->id]);
             $profile->notes = $validated['notes'] ?? $profile->notes;
             $profile->introduction = $validated['introduction'] ?? $profile->introduction;
+            if (array_key_exists('accept_guide_proposals', $validated)) {
+                $profile->accept_guide_proposals = (bool) $validated['accept_guide_proposals'];
+            }
+            if (array_key_exists('show_name_in_proposals', $validated)) {
+                $profile->show_name_in_proposals = (bool) $validated['show_name_in_proposals'];
+            }
             $profile->save();
         } else if ($user->isGuide()) {
             $profile = $user->guideProfile ?? new \App\Models\GuideProfile(['user_id' => $user->id]);

@@ -10,6 +10,7 @@ class GuideProposal extends Model
 
     protected $fillable = [
         'guide_id',
+        'bulk_group_id',
         'user_id',
         'request_type',
         'proposed_date',

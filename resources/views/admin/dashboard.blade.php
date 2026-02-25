@@ -1265,6 +1265,17 @@
                                     </div>
                                 </div>
                                 <div class="setting-card-body">
+                                    <div class="form-group">
+                                        <label class="form-label">送信時刻（スケジュール送信時）</label>
+                                        <input
+                                            type="time"
+                                            :value="setting.scheduled_time || ''"
+                                            @change="updateEmailSetting(setting.id, 'scheduled_time', $event.target.value ? $event.target.value : null)"
+                                            class="form-control"
+                                            style="width: 120px;"
+                                        />
+                                        <small class="form-text">リマインド等のスケジュール送信を行う時刻（HH:MM）。空欄の場合は 09:00 として実行されます。</small>
+                                    </div>
                                     <template x-if="setting.notification_type === 'reminder'">
                                         <div class="form-group">
                                             <label class="form-label">リマインド日数</label>
@@ -3113,7 +3124,8 @@ function adminDashboard() {
                     method: 'PUT',
                     body: JSON.stringify({
                         is_enabled: setting.is_enabled,
-                        reminder_days: setting.reminder_days || null
+                        reminder_days: setting.reminder_days || null,
+                        scheduled_time: setting.scheduled_time || null
                     })
                 });
                 alert('設定を更新しました');

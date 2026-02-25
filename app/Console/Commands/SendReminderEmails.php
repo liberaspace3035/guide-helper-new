@@ -27,21 +27,29 @@ class SendReminderEmails extends Command
 
     public function handle()
     {
-        // リマインド通知が有効かチェック
+        // 送信時刻のチェック（リマインドの scheduled_time に合わせてコマンド全体を実行）
         $reminderSetting = EmailNotificationSetting::where('notification_type', 'reminder')->first();
-        if (!$reminderSetting || !$reminderSetting->is_enabled) {
-            $this->info('リマインド通知は無効です');
+        $scheduledTime = $reminderSetting && $reminderSetting->scheduled_time
+            ? $reminderSetting->scheduled_time
+            : '09:00';
+        if (\Carbon\Carbon::now()->format('H:i') !== $scheduledTime) {
             return 0;
         }
 
-        $reminderDays = $reminderSetting->reminder_days ?? 3; // デフォルト3日
+        // リマインド通知が有効かチェック（依頼リマインド・報告書リマインドの送信可否）
+        if (!$reminderSetting || !$reminderSetting->is_enabled) {
+            $this->info('リマインド通知は無効です');
+            // 無効でも当日/前日リマインド・お知らせリマインドは送信するため続行
+        }
+
+        $reminderDays = ($reminderSetting && $reminderSetting->is_enabled) ? ($reminderSetting->reminder_days ?? 3) : 0;
         $targetDate = Carbon::now()->subDays($reminderDays);
 
-        // 承認待ちの依頼を取得
-        $pendingRequests = Request::where('status', 'pending')
+        // 承認待ちの依頼を取得（リマインド有効時のみ）
+        $pendingRequests = $reminderDays > 0 ? Request::where('status', 'pending')
             ->where('created_at', '<=', $targetDate)
             ->with('user')
-            ->get();
+            ->get() : collect();
 
         $sentCount = 0;
         foreach ($pendingRequests as $request) {
@@ -53,8 +61,8 @@ class SendReminderEmails extends Command
             }
         }
 
-        // 報告書未提出リマインド（ガイド向け）
-        $matchingsWithoutReport = Matching::with(['guide', 'request'])
+        // 報告書未提出リマインド（ガイド向け・リマインド有効時のみ）
+        $matchingsWithoutReport = $reminderDays > 0 ? Matching::with(['guide', 'request'])
             ->whereNull('report_completed_at')
             ->where('status', '!=', 'cancelled')
             ->where('matched_at', '<=', $targetDate)
@@ -64,7 +72,7 @@ class SendReminderEmails extends Command
                         $r->whereIn('status', ['draft', 'revision_requested']);
                     });
             })
-            ->get();
+            ->get() : collect();
 
         foreach ($matchingsWithoutReport as $matching) {
             if ($matching->guide) {

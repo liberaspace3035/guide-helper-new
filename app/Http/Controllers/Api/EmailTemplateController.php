@@ -80,12 +80,16 @@ class EmailTemplateController extends Controller
 
     /**
      * 通知設定一覧取得（本番の読み込み遅延対策でキャッシュ利用）
+     * パスワードリセットは管理者画面では不要なため一覧から除外する
      */
     public function settings()
     {
         $cacheKey = 'admin_email_notification_settings';
         $settings = Cache::remember($cacheKey, 300, function () {
-            return EmailNotificationSetting::orderBy('notification_type')->get();
+            return EmailNotificationSetting::orderBy('notification_type')
+                ->get()
+                ->filter(fn ($s) => $s->notification_type !== 'password_reset')
+                ->values();
         });
         return response()->json(['settings' => $settings]);
     }
@@ -98,12 +102,16 @@ class EmailTemplateController extends Controller
         $request->validate([
             'is_enabled' => 'required|boolean',
             'reminder_days' => 'nullable|integer|min:1',
+            'scheduled_time' => 'nullable|string|regex:/^\d{2}:\d{2}$/',
+        ], [
+            'scheduled_time.regex' => '送信時刻は HH:MM 形式で入力してください（例: 09:00）',
         ]);
 
         $setting = EmailNotificationSetting::findOrFail($id);
         $setting->update([
             'is_enabled' => $request->input('is_enabled'),
             'reminder_days' => $request->input('reminder_days'),
+            'scheduled_time' => $request->input('scheduled_time') ?: null,
         ]);
 
         Cache::forget('admin_email_notification_settings');

@@ -122,6 +122,41 @@
                 >{{ $user->userProfile->introduction ?? '' }}</textarea>
                 <small class="form-help-text">依頼を作成するには、ここへの入力が必要です。</small>
             </div>
+
+            <div class="form-group proposal-preference-group">
+                <fieldset aria-describedby="proposal-preference-desc">
+                    <legend>ガイドの支援提案機能</legend>
+                    <p id="proposal-preference-desc" class="form-help-text">ガイドから支援内容の提案を受け取るかどうか、および提案画面で氏名を表示するかを選択してください。</p>
+                    <div class="form-group">
+                        <label>提案機能を利用する</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="accept_guide_proposals" value="1" x-model="formData.accept_guide_proposals" {{ ($user->userProfile->accept_guide_proposals ?? true) ? 'checked' : '' }} />
+                                利用する
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="accept_guide_proposals" value="0" x-model="formData.accept_guide_proposals" {{ ($user->userProfile->accept_guide_proposals ?? true) ? '' : 'checked' }} />
+                                利用しない
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>ガイドの提案画面で氏名を表示する <span class="required">*</span></label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="show_name_in_proposals" value="1" x-model="formData.show_name_in_proposals" {{ ($user->userProfile->show_name_in_proposals ?? false) ? 'checked' : '' }} required aria-required="true" />
+                                表示する
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="show_name_in_proposals" value="0" x-model="formData.show_name_in_proposals" {{ ($user->userProfile->show_name_in_proposals ?? false) ? '' : 'checked' }} />
+                                表示しない
+                            </label>
+                        </div>
+                        <p class="form-help-text form-help-text--note" x-show="formData.show_name_in_proposals == 1">選択時：ガイドが提案を行う画面において、利用者の氏名が表示されます。</p>
+                        <p class="form-help-text form-help-text--note" x-show="formData.show_name_in_proposals == 0 || formData.show_name_in_proposals === false">選択時：氏名は表示されません。個別の提案に限らず、<strong>全体向けの一斉提案も通知でお知らせします</strong>。</p>
+                    </div>
+                </fieldset>
+            </div>
         @endif
 
         @if($user->isGuide())
@@ -228,9 +263,7 @@
 </div>
 @endsection
 
-@push('styles')
-<link rel="stylesheet" href="{{ asset('css/Profile.css') }}">
-@endpush
+{{-- スタイルは layouts/app の @vite(['resources/css/app.scss']) で SCSS からビルドされたものを読み込み --}}
 
 @push('scripts')
 <script>
@@ -242,6 +275,8 @@ function profileForm() {
             address: '{{ $user->address ?? '' }}',
             notes: '{{ $user->userProfile->notes ?? '' }}',
             introduction: '{{ $user->userProfile->introduction ?? ($user->guideProfile->introduction ?? '') }}',
+            accept_guide_proposals: {{ ($user->userProfile->accept_guide_proposals ?? true) ? 'true' : 'false' }},
+            show_name_in_proposals: {{ ($user->userProfile->show_name_in_proposals ?? false) ? 'true' : 'false' }},
             available_areas: @json($user->guideProfile ? ($user->guideProfile->available_areas ?? []) : []),
             available_days: @json($user->guideProfile ? ($user->guideProfile->available_days ?? []) : []),
             available_times: @json($user->guideProfile ? ($user->guideProfile->available_times ?? []) : []),

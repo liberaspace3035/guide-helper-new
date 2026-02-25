@@ -221,6 +221,58 @@
   font-size: 13px;
 }
 
+/* 支援を提案するセクション */
+.proposal-section {
+  margin-bottom: var(--spacing-2xl);
+}
+.proposal-section-desc {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: var(--spacing-sm);
+}
+.proposal-section-note {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+}
+.proposal-toggle-btn {
+  margin-bottom: var(--spacing-md);
+}
+/* フィールド名ラベルのみ block（ラジオの .radio-label は .radio-group 内のため対象外） */
+.proposal-form-wrap .form-group > label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+.proposal-form-wrap select,
+.proposal-form-wrap input[type="text"],
+.proposal-form-wrap input[type="date"],
+.proposal-form-wrap input[type="time"],
+.proposal-form-wrap textarea {
+  width: 100%;
+  max-width: 400px;
+}
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+  margin-top: 0.25rem;
+}
+.radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.radio-label input[type="radio"] {
+  flex-shrink: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 768px) {
   .requests-container h1 {

@@ -11,6 +11,7 @@
     <section class="proposal-section">
         <h2>支援を提案する</h2>
         <p class="proposal-section-desc">利用者に外出支援・自宅支援を提案できます。承諾されるとガイドが確定します。</p>
+        <p class="proposal-section-note">提案先で「氏名を表示する」を選択した利用者には氏名が表示され、「表示しない」を選択した利用者には「利用者」と表示されます。全体向けの一斉提案も行えます。</p>
         <button type="button" @click="showProposalForm = !showProposalForm" class="btn-primary proposal-toggle-btn">
             <span x-text="showProposalForm ? 'フォームを閉じる' : '支援を提案する'"></span>
         </button>
@@ -18,20 +19,100 @@
             <div class="proposal-form-column" :class="{ 'proposal-form-column--full': myProposals.length === 0 }">
                 <form x-show="showProposalForm" @submit.prevent="submitProposal()" class="proposal-form-wrap" x-transition>
                     <div class="form-group" style="margin-bottom: 0.75rem;">
-                        <label for="proposal-user">提案先の利用者 *</label>
-                        <select id="proposal-user" x-model="proposalForm.user_id" required>
-                            <option value="">選択してください</option>
-                            <template x-for="u in proposalUsers" :key="u.id">
-                                <option :value="u.id" x-text="u.name"></option>
-                            </template>
+                        <label>提案先 *</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="proposal_target" value="individual" x-model="proposalForm.proposal_target" />
+                                個別に提案する
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="proposal_target" value="all" x-model="proposalForm.proposal_target" />
+                                全体に一斉提案する
+                            </label>
+                        </div>
+                    </div>
+                    <template x-if="proposalForm.proposal_target === 'individual'">
+                        <div class="form-group" style="margin-bottom: 0.75rem;">
+                            <label for="proposal-user">提案先の利用者 *</label>
+                            <select id="proposal-user" x-model="proposalForm.user_id" :required="proposalForm.proposal_target === 'individual'">
+                                <option value="">選択してください</option>
+                                <template x-for="u in proposalUsers" :key="u.id">
+                                    <option :value="u.id" x-text="u.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </template>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label>依頼タイプ *</label>
+                        <select x-model="proposalForm.request_type" required>
+                            <option value="outing">外出</option>
+                            <option value="home">自宅</option>
                         </select>
                     </div>
                     <div class="form-group" style="margin-bottom: 0.75rem;">
-                        <label>支援種別 *</label>
-                        <select x-model="proposalForm.request_type" required>
-                            <option value="outing">外出支援</option>
-                            <option value="home">自宅支援</option>
+                        <label for="proposal-prefecture">都道府県</label>
+                        <select id="proposal-prefecture" x-model="proposalForm.prefecture">
+                            <option value="">選択してください</option>
+                            <option value="北海道">北海道</option>
+                            <option value="青森県">青森県</option>
+                            <option value="岩手県">岩手県</option>
+                            <option value="宮城県">宮城県</option>
+                            <option value="秋田県">秋田県</option>
+                            <option value="山形県">山形県</option>
+                            <option value="福島県">福島県</option>
+                            <option value="茨城県">茨城県</option>
+                            <option value="栃木県">栃木県</option>
+                            <option value="群馬県">群馬県</option>
+                            <option value="埼玉県">埼玉県</option>
+                            <option value="千葉県">千葉県</option>
+                            <option value="東京都">東京都</option>
+                            <option value="神奈川県">神奈川県</option>
+                            <option value="新潟県">新潟県</option>
+                            <option value="富山県">富山県</option>
+                            <option value="石川県">石川県</option>
+                            <option value="福井県">福井県</option>
+                            <option value="山梨県">山梨県</option>
+                            <option value="長野県">長野県</option>
+                            <option value="岐阜県">岐阜県</option>
+                            <option value="静岡県">静岡県</option>
+                            <option value="愛知県">愛知県</option>
+                            <option value="三重県">三重県</option>
+                            <option value="滋賀県">滋賀県</option>
+                            <option value="京都府">京都府</option>
+                            <option value="大阪府">大阪府</option>
+                            <option value="兵庫県">兵庫県</option>
+                            <option value="奈良県">奈良県</option>
+                            <option value="和歌山県">和歌山県</option>
+                            <option value="鳥取県">鳥取県</option>
+                            <option value="島根県">島根県</option>
+                            <option value="岡山県">岡山県</option>
+                            <option value="広島県">広島県</option>
+                            <option value="山口県">山口県</option>
+                            <option value="徳島県">徳島県</option>
+                            <option value="香川県">香川県</option>
+                            <option value="愛媛県">愛媛県</option>
+                            <option value="高知県">高知県</option>
+                            <option value="福岡県">福岡県</option>
+                            <option value="佐賀県">佐賀県</option>
+                            <option value="長崎県">長崎県</option>
+                            <option value="熊本県">熊本県</option>
+                            <option value="大分県">大分県</option>
+                            <option value="宮崎県">宮崎県</option>
+                            <option value="鹿児島県">鹿児島県</option>
+                            <option value="沖縄県">沖縄県</option>
                         </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="proposal-destination">市区町村・番地又は目的地の名称</label>
+                        <input type="text" id="proposal-destination" x-model="proposalForm.destination_address" placeholder="例: 港区青山１－１－１又は代々木公園など" />
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="proposal-meeting" x-text="proposalForm.request_type === 'outing' ? '待ち合わせ場所' : '集合場所'"></label>
+                        <input type="text" id="proposal-meeting" x-model="proposalForm.meeting_place" :placeholder="proposalForm.request_type === 'outing' ? '例: 渋谷駅ハチ公前' : '例: 玄関前'" />
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="proposal-content">サービス内容</label>
+                        <textarea id="proposal-content" rows="3" x-model="proposalForm.service_content" placeholder="例: 買い物同行・代筆など"></textarea>
                     </div>
                     <div class="form-group" style="margin-bottom: 0.75rem;">
                         <label for="proposal-date">希望日 *</label>
@@ -48,10 +129,6 @@
                         </div>
                     </div>
                     <div class="form-group" style="margin-bottom: 0.75rem;">
-                        <label for="proposal-content">支援内容（任意）</label>
-                        <textarea id="proposal-content" rows="2" x-model="proposalForm.service_content" placeholder="例：買い物同行"></textarea>
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0.75rem;">
                         <label for="proposal-message">利用者へのメッセージ（任意）</label>
                         <textarea id="proposal-message" rows="2" x-model="proposalForm.message" placeholder="一言メッセージ"></textarea>
                     </div>
@@ -63,15 +140,55 @@
             </div>
             <template x-if="myProposals.length > 0">
                 <div class="proposal-my-list" :class="{ 'proposal-my-list--full': !showProposalForm }">
-                    <h3>送った提案</h3>
-                    <ul>
-                        <template x-for="p in myProposals" :key="p.id">
-                            <li>
-                                <span x-text="(p.user?.name || '') + ' へ ' + (p.request_type_label || '') + ' · ' + (p.proposed_date || '')"></span>
-                                <span class="status-badge" :class="p.status === 'accepted' ? 'status-matched' : p.status === 'rejected' ? 'status-cancelled' : ''" x-text="p.status === 'pending' ? '待機中' : p.status === 'accepted' ? '承諾済み' : '辞退'"></span>
-                            </li>
+                    <h3 class="proposal-my-list__title">送った提案 <span class="proposal-my-list__hint" x-show="myProposals.length > 4" x-cloak>（一覧はスクロールで確認できます）</span></h3>
+                    <div class="proposal-sent-cards">
+                        <template x-for="p in myProposals" :key="p.bulk_group_id || p.id || ('proposal-' + $index)">
+                            <article class="proposal-sent-card" :class="{ 'proposal-sent-card--bulk': p.is_bulk }">
+                                <template x-if="p.is_bulk">
+                                    <div class="proposal-sent-card__body">
+                                        <p class="proposal-sent-card__type" x-text="'全体に一斉提案'"></p>
+                                        <dl class="proposal-sent-card__meta">
+                                            <div class="proposal-sent-card__meta-row">
+                                                <dt>希望日</dt>
+                                                <dd x-text="p.proposed_date || '—'"></dd>
+                                            </div>
+                                            <div class="proposal-sent-card__meta-row">
+                                                <dt>種別</dt>
+                                                <dd x-text="p.request_type_label || '—'"></dd>
+                                            </div>
+                                            <div class="proposal-sent-card__meta-row">
+                                                <dt>送付先</dt>
+                                                <dd x-text="(p.total_count || 0) + '件の利用者'"></dd>
+                                            </div>
+                                        </dl>
+                                        <div class="proposal-sent-card__bulk-stats">
+                                            <span class="proposal-sent-card__stat proposal-sent-card__stat--accepted" x-text="'承諾 ' + (p.accepted_count || 0)"></span>
+                                            <span class="proposal-sent-card__stat proposal-sent-card__stat--rejected" x-text="'辞退 ' + (p.rejected_count || 0)"></span>
+                                            <span class="proposal-sent-card__stat proposal-sent-card__stat--pending" x-text="'待機 ' + (p.pending_count || 0)"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!p.is_bulk">
+                                    <div class="proposal-sent-card__body">
+                                        <p class="proposal-sent-card__type" x-text="p.request_type_label || '—'"></p>
+                                        <dl class="proposal-sent-card__meta">
+                                            <div class="proposal-sent-card__meta-row">
+                                                <dt>提案先</dt>
+                                                <dd x-text="p.user?.name || '—'"></dd>
+                                            </div>
+                                            <div class="proposal-sent-card__meta-row">
+                                                <dt>希望日</dt>
+                                                <dd x-text="p.proposed_date || '—'"></dd>
+                                            </div>
+                                        </dl>
+                                        <p class="proposal-sent-card__status">
+                                            <span class="status-badge" :class="p.status === 'accepted' ? 'status-matched' : p.status === 'rejected' ? 'status-cancelled' : 'status-pending'" x-text="p.status === 'pending' ? '待機中' : p.status === 'accepted' ? '承諾済み' : '辞退'"></span>
+                                        </p>
+                                    </div>
+                                </template>
+                            </article>
                         </template>
-                    </ul>
+                    </div>
                 </div>
             </template>
         </div>
@@ -157,9 +274,7 @@
 </div>
 @endsection
 
-@push('styles')
-<link rel="stylesheet" href="{{ asset('css/Requests.css') }}">
-@endpush
+{{-- スタイルは layouts/app の @vite(['resources/css/app.scss']) で SCSS からビルドされたものを読み込み --}}
 
 @push('scripts')
 <script>
@@ -171,7 +286,19 @@ function guideRequestsData() {
         proposalUsers: [],
         myProposals: [],
         showProposalForm: false,
-        proposalForm: { user_id: '', request_type: 'outing', proposed_date: '', start_time: '', end_time: '', service_content: '', message: '' },
+        proposalForm: {
+            proposal_target: 'individual',
+            user_id: '',
+            request_type: 'outing',
+            prefecture: '',
+            destination_address: '',
+            meeting_place: '',
+            proposed_date: '',
+            start_time: '',
+            end_time: '',
+            service_content: '',
+            message: ''
+        },
         proposalSubmitting: false,
         init() {
             this.fetchRequests();
@@ -197,23 +324,56 @@ function guideRequestsData() {
             } catch (e) { console.error('提案一覧取得エラー:', e); }
         },
         async submitProposal() {
-            if (!this.proposalForm.user_id || !this.proposalForm.proposed_date) {
-                alert('提案先と希望日を入力してください');
+            const isIndividual = this.proposalForm.proposal_target === 'individual';
+            if (isIndividual && !this.proposalForm.user_id) {
+                alert('提案先の利用者を選択してください');
+                return;
+            }
+            if (!this.proposalForm.proposed_date) {
+                alert('希望日を入力してください');
                 return;
             }
             this.proposalSubmitting = true;
             try {
+                const payload = {
+                    request_type: this.proposalForm.request_type,
+                    proposed_date: this.proposalForm.proposed_date,
+                    start_time: this.proposalForm.start_time || null,
+                    end_time: this.proposalForm.end_time || null,
+                    service_content: this.proposalForm.service_content || null,
+                    message: this.proposalForm.message || null,
+                    prefecture: this.proposalForm.prefecture || null,
+                    destination_address: this.proposalForm.destination_address || null,
+                    meeting_place: this.proposalForm.meeting_place || null,
+                };
+                if (isIndividual) {
+                    payload.user_id = parseInt(this.proposalForm.user_id, 10);
+                } else {
+                    payload.target_all = true;
+                }
                 const res = await fetch('/api/guide/proposals', {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '' },
-                    body: JSON.stringify(this.proposalForm)
+                    body: JSON.stringify(payload)
                 });
                 if (window.handleApiResponse) await window.handleApiResponse(res);
                 const data = await res.json().catch(() => ({}));
                 if (res.ok) {
                     alert(data.message || '提案を送信しました');
-                    this.proposalForm = { user_id: '', request_type: 'outing', proposed_date: '', start_time: '', end_time: '', service_content: '', message: '' };
+                    this.proposalForm = {
+                        proposal_target: 'individual',
+                        user_id: '',
+                        request_type: 'outing',
+                        prefecture: '',
+                        destination_address: '',
+                        meeting_place: '',
+                        proposed_date: '',
+                        start_time: '',
+                        end_time: '',
+                        service_content: '',
+                        message: ''
+                    };
                     this.showProposalForm = false;
                     this.fetchMyProposals();
                 } else {
