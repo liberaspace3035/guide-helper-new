@@ -101,6 +101,9 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/users/{id}/reject', [\App\Http\Controllers\Api\AdminController::class, 'rejectUser']);
         Route::put('/users/{id}/monthly-limit', [\App\Http\Controllers\Api\AdminController::class, 'setUserMonthlyLimit']);
         Route::get('/users/{id}/monthly-limits', [\App\Http\Controllers\Api\AdminController::class, 'getUserMonthlyLimits']);
+        Route::get('/users/{id}/monthly-limit-rules', [\App\Http\Controllers\Api\AdminController::class, 'getUserMonthlyLimitRules']);
+        Route::post('/users/{id}/monthly-limit-rules', [\App\Http\Controllers\Api\AdminController::class, 'storeUserMonthlyLimitRule']);
+        Route::delete('/users/{id}/monthly-limit-rules', [\App\Http\Controllers\Api\AdminController::class, 'deleteUserMonthlyLimitRuleByEffectiveFrom']);
         Route::put('/guides/{id}/approve', [\App\Http\Controllers\Api\AdminController::class, 'approveGuide']);
         Route::put('/guides/{id}/reject', [\App\Http\Controllers\Api\AdminController::class, 'rejectGuide']);
         Route::get('/bulk-import/template', [\App\Http\Controllers\Api\AdminController::class, 'getBulkImportCsvTemplate']);

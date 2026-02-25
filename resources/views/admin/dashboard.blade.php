@@ -651,6 +651,13 @@
                                                 >
                                                     詳細
                                                 </button>
+                                                <button
+                                                    @click="openUserProfileModal(user.id, true)"
+                                                    class="btn-edit-user"
+                                                    aria-label="ユーザー情報を編集"
+                                                >
+                                                    編集
+                                                </button>
                                                 <template x-if="!user.is_allowed">
                                                     <button
                                                         @click="approveUser(user.id)"
@@ -854,9 +861,14 @@
                         </a>
                     </template>
                 </div>
-                <p class="section-description" style="margin-bottom: 1rem; color: var(--text-muted, #666); font-size: 0.9rem;">
-                    照会時は下表で各利用者の残時間をご確認いただくか、上記ボタンでCSVをダウンロードしてご利用ください。
-                </p>
+                <div class="limits-help-box" style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: var(--surface-hover, #f1f5f9); border-radius: 8px; font-size: 0.9rem; color: var(--text-secondary, #475569);">
+                    <p style="margin: 0 0 0.5rem 0;"><strong>限度の種類</strong></p>
+                    <ul style="margin: 0; padding-left: 1.25rem;">
+                        <li><strong>月別設定</strong>（下表の「年月」と「限度」を入力して「設定」）：その月だけ有効な限度です。</li>
+                        <li><strong>継続ルール</strong>（各行の「継続」ボタン）：○年○月から毎月、この限度をデフォルトで適用します。月別設定をしていない月は継続ルールが使われます。</li>
+                    </ul>
+                    <p style="margin: 0.5rem 0 0 0;">照会時は下表で各利用者の残時間をご確認いただくか、上記ボタンでCSVをダウンロードしてご利用ください。</p>
+                </div>
                 <template x-if="users.length === 0">
                     <p>ユーザーは登録されていません</p>
                 </template>
@@ -952,6 +964,13 @@
                                                 </button>
                                                 <button
                                                     class="btn-detail-user"
+                                                    @click="openLimitRulesModal(user.id)"
+                                                    aria-label="継続ルールを設定"
+                                                >
+                                                    継続
+                                                </button>
+                                                <button
+                                                    class="btn-detail-user"
                                                     @click="loadUserMonthlyLimits(user.id)"
                                                 >
                                                     履歴
@@ -965,6 +984,70 @@
                     </div>
                 </template>
             </section>
+        </template>
+
+        {{-- 継続ルールモーダル（body にテレポートで画面全体トーンダウン） --}}
+        <template x-teleport="body">
+        <div
+            class="modal-backdrop"
+            x-show="showLimitRulesModal"
+            x-cloak
+            @click.self="closeLimitRulesModal()"
+            @keydown.escape.window="closeLimitRulesModal()"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="limit-rules-modal-title"
+        >
+            <div class="modal-content modal-content-sm">
+                <div class="modal-header">
+                    <h2 id="limit-rules-modal-title">継続ルール（<span x-text="limitRulesUserName || '—'"></span>）</h2>
+                    <button type="button" class="modal-close-btn" @click="closeLimitRulesModal()" aria-label="閉じる">&times;</button>
+                </div>
+                <p class="section-description" style="margin: 0 0 1rem 0; font-size: 0.875rem; color: var(--text-muted, #666);">
+                    設定した「開始月」以降、月別設定のない月はここで指定した限度が適用されます。
+                </p>
+                <template x-if="limitRulesUserId">
+                    <div>
+                        <div class="limit-rules-list" style="margin-bottom: 1rem;">
+                            <template x-if="(userLimitRules[limitRulesUserId] || []).length === 0">
+                                <p style="color: var(--text-muted); font-size: 0.9rem;" x-text="limitRulesLoading ? '読み込み中...' : '継続ルールはありません'"></p>
+                            </template>
+                            <template x-if="(userLimitRules[limitRulesUserId] || []).length > 0 && !limitRulesLoading">
+                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                    <template x-for="rule in (userLimitRules[limitRulesUserId] || [])" :key="rule.effective_from">
+                                        <li style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+                                            <span x-text="rule.effective_from + ' から 外出 ' + rule.limit_hours_outing + 'h / 自宅 ' + rule.limit_hours_home + 'h'"></span>
+                                            <button type="button" class="btn-secondary btn-sm" @click="deleteUserLimitRule(limitRulesUserId, rule.effective_from)">削除</button>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </template>
+                        </div>
+                        <div class="limit-rules-add" style="padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+                            <p style="margin: 0 0 0.5rem 0; font-weight: 600;">新規追加</p>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end;">
+                                <label style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <span>開始</span>
+                                    <input type="number" x-model="newRuleYear" min="2000" max="2100" style="width: 6rem;" placeholder="年" aria-label="開始年">
+                                    <span>年</span>
+                                    <input type="number" x-model="newRuleMonth" min="1" max="12" style="width: 3.5rem;" placeholder="月" aria-label="開始月">
+                                    <span>月</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <span>外出</span>
+                                    <input type="number" x-model="newRuleOuting" step="0.1" min="0" style="width: 4rem;"> h
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <span>自宅</span>
+                                    <input type="number" x-model="newRuleHome" step="0.1" min="0" style="width: 4rem;"> h
+                                </label>
+                                <button type="button" class="btn-primary btn-sm" @click="addUserLimitRule(limitRulesUserId)" :disabled="limitRulesSaving">追加</button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
         </template>
 
         <!-- CSV一括登録タブ -->
@@ -1383,7 +1466,8 @@
             </section>
         </template>
     </div>
-    <!-- 報告書詳細モーダル -->
+    <!-- 報告書詳細モーダル（body にテレポートで画面全体トーンダウン） -->
+    <template x-teleport="body">
     <div
         class="modal-backdrop"
         x-show="showReportModal"
@@ -1460,7 +1544,9 @@
             </template>
         </div>
     </div>
-    <!-- ユーザープロフィール詳細モーダル -->
+    </template>
+    <!-- ユーザープロフィール詳細モーダル（body にテレポートで画面全体トーンダウン） -->
+    <template x-teleport="body">
     <div
         class="modal-backdrop"
         x-show="showUserProfileModal"
@@ -1474,7 +1560,17 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="user-profile-modal-title">ユーザープロフィール</h2>
-                <div>
+                <div class="modal-header-actions">
+                    <template x-if="selectedUserProfile && !editingUserProfile">
+                        <button
+                            type="button"
+                            class="btn-primary btn-sm"
+                            @click="editUserProfile(selectedUserProfile.id)"
+                            aria-label="氏名・電話番号などの情報を編集"
+                        >
+                            編集
+                        </button>
+                    </template>
                     <button
                         type="button"
                         class="btn-secondary btn-sm"
@@ -1626,28 +1722,30 @@
                                         ></textarea>
                                     </template>
                                 </div>
+                                <div class="modal-field modal-grid-full" x-show="selectedUserProfile.admin_comment !== undefined || editingUserProfile">
+                                    <strong>管理者メモ</strong>
+                                    <template x-if="!editingUserProfile">
+                                        <div class="modal-display-box" style="min-height: auto;">
+                                            <span x-text="selectedUserProfile.admin_comment || '—'"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="editingUserProfile">
+                                        <textarea
+                                            class="modal-textarea"
+                                            rows="3"
+                                            placeholder="管理者用のメモ（ユーザーには表示されません）"
+                                            x-model="editingUserProfileData.admin_comment"
+                                            aria-label="管理者メモ"
+                                        ></textarea>
+                                    </template>
+                                </div>
                             </div>
                         </div>
                     </div>
                     </div>
                 </div>
             </template>
-            
-            <!-- 編集ボタン（閲覧モード時） - templateの外に配置 -->
-            <div 
-                class="modal-edit-button" 
-                x-show="selectedUserProfile && !editingUserProfile"
-                x-init="console.log('編集ボタン要素初期化（ユーザー） - editingUserProfile:', editingUserProfile, 'selectedUserProfile:', selectedUserProfile)"
-            >
-                <button
-                    type="button"
-                    class="btn-primary"
-                    @click="console.log('編集ボタンクリック - editingUserProfile:', editingUserProfile, 'selectedUserProfile:', selectedUserProfile); editUserProfile(selectedUserProfile.id)"
-                    aria-label="プロフィールを編集"
-                >
-                    編集
-                </button>
-            </div>
+
             <!-- 編集モード時の保存・キャンセルボタン -->
             <div class="modal-button-group" x-show="selectedUserProfile && editingUserProfile">
                 <button
@@ -1671,7 +1769,9 @@
             </div>
         </div>
     </div>
-    <!-- ガイドプロフィール詳細モーダル -->
+    </template>
+    <!-- ガイドプロフィール詳細モーダル（body にテレポートで画面全体トーンダウン） -->
+    <template x-teleport="body">
     <div
         class="modal-backdrop"
         x-show="showGuideProfileModal"
@@ -1948,6 +2048,7 @@
             </div>
         </div>
     </div>
+    </template>
     </div>
 </div>
 @endsection
@@ -2010,6 +2111,16 @@ function adminDashboard() {
         operationLogs: [],
         userMonthlyLimits: {},
         userCurrentLimits: {}, // 現在の月の限度時間情報を保持
+        userLimitRules: {}, // 継続ルール userId => [{ effective_from, limit_hours_outing, limit_hours_home }]
+        showLimitRulesModal: false,
+        limitRulesUserId: null,
+        limitRulesUserName: '',
+        limitRulesLoading: false,
+        limitRulesSaving: false,
+        newRuleYear: new Date().getFullYear(),
+        newRuleMonth: new Date().getMonth() + 1,
+        newRuleOuting: 0,
+        newRuleHome: 0,
         notifications: @json($notifications ?? []),
         bulkImportFile: null,
         bulkImportFileSnapshot: null,
@@ -2749,7 +2860,7 @@ function adminDashboard() {
             }
         },
 
-        async openUserProfileModal(userId) {
+        async openUserProfileModal(userId, openInEditMode = false) {
             try {
                 const user = this.users.find(u => u.id === userId);
                 if (!user) {
@@ -2759,6 +2870,9 @@ function adminDashboard() {
                 this.selectedUserProfile = { ...user };
                 this.showUserProfileModal = true;
                 this.editingUserProfile = false;
+                if (openInEditMode) {
+                    this.$nextTick(() => this.editUserProfile(userId));
+                }
             } catch (error) {
                 console.error('ユーザープロフィール取得エラー:', error);
                 alert('ユーザープロフィールの取得に失敗しました');
@@ -2785,6 +2899,7 @@ function adminDashboard() {
                 notes: this.selectedUserProfile.notes || '',
                 introduction: this.selectedUserProfile.introduction || '',
                 recipient_number: this.selectedUserProfile.recipient_number || '',
+                admin_comment: this.selectedUserProfile.admin_comment || '',
             };
         },
 
@@ -3203,6 +3318,75 @@ function adminDashboard() {
             } catch (error) {
                 console.error('限度時間履歴取得エラー:', error);
                 alert('限度時間履歴の取得に失敗しました');
+            }
+        },
+
+        openLimitRulesModal(userId) {
+            const user = this.users.find(u => u.id === userId);
+            this.limitRulesUserId = userId;
+            this.limitRulesUserName = user ? user.name : '—';
+            this.showLimitRulesModal = true;
+            this.newRuleYear = new Date().getFullYear();
+            this.newRuleMonth = new Date().getMonth() + 1;
+            this.newRuleOuting = 0;
+            this.newRuleHome = 0;
+            this.fetchUserLimitRules(userId);
+        },
+        closeLimitRulesModal() {
+            this.showLimitRulesModal = false;
+            this.limitRulesUserId = null;
+            this.limitRulesUserName = '';
+        },
+        async fetchUserLimitRules(userId) {
+            this.limitRulesLoading = true;
+            try {
+                const data = await this.apiFetch(`/api/admin/users/${userId}/monthly-limit-rules`);
+                this.userLimitRules[userId] = data.rules || [];
+            } catch (e) {
+                this.userLimitRules[userId] = [];
+                console.error('継続ルール取得エラー:', e);
+            } finally {
+                this.limitRulesLoading = false;
+            }
+        },
+        async addUserLimitRule(userId) {
+            const y = parseInt(this.newRuleYear, 10);
+            const m = parseInt(this.newRuleMonth, 10);
+            if (isNaN(y) || isNaN(m) || m < 1 || m > 12) {
+                alert('開始年・月を正しく入力してください');
+                return;
+            }
+            const effectiveFrom = `${y}-${String(m).padStart(2, '0')}-01`;
+            const outing = Math.max(0, parseFloat(this.newRuleOuting) || 0);
+            const home = Math.max(0, parseFloat(this.newRuleHome) || 0);
+            this.limitRulesSaving = true;
+            try {
+                await this.apiFetch(`/api/admin/users/${userId}/monthly-limit-rules`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        effective_from: effectiveFrom,
+                        limit_hours_outing: outing,
+                        limit_hours_home: home
+                    })
+                });
+                alert('継続ルールを追加しました');
+                await this.fetchUserLimitRules(userId);
+                await this.fetchMonthlyLimitsSummary();
+            } catch (e) {
+                alert(e.message || '継続ルールの追加に失敗しました');
+            } finally {
+                this.limitRulesSaving = false;
+            }
+        },
+        async deleteUserLimitRule(userId, effectiveFrom) {
+            if (!confirm('この継続ルールを削除しますか？')) return;
+            try {
+                await this.apiFetch(`/api/admin/users/${userId}/monthly-limit-rules?effective_from=${encodeURIComponent(effectiveFrom)}`, { method: 'DELETE' });
+                alert('継続ルールを削除しました');
+                await this.fetchUserLimitRules(userId);
+                await this.fetchMonthlyLimitsSummary();
+            } catch (e) {
+                alert(e.message || '継続ルールの削除に失敗しました');
             }
         },
 

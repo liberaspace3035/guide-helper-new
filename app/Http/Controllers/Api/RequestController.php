@@ -317,6 +317,7 @@ class RequestController extends Controller
         $ageMin = $request->has('age_min') ? (int) $request->input('age_min') : null;
         $ageMax = $request->has('age_max') ? (int) $request->input('age_max') : null;
         $keyword = $request->input('keyword'); // 自己PR（introduction）のキーワード
+        $sort = $request->input('sort', 'name_asc'); // name_asc, name_desc, age_asc, age_desc
 
         $query = User::query()
             ->where('users.role', 'guide')
@@ -340,7 +341,20 @@ class RequestController extends Controller
             $query->where('guide_profiles.introduction', 'like', '%' . addcslashes($keyword, '%_\\') . '%');
         }
 
-        $query->orderBy('users.name');
+        switch ($sort) {
+            case 'name_desc':
+                $query->orderBy('users.name', 'desc');
+                break;
+            case 'age_asc':
+                $query->orderBy('users.birth_date', 'desc'); // 誕生日の降順 = 若い順
+                break;
+            case 'age_desc':
+                $query->orderBy('users.birth_date', 'asc'); // 誕生日の昇順 = 年上順
+                break;
+            default:
+                $query->orderBy('users.name', 'asc');
+                break;
+        }
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);
 
         $guides = $paginator->getCollection()->map(function ($row) {

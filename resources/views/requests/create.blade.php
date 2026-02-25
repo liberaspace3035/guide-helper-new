@@ -33,17 +33,42 @@
 
         <div class="form-group guide-nomination-group">
             <label id="guide-nomination-label">指名ガイド（任意）</label>
-            <p class="guide-nomination-desc">特定のガイドを指名して依頼を投稿できます。地域・性別・年齢・自己PRのキーワードで検索して選択してください。</p>
-
             <template x-if="formData.nominated_guide_id">
-                <div class="nominated-guide-selected" aria-live="polite">
-                    <span class="nominated-guide-name" x-text="selectedGuide ? selectedGuide.name : '—'"></span>
-                    <button type="button" class="btn-change-guide" @click="clearNominatedGuide()" aria-label="指名ガイドを変更する">変更</button>
+                <div class="nominated-guide-selected-block" aria-live="polite">
+                    <p class="guide-nomination-desc">現在選択中のガイドです。変更するには「変更」ボタンを押してください。</p>
+                    <div class="nominated-guide-selected">
+                        <span class="nominated-guide-name" x-text="selectedGuide ? selectedGuide.name : '—'"></span>
+                        <button type="button" class="btn-change-guide" @click="openGuideSearchModal()" aria-label="指名ガイドを変更する">変更</button>
+                    </div>
+                </div>
+            </template>
+            <template x-if="!formData.nominated_guide_id">
+                <div>
+                    <p class="guide-nomination-desc">特定のガイドを指名して依頼を投稿できます。地域・性別・年齢・自己PRのキーワードで検索して選択してください。</p>
+                    <button type="button" class="btn-open-guide-search" @click="openGuideSearchModal()" aria-label="指名ガイドを選択する（モーダルを開く）">ガイドを選択</button>
                 </div>
             </template>
 
-            <template x-if="!formData.nominated_guide_id">
-                <div class="guide-search-box" aria-labelledby="guide-nomination-label">
+            <input type="hidden" name="nominated_guide_id" :value="formData.nominated_guide_id">
+        </div>
+
+        {{-- 指名ガイド選択モーダル --}}
+        <div
+            class="modal-backdrop"
+            x-show="showGuideSearchModal"
+            x-cloak
+            @click.self="closeGuideSearchModal()"
+            @keydown.escape.window="closeGuideSearchModal()"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="guide-search-modal-title"
+        >
+            <div class="modal-content guide-search-modal-content">
+                <div class="modal-header">
+                    <h2 id="guide-search-modal-title">指名ガイドを選択</h2>
+                    <button type="button" class="modal-close-btn" @click="closeGuideSearchModal()" aria-label="閉じる">&times;</button>
+                </div>
+                <div class="guide-search-box" aria-labelledby="guide-search-modal-title">
                     <div class="guide-search-filters">
                         <div class="guide-filter-item">
                             <label for="guide_filter_area">地域</label>
@@ -122,6 +147,15 @@
                             <label for="guide_filter_keyword">キーワード（自己PR）</label>
                             <input type="text" id="guide_filter_keyword" x-model="guideFilter.keyword" placeholder="例: 買い物 代筆" aria-label="自己PRのキーワードで検索">
                         </div>
+                        <div class="guide-filter-item">
+                            <label for="guide_filter_sort">並び順</label>
+                            <select id="guide_filter_sort" x-model="guideSearchSort" aria-label="検索結果の並び順">
+                                <option value="name_asc">名前（昇順）</option>
+                                <option value="name_desc">名前（降順）</option>
+                                <option value="age_asc">年齢（若い順）</option>
+                                <option value="age_desc">年齢（年上順）</option>
+                            </select>
+                        </div>
                         <div class="guide-filter-actions">
                             <button type="button" class="btn-search-guide" @click="fetchGuidesSearch(1)" :disabled="guideSearchLoading" aria-label="ガイドを検索">
                                 <span x-show="!guideSearchLoading">検索</span>
@@ -131,8 +165,8 @@
                     </div>
 
                     <template x-if="guideSearchResults.length > 0">
-                        <div class="guide-search-results" role="list">
-                            <p class="guide-search-summary" x-text="`${guideSearchTotal}件中 ${guideSearchResults.length}件を表示`"></p>
+                        <div class="guide-search-results" role="list" x-ref="guideSearchResultsContainer">
+                            <h2 id="guide-search-results-heading" class="guide-search-results-heading" x-ref="guideSearchResultsHeading" tabindex="-1" x-text="`全${guideSearchTotal}件中${guideSearchResults.length}件を表示`"></h2>
                             <template x-for="guide in guideSearchResults" :key="guide.id">
                                 <div class="guide-result-card" role="listitem">
                                     <div class="guide-result-main">
@@ -146,7 +180,10 @@
                                             <p class="guide-result-intro" x-text="(guide.introduction || '').substring(0, 80) + ((guide.introduction || '').length > 80 ? '...' : '')"></p>
                                         </template>
                                     </div>
-                                    <button type="button" class="btn-select-guide" @click="selectGuide(guide)" aria-label="このガイドを指名する">選択</button>
+                                    <div class="guide-result-actions">
+                                        <button type="button" class="btn-guide-detail" @click="openGuideDetailModal(guide)" aria-label="このガイドの詳細を表示">詳細を表示</button>
+                                        <button type="button" class="btn-select-guide" @click="selectGuide(guide)" aria-label="このガイドを指名する">選択</button>
+                                    </div>
                                 </div>
                             </template>
                             <template x-if="guideSearchPage < guideSearchLastPage">
@@ -159,9 +196,45 @@
                         <p class="guide-search-empty">条件に合うガイドがいません。条件を変えて検索してください。</p>
                     </template>
                 </div>
-            </template>
+            </div>
+        </div>
 
-            <input type="hidden" name="nominated_guide_id" :value="formData.nominated_guide_id">
+        {{-- ガイド詳細プロフィールモーダル --}}
+        <div
+            class="modal-backdrop"
+            x-show="showGuideDetailModal"
+            x-cloak
+            @click.self="closeGuideDetailModal()"
+            @keydown.escape.window="closeGuideDetailModal()"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="guide-detail-modal-title"
+        >
+            <div class="modal-content modal-content-sm">
+                <div class="modal-header">
+                    <h2 id="guide-detail-modal-title">ガイドの詳細</h2>
+                    <button type="button" class="modal-close-btn" @click="closeGuideDetailModal()" aria-label="閉じる">&times;</button>
+                </div>
+                <template x-if="guideDetailForModal">
+                    <div class="guide-detail-modal-body">
+                        <dl class="guide-detail-dl">
+                            <dt>名前</dt>
+                            <dd x-text="guideDetailForModal.name"></dd>
+                            <dt>性別</dt>
+                            <dd x-text="getGenderLabel(guideDetailForModal.gender)"></dd>
+                            <dt>年齢</dt>
+                            <dd><span x-text="guideDetailForModal.age !== null ? guideDetailForModal.age + '歳' : '—'"></span></dd>
+                            <dt>対応地域</dt>
+                            <dd x-text="guideDetailForModal.available_areas && guideDetailForModal.available_areas.length ? guideDetailForModal.available_areas.join('、') : '—'"></dd>
+                            <dt>自己PR</dt>
+                            <dd class="guide-detail-intro" x-text="guideDetailForModal.introduction || '—'"></dd>
+                        </dl>
+                        <div class="guide-detail-actions">
+                            <button type="button" class="btn-select-guide" @click="selectGuideFromDetail()">このガイドを指名する</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
         </div>
 
         <template x-if="formData.request_type === 'outing'">
@@ -673,6 +746,10 @@ function requestForm() {
         guideSearchLoading: false,
         guideSearchDone: false,
         selectedGuide: null,
+        guideSearchSort: 'name_asc',
+        showGuideSearchModal: false,
+        showGuideDetailModal: false,
+        guideDetailForModal: null,
         openDatePicker() {
             // 日付入力フィールドをクリックしてカレンダーを開く
             const dateInput = this.$refs.dateInput;
@@ -752,6 +829,7 @@ function requestForm() {
                     }
                 }
                 if (this.guideFilter.keyword && this.guideFilter.keyword.trim()) q.set('keyword', this.guideFilter.keyword.trim());
+                q.set('sort', this.guideSearchSort);
                 const token = localStorage.getItem('token');
                 const response = await fetch('/api/guides/available?' + q.toString(), {
                     headers: { 'Authorization': 'Bearer ' + (token || ''), 'Accept': 'application/json' }
@@ -767,6 +845,12 @@ function requestForm() {
                     this.guideSearchTotal = data.total ?? 0;
                     this.guideSearchPage = data.current_page ?? page;
                     this.guideSearchLastPage = data.last_page ?? 1;
+                    if (isFirst && this.guideSearchResults.length > 0) {
+                        this.$nextTick(() => {
+                            const el = this.$refs.guideSearchResultsHeading;
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        });
+                    }
                 } else {
                     if (isFirst) this.guideSearchResults = [];
                     this.guideSearchTotal = 0;
@@ -779,9 +863,31 @@ function requestForm() {
                 this.guideSearchDone = true;
             }
         },
+        openGuideSearchModal() {
+            this.showGuideSearchModal = true;
+        },
+        closeGuideSearchModal() {
+            this.showGuideSearchModal = false;
+        },
+        openGuideDetailModal(guide) {
+            this.guideDetailForModal = guide;
+            this.showGuideDetailModal = true;
+        },
+        closeGuideDetailModal() {
+            this.showGuideDetailModal = false;
+            this.guideDetailForModal = null;
+        },
+        selectGuideFromDetail() {
+            if (this.guideDetailForModal) {
+                this.selectGuide(this.guideDetailForModal);
+                this.closeGuideDetailModal();
+                this.closeGuideSearchModal();
+            }
+        },
         selectGuide(guide) {
             this.formData.nominated_guide_id = String(guide.id);
             this.selectedGuide = guide;
+            this.closeGuideSearchModal();
         },
         clearNominatedGuide() {
             this.formData.nominated_guide_id = '';

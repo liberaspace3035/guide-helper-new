@@ -567,29 +567,21 @@ class AdminService
             ->orderBy('name')
             ->get();
 
-        $limitsByUser = UserMonthlyLimit::where('year', $year)
-            ->where('month', $month)
-            ->whereIn('user_id', $users->pluck('id'))
-            ->get()
-            ->groupBy('user_id');
+        $limitService = app(\App\Services\UserMonthlyLimitService::class);
 
-        return $users->map(function ($user) use ($year, $month, $limitsByUser) {
-            $userLimits = $limitsByUser->get($user->id) ?? collect();
-            $outing = $userLimits->firstWhere('request_type', 'outing');
-            $home = $userLimits->firstWhere('request_type', 'home');
-            $build = function ($row) {
-                if (!$row) {
-                    return ['limit_hours' => 0.0, 'used_hours' => 0.0, 'remaining_hours' => 0.0];
-                }
-                $limit = (float) $row->limit_hours;
-                $used = (float) $row->used_hours;
-                return [
-                    'limit_hours' => round($limit, 2),
-                    'used_hours' => round($used, 2),
-                    'remaining_hours' => round(max(0, $limit - $used), 2),
-                ];
-            };
+        $build = function (array $data) {
+            $limit = (float) ($data['limit_hours'] ?? 0);
+            $used = (float) ($data['used_hours'] ?? 0);
+            return [
+                'limit_hours' => round($limit, 2),
+                'used_hours' => round($used, 2),
+                'remaining_hours' => round(max(0, $limit - $used), 2),
+            ];
+        };
 
+        return $users->map(function ($user) use ($year, $month, $limitService, $build) {
+            $outing = $limitService->getEffectiveLimitAndUsed($user->id, $year, $month, 'outing');
+            $home = $limitService->getEffectiveLimitAndUsed($user->id, $year, $month, 'home');
             return [
                 'user_id' => (int) $user->id,
                 'user_name' => $user->name ?? '',

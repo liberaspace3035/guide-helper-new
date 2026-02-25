@@ -801,6 +801,90 @@ class AdminController extends Controller
     }
 
     /**
+     * ユーザーの継続ルール一覧を取得（effective_from ごとに外出・自宅をまとめて返す）
+     */
+    public function getUserMonthlyLimitRules(Request $request, int $id)
+    {
+        $request->validate(['id' => 'exists:users,id']);
+        try {
+            $rules = \App\Models\UserMonthlyLimitRule::where('user_id', $id)
+                ->orderBy('effective_from', 'desc')
+                ->get();
+            $grouped = $rules->groupBy(function ($r) {
+                return $r->effective_from->format('Y-m-d');
+            });
+            $result = $grouped->map(function ($rows) {
+                $outing = $rows->firstWhere('request_type', 'outing');
+                $home = $rows->firstWhere('request_type', 'home');
+                return [
+                    'effective_from' => $rows->first()->effective_from->format('Y-m-d'),
+                    'limit_hours_outing' => $outing ? (float) $outing->limit_hours : 0.0,
+                    'limit_hours_home' => $home ? (float) $home->limit_hours : 0.0,
+                ];
+            })->values()->toArray();
+            return response()->json(['rules' => $result]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * 継続ルールを1件追加（指定した開始月から外出・自宅のデフォルト限度を設定）
+     */
+    public function storeUserMonthlyLimitRule(Request $request, int $id)
+    {
+        $request->validate([
+            'effective_from' => 'required|date',
+            'limit_hours_outing' => 'required|numeric|min:0',
+            'limit_hours_home' => 'required|numeric|min:0',
+        ], [
+            'effective_from.required' => '適用開始日を指定してください。',
+            'effective_from.date' => '適用開始日は有効な日付で指定してください。',
+        ]);
+        try {
+            $user = \App\Models\User::where('id', $id)->where('role', 'user')->firstOrFail();
+            $effectiveFrom = \Carbon\Carbon::parse($request->input('effective_from'))->startOfDay();
+            $effectiveFrom = $effectiveFrom->format('Y-m-d');
+            $outing = (float) $request->input('limit_hours_outing');
+            $home = (float) $request->input('limit_hours_home');
+            \App\Models\UserMonthlyLimitRule::updateOrCreate(
+                ['user_id' => $id, 'request_type' => 'outing', 'effective_from' => $effectiveFrom],
+                ['limit_hours' => $outing]
+            );
+            \App\Models\UserMonthlyLimitRule::updateOrCreate(
+                ['user_id' => $id, 'request_type' => 'home', 'effective_from' => $effectiveFrom],
+                ['limit_hours' => $home]
+            );
+            return response()->json(['message' => '継続ルールを保存しました']);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'ユーザーが見つかりません'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * 指定した適用開始日の継続ルールを削除（外出・自宅両方）
+     * クエリ: effective_from (Y-m-d)
+     */
+    public function deleteUserMonthlyLimitRuleByEffectiveFrom(Request $request, int $id)
+    {
+        $effectiveFromInput = $request->query('effective_from') ?? $request->input('effective_from');
+        if (!$effectiveFromInput) {
+            return response()->json(['error' => 'effective_from（Y-m-d）を指定してください'], 422);
+        }
+        try {
+            $effectiveFrom = \Carbon\Carbon::parse($effectiveFromInput)->format('Y-m-d');
+            $deleted = \App\Models\UserMonthlyLimitRule::where('user_id', $id)
+                ->where('effective_from', $effectiveFrom)
+                ->delete();
+            return response()->json(['message' => '継続ルールを削除しました', 'deleted' => $deleted]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
      * 全利用者の指定月の限度時間・残時間一覧を取得（照会用・一括表示用）
      */
     public function getUsersMonthlyLimitsSummary(Request $request)

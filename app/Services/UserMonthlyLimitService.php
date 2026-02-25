@@ -4,12 +4,59 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\UserMonthlyLimit;
+use App\Models\UserMonthlyLimitRule;
 use Carbon\Carbon;
 
 class UserMonthlyLimitService
 {
     /**
+     * 継続ルールから、指定月に適用されるデフォルト限度時間を取得（該当がなければ null）
+     */
+    public function getDefaultLimitFromRule(int $userId, int $year, int $month, string $requestType): ?float
+    {
+        $firstDay = Carbon::createFromDate($year, $month, 1)->startOfDay();
+        $rule = UserMonthlyLimitRule::where('user_id', $userId)
+            ->where('request_type', $requestType)
+            ->where('effective_from', '<=', $firstDay)
+            ->orderBy('effective_from', 'desc')
+            ->first();
+        return $rule !== null ? (float) $rule->limit_hours : null;
+    }
+
+    /**
+     * 指定月の「実効限度」と「使用時間」を取得（レコードは作らない）
+     * 月別設定があればそれを、なければ継続ルールを、どちらもなければ 0。
+     */
+    public function getEffectiveLimitAndUsed(int $userId, int $year = null, int $month = null, string $requestType = 'outing'): array
+    {
+        $now = Carbon::now();
+        $year = $year ?? $now->year;
+        $month = $month ?? $now->month;
+        $requestType = in_array($requestType, ['outing', 'home'], true) ? $requestType : 'outing';
+
+        $monthly = UserMonthlyLimit::where('user_id', $userId)
+            ->where('year', $year)
+            ->where('month', $month)
+            ->where('request_type', $requestType)
+            ->first();
+
+        if ($monthly !== null) {
+            return [
+                'limit_hours' => (float) $monthly->limit_hours,
+                'used_hours' => (float) $monthly->used_hours,
+            ];
+        }
+
+        $fromRule = $this->getDefaultLimitFromRule($userId, $year, $month, $requestType);
+        return [
+            'limit_hours' => $fromRule ?? 0.0,
+            'used_hours' => 0.0,
+        ];
+    }
+
+    /**
      * 指定ユーザーの指定月・依頼種別の限度時間を取得（なければ作成）
+     * 新規作成時は継続ルールの値があればそれを、なければ 0 をセットする。
      * @param string $requestType 'outing'=外出, 'home'=自宅
      */
     public function getOrCreateLimit(int $userId, int $year = null, int $month = null, string $requestType = 'outing'): UserMonthlyLimit
@@ -19,18 +66,25 @@ class UserMonthlyLimitService
         $month = $month ?? $now->month;
         $requestType = in_array($requestType, ['outing', 'home'], true) ? $requestType : 'outing';
 
-        return UserMonthlyLimit::firstOrCreate(
-            [
-                'user_id' => $userId,
-                'year' => $year,
-                'month' => $month,
-                'request_type' => $requestType,
-            ],
-            [
-                'limit_hours' => 0.00,
-                'used_hours' => 0.00,
-            ]
-        );
+        $existing = UserMonthlyLimit::where('user_id', $userId)
+            ->where('year', $year)
+            ->where('month', $month)
+            ->where('request_type', $requestType)
+            ->first();
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $defaultHours = $this->getDefaultLimitFromRule($userId, $year, $month, $requestType) ?? 0.0;
+        return UserMonthlyLimit::create([
+            'user_id' => $userId,
+            'year' => $year,
+            'month' => $month,
+            'request_type' => $requestType,
+            'limit_hours' => $defaultHours,
+            'used_hours' => 0.00,
+        ]);
     }
 
     /**

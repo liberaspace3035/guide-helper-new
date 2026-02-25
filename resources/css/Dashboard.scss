@@ -569,6 +569,7 @@
 
 // 限度時間管理テーブル専用スタイル
 .monthly-limits-table {
+  min-width: 1200px; // 列がつぶれず横スクロールで表示
   .limit-type-th {
     text-align: center;
     width: 215px;
@@ -627,6 +628,18 @@
     width: 72px;
     min-width: 72px;
     box-sizing: border-box;
+  }
+  // 操作列：設定・継続・履歴を横並びに（はみ出さないよう列幅を確保）
+  th:last-child,
+  td:last-child {
+    min-width: 240px;
+    width: 240px;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+  .user-action-buttons {
+    flex-wrap: nowrap;
+    justify-content: center;
   }
   thead {
     background-color: #f8fafc; // bg-slate-50
@@ -962,6 +975,21 @@
   
   &:focus-visible {
     outline: 2px solid #475569;
+    outline-offset: 2px;
+  }
+}
+
+.btn-edit-user {
+  @extend .btn-detail-user;
+  background-color: var(--primary-color, #2563eb);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background-color: var(--primary-hover, #1d4ed8);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color, #2563eb);
     outline-offset: 2px;
   }
 }
