@@ -14,6 +14,9 @@ class Kernel extends ConsoleKernel
     {
         // リマインドメールは毎分実行し、コマンド内で管理者が設定した送信時刻と一致するときのみ送信
         $schedule->command('emails:send-reminders')->everyMinute();
+
+        // 管理者画面の設定キャッシュを5分ごとにウォーム（初回リクエストの遅延対策）
+        $schedule->command('admin:warm-settings-cache')->everyFiveMinutes();
     }
 
     /**

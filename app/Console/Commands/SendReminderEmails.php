@@ -14,7 +14,7 @@ use Carbon\Carbon;
 
 class SendReminderEmails extends Command
 {
-    protected $signature = 'emails:send-reminders';
+    protected $signature = 'emails:send-reminders {--force : 送信時刻を無視して今すぐ送信（動作確認用）}';
     protected $description = 'リマインドメールを送信';
 
     protected $emailService;
@@ -27,13 +27,26 @@ class SendReminderEmails extends Command
 
     public function handle()
     {
-        // 送信時刻のチェック（リマインドの scheduled_time に合わせてコマンド全体を実行）
         $reminderSetting = EmailNotificationSetting::where('notification_type', 'reminder')->first();
-        $scheduledTime = $reminderSetting && $reminderSetting->scheduled_time
-            ? $reminderSetting->scheduled_time
+        $scheduledTimeRaw = $reminderSetting && $reminderSetting->scheduled_time
+            ? trim($reminderSetting->scheduled_time)
             : '09:00';
-        if (\Carbon\Carbon::now()->format('H:i') !== $scheduledTime) {
-            return 0;
+        $scheduledTime = $this->normalizeTime($scheduledTimeRaw);
+        $now = Carbon::now()->format('H:i');
+
+        // --force でない場合は、設定時刻と一致したときだけ送信
+        if (! $this->option('force')) {
+            if ($now !== $scheduledTime) {
+                \Log::debug('SendReminderEmails: 送信時刻外のためスキップ', [
+                    'now' => $now,
+                    'scheduled_time' => $scheduledTime,
+                    'scheduled_time_raw' => $scheduledTimeRaw,
+                    'timezone' => config('app.timezone'),
+                ]);
+                return 0;
+            }
+        } else {
+            $this->info("送信時刻を無視して実行します（now={$now}, scheduled={$scheduledTime}）");
         }
 
         // リマインド通知が有効かチェック（依頼リマインド・報告書リマインドの送信可否）
@@ -196,6 +209,18 @@ class SendReminderEmails extends Command
             'request_time' => (string) $requestTime,
             'masked_address' => $request->masked_address ?? '',
         ];
+    }
+
+    /**
+     * 送信時刻を HH:MM に正規化（"9:00" → "09:00"）。比較ずれを防ぐ。
+     */
+    private function normalizeTime(string $time): string
+    {
+        $time = trim($time);
+        if (preg_match('/^(\d{1,2}):(\d{1,2})$/', $time, $m)) {
+            return sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
+        }
+        return $time;
     }
 }
 

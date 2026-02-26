@@ -153,16 +153,21 @@ class EmailTemplateController extends Controller
         $request->validate([
             'is_enabled' => 'required|boolean',
             'reminder_days' => 'nullable|integer|min:1',
-            'scheduled_time' => 'nullable|string|regex:/^\d{2}:\d{2}$/',
+            'scheduled_time' => 'nullable|string|regex:/^\d{1,2}:\d{1,2}$/',
         ], [
-            'scheduled_time.regex' => '送信時刻は HH:MM 形式で入力してください（例: 09:00）',
+            'scheduled_time.regex' => '送信時刻は H:MM または HH:MM で入力してください（例: 9:00 または 09:00）',
         ]);
 
         $setting = EmailNotificationSetting::findOrFail($id);
+        $scheduledTime = $request->input('scheduled_time') ? trim($request->input('scheduled_time')) : null;
+        if ($scheduledTime && preg_match('/^(\d{1,2}):(\d{1,2})$/', $scheduledTime, $m)) {
+            $scheduledTime = sprintf('%02d:%02d', (int) $m[1], (int) $m[2]);
+        }
+
         $setting->update([
             'is_enabled' => $request->input('is_enabled'),
             'reminder_days' => $request->input('reminder_days'),
-            'scheduled_time' => $request->input('scheduled_time') ?: null,
+            'scheduled_time' => $scheduledTime,
         ]);
 
         Cache::forget('admin_email_notification_settings');

@@ -22,6 +22,12 @@ use App\Services\EmailNotificationService;
 
 class AdminService
 {
+    /** ダッシュボード一覧の取得上限（件数増加によるAPI遅延対策） */
+    private const DASHBOARD_REQUESTS_LIMIT = 500;
+    private const DASHBOARD_ACCEPTANCES_LIMIT = 300;
+    private const DASHBOARD_REPORTS_LIMIT = 500;
+    private const DASHBOARD_USER_APPROVED_REPORTS_LIMIT = 300;
+
     protected EmailNotificationService $emailService;
 
     public function __construct(EmailNotificationService $emailService)
@@ -73,6 +79,7 @@ class AdminService
     {
         $requests = Request::with('user:id,name,email')
             ->orderBy('created_at', 'desc')
+            ->limit(self::DASHBOARD_REQUESTS_LIMIT)
             ->get();
         
         // リレーションを明示的にロード
@@ -102,6 +109,7 @@ class AdminService
         $acceptances = GuideAcceptance::where('status', 'pending')
             ->with(['request:id,user_id,request_type,masked_address,request_date,request_time', 'guide:id,name', 'request.user:id,name'])
             ->orderBy('created_at', 'desc')
+            ->limit(self::DASHBOARD_ACCEPTANCES_LIMIT)
             ->get();
         
         // リレーションを明示的にロード
@@ -147,19 +155,21 @@ class AdminService
 
     public function getPendingReports(): array
     {
-        // 報告書一覧（全ステータス）を取得
+        // 報告書一覧（全ステータス）を取得（件数上限で応答時間を抑制）
         return Report::with(['user:id,name', 'guide:id,name', 'request:id,request_type'])
             ->orderBy('created_at', 'desc')
+            ->limit(self::DASHBOARD_REPORTS_LIMIT)
             ->get()
             ->toArray();
     }
 
     public function getUserApprovedReports(): array
     {
-        // 管理者承認待ちの報告書を取得
+        // 管理者承認待ちの報告書を取得（件数上限で応答時間を抑制）
         return Report::where('status', 'user_approved')
             ->with(['user:id,name', 'guide:id,name', 'request:id,request_type'])
             ->orderBy('user_approved_at', 'desc')
+            ->limit(self::DASHBOARD_USER_APPROVED_REPORTS_LIMIT)
             ->get()
             ->toArray();
     }
