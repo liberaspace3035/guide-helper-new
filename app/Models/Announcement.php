@@ -15,7 +15,12 @@ class Announcement extends Model
         'title',
         'content',
         'target_audience',
+        'reminder_enabled',
         'created_by',
+    ];
+
+    protected $casts = [
+        'reminder_enabled' => 'boolean',
     ];
 
     public function creator()

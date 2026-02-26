@@ -69,6 +69,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/requests', [\App\Http\Controllers\Api\AdminController::class, 'requests']);
         Route::get('/operation-logs', [\App\Http\Controllers\Api\AdminController::class, 'operationLogs']);
         Route::get('/email-templates', [\App\Http\Controllers\Api\EmailTemplateController::class, 'index']);
+        Route::get('/email-templates/triggers', [\App\Http\Controllers\Api\EmailTemplateController::class, 'triggers']);
         Route::post('/email-templates', [\App\Http\Controllers\Api\EmailTemplateController::class, 'store']);
         Route::put('/email-templates/{id}', [\App\Http\Controllers\Api\EmailTemplateController::class, 'update']);
         Route::delete('/email-templates/{id}', [\App\Http\Controllers\Api\EmailTemplateController::class, 'destroy']);
@@ -99,6 +100,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/guides/{id}/profile', [\App\Http\Controllers\Api\AdminController::class, 'updateGuideProfile']);
         Route::put('/users/{id}/approve', [\App\Http\Controllers\Api\AdminController::class, 'approveUser']);
         Route::put('/users/{id}/reject', [\App\Http\Controllers\Api\AdminController::class, 'rejectUser']);
+        Route::post('/users/batch-approve', [\App\Http\Controllers\Api\AdminController::class, 'batchApproveUsers']);
+        Route::post('/users/batch-reject', [\App\Http\Controllers\Api\AdminController::class, 'batchRejectUsers']);
         Route::put('/users/{id}/monthly-limit', [\App\Http\Controllers\Api\AdminController::class, 'setUserMonthlyLimit']);
         Route::get('/users/{id}/monthly-limits', [\App\Http\Controllers\Api\AdminController::class, 'getUserMonthlyLimits']);
         Route::get('/users/{id}/monthly-limit-rules', [\App\Http\Controllers\Api\AdminController::class, 'getUserMonthlyLimitRules']);
@@ -106,6 +109,8 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/users/{id}/monthly-limit-rules', [\App\Http\Controllers\Api\AdminController::class, 'deleteUserMonthlyLimitRuleByEffectiveFrom']);
         Route::put('/guides/{id}/approve', [\App\Http\Controllers\Api\AdminController::class, 'approveGuide']);
         Route::put('/guides/{id}/reject', [\App\Http\Controllers\Api\AdminController::class, 'rejectGuide']);
+        Route::post('/guides/batch-approve', [\App\Http\Controllers\Api\AdminController::class, 'batchApproveGuides']);
+        Route::post('/guides/batch-reject', [\App\Http\Controllers\Api\AdminController::class, 'batchRejectGuides']);
         Route::get('/bulk-import/template', [\App\Http\Controllers\Api\AdminController::class, 'getBulkImportCsvTemplate']);
         Route::post('/bulk-import/csv', [\App\Http\Controllers\Api\AdminController::class, 'processBulkImportCsv']);
     });

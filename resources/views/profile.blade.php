@@ -116,11 +116,11 @@
                     name="introduction"
                     x-model="formData.introduction"
                     rows="4"
-                    placeholder="依頼を作成するには入力が必須です。ガイドに伝えたいことなどを記入してください。"
+                    placeholder="ガイドに表示される内容ですので、配慮事項やガイドを実施する上で重視していることを記載してください。趣味なども記載してください。"
                     required
                     aria-required="true"
                 >{{ $user->userProfile->introduction ?? '' }}</textarea>
-                <small class="form-help-text">依頼を作成するには、ここへの入力が必要です。</small>
+                <small class="form-help-text">ガイドに表示される内容ですので、配慮事項やガイドを実施する上で重視していることを記載してください。趣味なども記載してください。</small>
             </div>
 
             <div class="form-group proposal-preference-group">
@@ -167,11 +167,11 @@
                     name="introduction"
                     x-model="formData.introduction"
                     rows="4"
-                    placeholder="依頼に応募するには入力が必須です。ユーザーに伝えたいことなどを記入してください。"
+                    placeholder="利用者に表示される内容ですので、ガイドとして心掛けていることや得意分野などを記載してください。趣味も記載してください。"
                     required
                     aria-required="true"
                 >{{ $user->guideProfile->introduction ?? '' }}</textarea>
-                <small class="form-help-text">依頼に応募するには、ここへの入力が必要です。</small>
+                <small class="form-help-text">利用者に表示される内容ですので、ガイドとして心掛けていることや得意分野などを記載してください。趣味も記載してください。</small>
             </div>
 
             <div class="form-group">

@@ -119,6 +119,7 @@ class AnnouncementService
             'title' => $data['title'],
             'content' => $data['content'],
             'target_audience' => $data['target_audience'],
+            'reminder_enabled' => isset($data['reminder_enabled']) ? (bool) $data['reminder_enabled'] : true,
             'created_by' => $createdBy,
         ]);
     }

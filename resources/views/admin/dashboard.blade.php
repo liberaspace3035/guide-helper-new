@@ -553,6 +553,50 @@
                         ユーザー管理
                     </h2>
                 </div>
+                <div class="section-actions" x-show="users.length > 0">
+                    <button
+                        x-show="users.filter(u => !u.is_allowed).length > 0"
+                        @click="approveAllUsers()"
+                        class="btn-primary"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        全件承認
+                    </button>
+                    <button
+                        x-show="selectedUsers.length > 0"
+                        @click="batchApproveUsers()"
+                        class="btn-primary"
+                        :disabled="selectedUsers.length === 0"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        選択した<span x-text="selectedUsers.length"></span>件を承認
+                    </button>
+                    <button
+                        x-show="users.filter(u => u.is_allowed).length > 0"
+                        @click="rejectAllUsers()"
+                        class="btn-reject"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                            <path d="M3 12l6-6m-6 6l6 6m-6-6h18"></path>
+                        </svg>
+                        全件拒否
+                    </button>
+                    <button
+                        x-show="selectedUsers.length > 0"
+                        @click="batchRejectUsers()"
+                        class="btn-reject"
+                        :disabled="selectedUsers.length === 0"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                            <path d="M3 12l6-6m-6 6l6 6m-6-6h18"></path>
+                        </svg>
+                        選択した<span x-text="selectedUsers.length"></span>件を拒否
+                    </button>
+                </div>
                 <div class="users-toolbar">
                     <div class="users-search-sort">
                         <label for="user-search" class="sr-only">名前またはメールで検索</label>
@@ -591,6 +635,17 @@
                         <table class="admin-table admin-table-scrollable-large users-table">
                             <thead>
                                 <tr>
+                                    <th class="checkbox-cell">
+                                        <input
+                                            type="checkbox"
+                                            class="acceptance-checkbox acceptance-checkbox-select-all"
+                                            @change="toggleSelectAllUsers($event.target.checked)"
+                                            :checked="users.length > 0 && selectedUsers.length === users.length"
+                                            x-ref="selectAllUsersCheckbox"
+                                            x-effect="if ($refs.selectAllUsersCheckbox) { $refs.selectAllUsersCheckbox.indeterminate = selectedUsers.length > 0 && selectedUsers.length < users.length; }"
+                                            aria-label="すべて選択"
+                                        />
+                                    </th>
                                     <th>No</th>
                                     <th>名前</th>
                                     <th>メールアドレス</th>
@@ -604,6 +659,16 @@
                             <tbody>
                                 <template x-for="(user, index) in users" :key="user.id">
                                     <tr>
+                                        <td class="checkbox-cell">
+                                            <input
+                                                type="checkbox"
+                                                class="acceptance-checkbox"
+                                                :value="user.id"
+                                                @change="toggleUserSelection(user.id, $event.target.checked)"
+                                                :checked="isUserSelected(user.id)"
+                                                :aria-label="`ユーザー ${user.name} を選択`"
+                                            />
+                                        </td>
                                         <td>
                                             <span class="user-id-number" x-text="index + 1"></span>
                                         </td>
@@ -701,6 +766,50 @@
                         ガイド管理
                     </h2>
                 </div>
+                <div class="section-actions" x-show="guides.length > 0">
+                    <button
+                        x-show="guides.filter(g => !g.is_allowed).length > 0"
+                        @click="approveAllGuides()"
+                        class="btn-primary"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        全件承認
+                    </button>
+                    <button
+                        x-show="selectedGuides.length > 0"
+                        @click="batchApproveGuides()"
+                        class="btn-primary"
+                        :disabled="selectedGuides.length === 0"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        選択した<span x-text="selectedGuides.length"></span>件を承認
+                    </button>
+                    <button
+                        x-show="guides.filter(g => g.is_allowed).length > 0"
+                        @click="rejectAllGuides()"
+                        class="btn-reject"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                            <path d="M3 12l6-6m-6 6l6 6m-6-6h18"></path>
+                        </svg>
+                        全件拒否
+                    </button>
+                    <button
+                        x-show="selectedGuides.length > 0"
+                        @click="batchRejectGuides()"
+                        class="btn-reject"
+                        :disabled="selectedGuides.length === 0"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                            <path d="M3 12l6-6m-6 6l6 6m-6-6h18"></path>
+                        </svg>
+                        選択した<span x-text="selectedGuides.length"></span>件を拒否
+                    </button>
+                </div>
                 <div class="users-toolbar guides-toolbar">
                     <div class="users-search-sort">
                         <label for="guide-search" class="sr-only">名前またはメールで検索</label>
@@ -739,6 +848,17 @@
                         <table class="admin-table admin-table-scrollable-large guides-table">
                             <thead>
                                 <tr>
+                                    <th class="checkbox-cell">
+                                        <input
+                                            type="checkbox"
+                                            class="acceptance-checkbox acceptance-checkbox-select-all"
+                                            @change="toggleSelectAllGuides($event.target.checked)"
+                                            :checked="guides.length > 0 && selectedGuides.length === guides.length"
+                                            x-ref="selectAllGuidesCheckbox"
+                                            x-effect="if ($refs.selectAllGuidesCheckbox) { $refs.selectAllGuidesCheckbox.indeterminate = selectedGuides.length > 0 && selectedGuides.length < guides.length; }"
+                                            aria-label="すべて選択"
+                                        />
+                                    </th>
                                     <th>No</th>
                                     <th>名前</th>
                                     <th>メールアドレス</th>
@@ -752,6 +872,16 @@
                             <tbody>
                                 <template x-for="(guide, index) in guides" :key="guide.id">
                                     <tr>
+                                        <td class="checkbox-cell">
+                                            <input
+                                                type="checkbox"
+                                                class="acceptance-checkbox"
+                                                :value="guide.id"
+                                                @change="toggleGuideSelection(guide.id, $event.target.checked)"
+                                                :checked="isGuideSelected(guide.id)"
+                                                :aria-label="`ガイド ${guide.name} を選択`"
+                                            />
+                                        </td>
                                         <td>
                                             <span class="user-id-number" x-text="index + 1"></span>
                                         </td>
@@ -1137,7 +1267,7 @@
                     </h2>
                     <button
                         class="btn-primary"
-                        @click="showNewTemplateForm = !showNewTemplateForm"
+                        @click="showNewTemplateForm = !showNewTemplateForm; if (showNewTemplateForm && emailTemplateTriggers.length === 0) fetchEmailTemplateTriggers()"
                     >
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -1168,28 +1298,44 @@
                         </div>
                         <div class="template-form">
                             <div class="form-group">
-                                <label class="form-label">通知の種類（テンプレートキー） <span style="color: var(--error-color);">*</span></label>
-                                <input
-                                    type="text"
+                                <label class="form-label">トリガー（送信のきっかけ） <span style="color: var(--error-color);">*</span></label>
+                                <select
                                     x-model="newTemplate.template_key"
                                     class="form-control"
-                                    placeholder="例: 依頼通知(request_notification)、ガイド確定(matching_notification)"
-                                    @input="updateRecipientFromKey()"
-                                />
-                                <small class="form-text">英数字とアンダースコアのみ使用可能です。既存のテンプレートキーを入力すると送信先が自動設定されます。</small>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">送信先 <span style="color: var(--error-color);">*</span></label>
-                                <select
-                                    x-model="newTemplate.recipient"
-                                    class="form-control"
+                                    @change="onNewTemplateTriggerChange()"
                                 >
                                     <option value="">選択してください</option>
-                                    <option value="user">ユーザー</option>
-                                    <option value="guide">ガイド</option>
-                                    <option value="both">ユーザー・ガイド</option>
+                                    <template x-for="t in emailTemplateTriggers" :key="t.template_key">
+                                        <option
+                                            :value="t.template_key"
+                                            :disabled="t.already_has_template"
+                                            x-text="t.already_has_template ? (t.label + '（登録済み）') : (t.label + ' — ' + t.description)"
+                                        ></option>
+                                    </template>
                                 </select>
-                                <small class="form-text">このメールテンプレートの送信先を選択してください。既存のテンプレートキーを入力すると自動設定されます。</small>
+                                <small class="form-text">送信タイミングをトリガーで選択します。登録済みのトリガーは編集から変更してください。</small>
+                            </div>
+                            <div class="form-group" x-show="newTemplate.template_key">
+                                <label class="form-label">送信先</label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    readonly
+                                    :value="getRecipientLabelForNew(newTemplate)"
+                                    style="background: var(--surface-color); cursor: not-allowed;"
+                                />
+                                <small class="form-text">トリガーに応じて自動設定されます。</small>
+                            </div>
+                            <div class="form-group" x-show="getSelectedTriggerForNew() && getSelectedTriggerForNew().uses_scheduled_time">
+                                <label class="form-label">送信時刻（HH:MM）</label>
+                                <input
+                                    type="text"
+                                    x-model="newTemplate.scheduled_time"
+                                    class="form-control"
+                                    placeholder="例: 09:00"
+                                    maxlength="5"
+                                />
+                                <small class="form-text">リマインド系はこの時刻に送信されます。未入力の場合は通知設定の送信時刻を使用します。</small>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">件名 <span style="color: var(--error-color);">*</span></label>
@@ -1213,7 +1359,7 @@
                             <div class="template-actions">
                                 <button
                                     class="btn-secondary"
-                                    @click="showNewTemplateForm = false; newTemplate = { template_key: '', subject: '', body: '', is_active: true, recipient: '' }"
+                                    @click="showNewTemplateForm = false; newTemplate = { template_key: '', subject: '', body: '', is_active: true, recipient: '', scheduled_time: '' }"
                                 >
                                     キャンセル
                                 </button>
@@ -2071,6 +2217,8 @@ function adminDashboard() {
         userApprovedReports: [], // ユーザー承認済み（管理者承認待ち）報告書
         selectedReportMonth: '', // 選択された月（フィルタリング用）
         selectedReports: [], // 一括操作用の選択された報告書IDリスト
+        selectedUsers: [],   // 一括操作用の選択されたユーザーIDリスト
+        selectedGuides: [],  // 一括操作用の選択されたガイドIDリスト
         selectedReport: null,    // 詳細表示用
         showReportModal: false,
         selectedUserProfile: null,    // ユーザープロフィール詳細表示用
@@ -2099,13 +2247,15 @@ function adminDashboard() {
         guideMeta: {},
         userAdminComment: {},
         emailTemplates: [],
+        emailTemplateTriggers: [], // トリガー一覧（新規作成用）
         showNewTemplateForm: false,
         newTemplate: {
             template_key: '',
             subject: '',
             body: '',
             is_active: true,
-            recipient: '' // 'user', 'guide', 'both'
+            recipient: '',
+            scheduled_time: '' // リマインド系のみ。HH:MM
         },
         emailSettings: [],
         operationLogs: [],
@@ -2735,6 +2885,170 @@ function adminDashboard() {
             }
         },
 
+        toggleSelectAllUsers(checked) {
+            if (checked) this.selectedUsers = this.users.map(u => u.id);
+            else this.selectedUsers = [];
+        },
+        toggleUserSelection(userId, checked) {
+            if (checked && !this.selectedUsers.includes(userId)) this.selectedUsers.push(userId);
+            if (!checked) this.selectedUsers = this.selectedUsers.filter(id => id !== userId);
+        },
+        isUserSelected(userId) {
+            return this.selectedUsers.includes(userId);
+        },
+        async approveAllUsers() {
+            const ids = this.users.filter(u => !u.is_allowed).map(u => u.id);
+            if (ids.length === 0) { alert('未承認のユーザーがありません'); return; }
+            if (!confirm(`表示中の未承認ユーザー ${ids.length} 件を一括承認しますか？`)) return;
+            try {
+                const res = await this.apiFetch('/api/admin/users/batch-approve', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { alert(data.error || '一括承認に失敗しました'); return; }
+                alert(data.message || `${data.successful_count ?? 0}件を承認しました`);
+                this.selectedUsers = [];
+                await this.fetchUsers();
+            } catch (e) {
+                console.error(e);
+                alert('一括承認に失敗しました');
+            }
+        },
+        async batchApproveUsers() {
+            const ids = this.selectedUsers.filter(id => {
+                const u = this.users.find(u => u.id === id);
+                return u && !u.is_allowed;
+            });
+            if (ids.length === 0) { alert('選択された未承認ユーザーがありません'); return; }
+            if (!confirm(`選択した ${ids.length} 件を承認しますか？`)) return;
+            try {
+                const res = await this.apiFetch('/api/admin/users/batch-approve', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { alert(data.error || '一括承認に失敗しました'); return; }
+                alert(data.message || `${data.successful_count ?? 0}件を承認しました`);
+                this.selectedUsers = [];
+                await this.fetchUsers();
+            } catch (e) {
+                console.error(e);
+                alert('一括承認に失敗しました');
+            }
+        },
+        async rejectAllUsers() {
+            const ids = this.users.filter(u => u.is_allowed).map(u => u.id);
+            if (ids.length === 0) { alert('承認済みのユーザーがありません'); return; }
+            if (!confirm(`表示中の承認済みユーザー ${ids.length} 件を一括拒否しますか？`)) return;
+            try {
+                const res = await this.apiFetch('/api/admin/users/batch-reject', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { alert(data.error || '一括拒否に失敗しました'); return; }
+                alert(data.message || `${data.successful_count ?? 0}件を拒否しました`);
+                this.selectedUsers = [];
+                await this.fetchUsers();
+            } catch (e) {
+                console.error(e);
+                alert('一括拒否に失敗しました');
+            }
+        },
+        async batchRejectUsers() {
+            const ids = this.selectedUsers.filter(id => {
+                const u = this.users.find(u => u.id === id);
+                return u && u.is_allowed;
+            });
+            if (ids.length === 0) { alert('選択された承認済みユーザーがありません'); return; }
+            if (!confirm(`選択した ${ids.length} 件を拒否しますか？`)) return;
+            try {
+                const res = await this.apiFetch('/api/admin/users/batch-reject', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { alert(data.error || '一括拒否に失敗しました'); return; }
+                alert(data.message || `${data.successful_count ?? 0}件を拒否しました`);
+                this.selectedUsers = [];
+                await this.fetchUsers();
+            } catch (e) {
+                console.error(e);
+                alert('一括拒否に失敗しました');
+            }
+        },
+
+        toggleSelectAllGuides(checked) {
+            if (checked) this.selectedGuides = this.guides.map(g => g.id);
+            else this.selectedGuides = [];
+        },
+        toggleGuideSelection(guideId, checked) {
+            if (checked && !this.selectedGuides.includes(guideId)) this.selectedGuides.push(guideId);
+            if (!checked) this.selectedGuides = this.selectedGuides.filter(id => id !== guideId);
+        },
+        isGuideSelected(guideId) {
+            return this.selectedGuides.includes(guideId);
+        },
+        async approveAllGuides() {
+            const ids = this.guides.filter(g => !g.is_allowed).map(g => g.id);
+            if (ids.length === 0) { alert('未承認のガイドがありません'); return; }
+            if (!confirm(`表示中の未承認ガイド ${ids.length} 件を一括承認しますか？`)) return;
+            try {
+                const res = await this.apiFetch('/api/admin/guides/batch-approve', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { alert(data.error || '一括承認に失敗しました'); return; }
+                alert(data.message || `${data.successful_count ?? 0}件を承認しました`);
+                this.selectedGuides = [];
+                await this.fetchGuides();
+            } catch (e) {
+                console.error(e);
+                alert('一括承認に失敗しました');
+            }
+        },
+        async batchApproveGuides() {
+            const ids = this.selectedGuides.filter(id => {
+                const g = this.guides.find(g => g.id === id);
+                return g && !g.is_allowed;
+            });
+            if (ids.length === 0) { alert('選択された未承認ガイドがありません'); return; }
+            if (!confirm(`選択した ${ids.length} 件を承認しますか？`)) return;
+            try {
+                const res = await this.apiFetch('/api/admin/guides/batch-approve', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { alert(data.error || '一括承認に失敗しました'); return; }
+                alert(data.message || `${data.successful_count ?? 0}件を承認しました`);
+                this.selectedGuides = [];
+                await this.fetchGuides();
+            } catch (e) {
+                console.error(e);
+                alert('一括承認に失敗しました');
+            }
+        },
+        async rejectAllGuides() {
+            const ids = this.guides.filter(g => g.is_allowed).map(g => g.id);
+            if (ids.length === 0) { alert('承認済みのガイドがありません'); return; }
+            if (!confirm(`表示中の承認済みガイド ${ids.length} 件を一括拒否しますか？`)) return;
+            try {
+                const res = await this.apiFetch('/api/admin/guides/batch-reject', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { alert(data.error || '一括拒否に失敗しました'); return; }
+                alert(data.message || `${data.successful_count ?? 0}件を拒否しました`);
+                this.selectedGuides = [];
+                await this.fetchGuides();
+            } catch (e) {
+                console.error(e);
+                alert('一括拒否に失敗しました');
+            }
+        },
+        async batchRejectGuides() {
+            const ids = this.selectedGuides.filter(id => {
+                const g = this.guides.find(g => g.id === id);
+                return g && g.is_allowed;
+            });
+            if (ids.length === 0) { alert('選択された承認済みガイドがありません'); return; }
+            if (!confirm(`選択した ${ids.length} 件を拒否しますか？`)) return;
+            try {
+                const res = await this.apiFetch('/api/admin/guides/batch-reject', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) { alert(data.error || '一括拒否に失敗しました'); return; }
+                alert(data.message || `${data.successful_count ?? 0}件を拒否しました`);
+                this.selectedGuides = [];
+                await this.fetchGuides();
+            } catch (e) {
+                console.error(e);
+                alert('一括拒否に失敗しました');
+            }
+        },
+
         async saveUserMeta(userId) {
             // 入力欄から直接値を取得
             const inputElement = document.getElementById(`recipient-number-${userId}`);
@@ -3076,6 +3390,26 @@ function adminDashboard() {
             }
         },
 
+        async fetchEmailTemplateTriggers() {
+            try {
+                const data = await this.apiFetch('/api/admin/email-templates/triggers');
+                this.emailTemplateTriggers = data.triggers || [];
+            } catch (error) {
+                console.error('トリガー一覧取得エラー:', error);
+                this.emailTemplateTriggers = [];
+            }
+        },
+
+        onNewTemplateTriggerChange() {
+            const t = this.getSelectedTriggerForNew();
+            if (t) this.newTemplate.recipient = t.recipient || '';
+        },
+
+        getSelectedTriggerForNew() {
+            if (!this.newTemplate.template_key) return null;
+            return this.emailTemplateTriggers.find(t => t.template_key === this.newTemplate.template_key) || null;
+        },
+
         async fetchEmailSettings() {
             try {
                 const data = await this.apiFetch('/api/admin/email-settings');
@@ -3170,31 +3504,32 @@ function adminDashboard() {
         },
 
         async createEmailTemplate() {
-            if (!this.newTemplate.template_key || !this.newTemplate.subject || !this.newTemplate.body || !this.newTemplate.recipient) {
-                alert('すべての必須項目を入力してください');
+            if (!this.newTemplate.template_key || !this.newTemplate.subject || !this.newTemplate.body) {
+                alert('トリガー・件名・本文を入力してください');
                 return;
             }
 
-            // テンプレートキーのバリデーション（英数字とアンダースコアのみ）
-            if (!/^[a-zA-Z0-9_]+$/.test(this.newTemplate.template_key)) {
-                alert('テンプレートキーは英数字とアンダースコアのみ使用可能です');
-                return;
+            const body = {
+                template_key: this.newTemplate.template_key,
+                subject: this.newTemplate.subject,
+                body: this.newTemplate.body,
+                is_active: this.newTemplate.is_active
+            };
+            if (this.newTemplate.scheduled_time && /^\d{2}:\d{2}$/.test(this.newTemplate.scheduled_time.trim())) {
+                body.scheduled_time = this.newTemplate.scheduled_time.trim();
             }
 
             try {
                 await this.apiFetch('/api/admin/email-templates', {
                     method: 'POST',
-                    body: JSON.stringify({
-                        template_key: this.newTemplate.template_key,
-                        subject: this.newTemplate.subject,
-                        body: this.newTemplate.body,
-                        is_active: this.newTemplate.is_active
-                    })
+                    body: JSON.stringify(body)
                 });
                 alert('テンプレートを作成しました');
                 this.showNewTemplateForm = false;
-                this.newTemplate = { template_key: '', subject: '', body: '', is_active: true, recipient: '' };
+                this.newTemplate = { template_key: '', subject: '', body: '', is_active: true, recipient: '', scheduled_time: '' };
                 await this.fetchEmailTemplates();
+                await this.fetchEmailTemplateTriggers();
+                await this.fetchEmailSettings();
             } catch (error) {
                 const errorMessage = error.message || 'テンプレートの作成に失敗しました';
                 alert(errorMessage);
@@ -3918,7 +4253,8 @@ function announcementManagement() {
         formData: {
             title: '',
             content: '',
-            target_audience: 'all'
+            target_audience: 'all',
+            reminder_enabled: true
         },
         readStatus: null,
         showReadStatusModal: false,
@@ -4033,7 +4369,7 @@ function announcementManagement() {
                 alert(this.editingId ? 'お知らせを更新しました' : 'お知らせを作成しました');
                 this.showForm = false;
                 this.editingId = null;
-                this.formData = { title: '', content: '', target_audience: 'all' };
+                this.formData = { title: '', content: '', target_audience: 'all', reminder_enabled: true };
                 await this.fetchAnnouncements();
             } catch (error) {
                 alert('お知らせの保存に失敗しました: ' + error.message);
@@ -4045,7 +4381,8 @@ function announcementManagement() {
             this.formData = {
                 title: announcement.title,
                 content: announcement.content,
-                target_audience: announcement.target_audience
+                target_audience: announcement.target_audience,
+                reminder_enabled: announcement.reminder_enabled !== false
             };
             this.editingId = announcement.id;
             this.showForm = true;
@@ -4071,7 +4408,7 @@ function announcementManagement() {
         handleCancel() {
             this.showForm = false;
             this.editingId = null;
-            this.formData = { title: '', content: '', target_audience: 'all' };
+            this.formData = { title: '', content: '', target_audience: 'all', reminder_enabled: true };
         },
 
         formatDate(dateString) {

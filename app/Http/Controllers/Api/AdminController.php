@@ -321,14 +321,36 @@ class AdminController extends Controller
         }
     }
 
+    /**
+     * CSV用に依頼タイプを日本語に変換
+     */
+    private function requestTypeForCsv(?string $requestType): string
+    {
+        $map = ['outing' => '外出', 'home' => '自宅'];
+        return $map[$requestType ?? ''] ?? (string) $requestType;
+    }
+
+    /**
+     * 先頭0がExcelで消えないよう、タブ付きの引用符囲みで出力する
+     */
+    private function csvCellWithLeadingZeros(?string $value): string
+    {
+        $s = (string) ($value ?? '');
+        return '"' . "\t" . str_replace('"', '""', $s) . '"';
+    }
+
     public function reportCsv($id)
     {
         $report = $this->adminService->getReportForCsv($id);
-        
+
         if (!$report) {
             return response()->json(['error' => '報告書が見つかりません'], 404);
         }
-        
+
+        $recipientNumber = $this->csvCellWithLeadingZeros($report['recipient_number'] ?? null);
+        $employeeNumber = $this->csvCellWithLeadingZeros($report['employee_number'] ?? null);
+        $requestType = $this->requestTypeForCsv($report['request_type'] ?? null);
+
         $csvHeader = 'ID,利用日,開始時刻,終了時刻,ユーザー名,ユーザーメール,受給者証番号,ガイド名,ガイドメール,従業員番号,依頼タイプ,依頼日,承認日時,サービス内容,報告内容' . "\n";
         $csvRow = sprintf(
             '%d,%s,%s,%s,"%s","%s",%s,"%s","%s",%s,%s,%s,%s,"%s","%s"',
@@ -336,21 +358,21 @@ class AdminController extends Controller
             $report['actual_date'],
             $report['actual_start_time'],
             $report['actual_end_time'],
-            $report['user_name'],
-            $report['user_email'],
-            $report['recipient_number'] ?? '',
-            $report['guide_name'],
-            $report['guide_email'],
-            $report['employee_number'] ?? '',
-            $report['request_type'],
+            str_replace('"', '""', $report['user_name'] ?? ''),
+            str_replace('"', '""', $report['user_email'] ?? ''),
+            $recipientNumber,
+            str_replace('"', '""', $report['guide_name'] ?? ''),
+            str_replace('"', '""', $report['guide_email'] ?? ''),
+            $employeeNumber,
+            $requestType,
             $report['request_date'] ?? '',
             $report['approved_at'],
             str_replace('"', '""', $report['service_content'] ?? ''),
             str_replace('"', '""', $report['report_content'] ?? '')
         );
-        
+
         $csv = "\xEF\xBB\xBF" . $csvHeader . $csvRow; // BOMを追加してExcelで正しく表示
-        
+
         return response($csv, 200)
             ->header('Content-Type', 'text/csv; charset=utf-8')
             ->header('Content-Disposition', 'attachment; filename=report_' . $id . '.csv');
@@ -359,29 +381,32 @@ class AdminController extends Controller
     public function reportsCsv()
     {
         $reports = $this->adminService->getReportsForCsv();
-        
+
         $csvHeader = 'ID,利用日,開始時刻,終了時刻,ユーザー名,ユーザーメール,受給者証番号,ガイド名,ガイドメール,従業員番号,依頼タイプ,依頼日,承認日時' . "\n";
-        $csvRows = array_map(function($report) {
+        $csvRows = array_map(function ($report) {
+            $recipientNumber = $this->csvCellWithLeadingZeros($report['recipient_number'] ?? null);
+            $employeeNumber = $this->csvCellWithLeadingZeros($report['employee_number'] ?? null);
+            $requestType = $this->requestTypeForCsv($report['request_type'] ?? null);
             return sprintf(
                 '%d,%s,%s,%s,"%s","%s",%s,"%s","%s",%s,%s,%s,%s',
                 $report['id'],
                 $report['actual_date'],
                 $report['actual_start_time'],
                 $report['actual_end_time'],
-                $report['user_name'],
-                $report['user_email'],
-                $report['recipient_number'] ?? '',
-                $report['guide_name'],
-                $report['guide_email'],
-                $report['employee_number'] ?? '',
-                $report['request_type'],
+                str_replace('"', '""', $report['user_name'] ?? ''),
+                str_replace('"', '""', $report['user_email'] ?? ''),
+                $recipientNumber,
+                str_replace('"', '""', $report['guide_name'] ?? ''),
+                str_replace('"', '""', $report['guide_email'] ?? ''),
+                $employeeNumber,
+                $requestType,
                 $report['request_date'] ?? '',
                 $report['approved_at']
             );
         }, $reports);
-        
+
         $csv = "\xEF\xBB\xBF" . $csvHeader . implode("\n", $csvRows); // BOMを追加してExcelで正しく表示
-        
+
         return response($csv, 200)
             ->header('Content-Type', 'text/csv; charset=utf-8')
             ->header('Content-Disposition', 'attachment; filename=reports.csv');
@@ -391,11 +416,14 @@ class AdminController extends Controller
     {
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
-        
+
         $reports = $this->adminService->getUsageForCsv($startDate, $endDate);
-        
+
         $csvHeader = 'ID,利用日,開始時刻,終了時刻,利用時間(分),ユーザー名,受給者証番号,ガイド名,従業員番号,依頼タイプ' . "\n";
-        $csvRows = array_map(function($report) {
+        $csvRows = array_map(function ($report) {
+            $recipientNumber = $this->csvCellWithLeadingZeros($report['recipient_number'] ?? null);
+            $employeeNumber = $this->csvCellWithLeadingZeros($report['employee_number'] ?? null);
+            $requestType = $this->requestTypeForCsv($report['request_type'] ?? null);
             return sprintf(
                 '%d,%s,%s,%s,%d,"%s",%s,"%s",%s,%s',
                 $report['id'],
@@ -403,16 +431,16 @@ class AdminController extends Controller
                 $report['actual_start_time'],
                 $report['actual_end_time'],
                 $report['duration_minutes'],
-                $report['user_name'],
-                $report['recipient_number'] ?? '',
-                $report['guide_name'],
-                $report['employee_number'] ?? '',
-                $report['request_type']
+                str_replace('"', '""', $report['user_name'] ?? ''),
+                $recipientNumber,
+                str_replace('"', '""', $report['guide_name'] ?? ''),
+                $employeeNumber,
+                $requestType
             );
         }, $reports);
-        
+
         $csv = "\xEF\xBB\xBF" . $csvHeader . implode("\n", $csvRows); // BOMを追加してExcelで正しく表示
-        
+
         return response($csv, 200)
             ->header('Content-Type', 'text/csv; charset=utf-8')
             ->header('Content-Disposition', 'attachment; filename=usage.csv');
@@ -699,6 +727,78 @@ class AdminController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * ユーザーを一括承認
+     */
+    public function batchApproveUsers(Request $request)
+    {
+        $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'integer|exists:users,id',
+        ]);
+        try {
+            $result = $this->adminService->batchApproveUsers($request->input('user_ids'));
+            return response()->json($result);
+        } catch (\Exception $e) {
+            \Log::error('AdminController::batchApproveUsers - Error', ['error' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * ユーザーを一括拒否
+     */
+    public function batchRejectUsers(Request $request)
+    {
+        $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'integer|exists:users,id',
+        ]);
+        try {
+            $result = $this->adminService->batchRejectUsers($request->input('user_ids'));
+            return response()->json($result);
+        } catch (\Exception $e) {
+            \Log::error('AdminController::batchRejectUsers - Error', ['error' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * ガイドを一括承認
+     */
+    public function batchApproveGuides(Request $request)
+    {
+        $request->validate([
+            'guide_ids' => 'required|array',
+            'guide_ids.*' => 'integer|exists:users,id',
+        ]);
+        try {
+            $result = $this->adminService->batchApproveGuides($request->input('guide_ids'));
+            return response()->json($result);
+        } catch (\Exception $e) {
+            \Log::error('AdminController::batchApproveGuides - Error', ['error' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * ガイドを一括拒否
+     */
+    public function batchRejectGuides(Request $request)
+    {
+        $request->validate([
+            'guide_ids' => 'required|array',
+            'guide_ids.*' => 'integer|exists:users,id',
+        ]);
+        try {
+            $result = $this->adminService->batchRejectGuides($request->input('guide_ids'));
+            return response()->json($result);
+        } catch (\Exception $e) {
+            \Log::error('AdminController::batchRejectGuides - Error', ['error' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }

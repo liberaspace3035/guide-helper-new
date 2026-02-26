@@ -842,7 +842,7 @@ class AdminService
     public function rejectGuide(int $guideId): void
     {
         $guide = User::where('id', $guideId)->where('role', 'guide')->firstOrFail();
-        
+
         $guide->update(['is_allowed' => false]);
 
         // 通知を送信
@@ -853,6 +853,94 @@ class AdminService
             'message' => '申し訳ございませんが、あなたのアカウントは承認されませんでした。',
             'related_id' => $guideId,
         ]);
+    }
+
+    /**
+     * ユーザーを一括承認
+     *
+     * @return array{successful_count: int, failed_count: int, message: string}
+     */
+    public function batchApproveUsers(array $userIds): array
+    {
+        $successfulCount = 0;
+        $users = User::where('role', 'user')->whereIn('id', $userIds)->get();
+        foreach ($users as $user) {
+            if (!$user->is_allowed) {
+                $this->approveUser($user->id);
+                $successfulCount++;
+            }
+        }
+        return [
+            'successful_count' => $successfulCount,
+            'failed_count' => count($userIds) - $successfulCount,
+            'message' => $successfulCount . '件のユーザーを承認しました',
+        ];
+    }
+
+    /**
+     * ユーザーを一括拒否（承認取り消し）
+     *
+     * @return array{successful_count: int, failed_count: int, message: string}
+     */
+    public function batchRejectUsers(array $userIds): array
+    {
+        $successfulCount = 0;
+        $users = User::where('role', 'user')->whereIn('id', $userIds)->get();
+        foreach ($users as $user) {
+            if ($user->is_allowed) {
+                $this->rejectUser($user->id);
+                $successfulCount++;
+            }
+        }
+        return [
+            'successful_count' => $successfulCount,
+            'failed_count' => count($userIds) - $successfulCount,
+            'message' => $successfulCount . '件のユーザーを拒否しました',
+        ];
+    }
+
+    /**
+     * ガイドを一括承認
+     *
+     * @return array{successful_count: int, failed_count: int, message: string}
+     */
+    public function batchApproveGuides(array $guideIds): array
+    {
+        $successfulCount = 0;
+        $guides = User::where('role', 'guide')->whereIn('id', $guideIds)->get();
+        foreach ($guides as $guide) {
+            if (!$guide->is_allowed) {
+                $this->approveGuide($guide->id);
+                $successfulCount++;
+            }
+        }
+        return [
+            'successful_count' => $successfulCount,
+            'failed_count' => count($guideIds) - $successfulCount,
+            'message' => $successfulCount . '件のガイドを承認しました',
+        ];
+    }
+
+    /**
+     * ガイドを一括拒否（承認取り消し）
+     *
+     * @return array{successful_count: int, failed_count: int, message: string}
+     */
+    public function batchRejectGuides(array $guideIds): array
+    {
+        $successfulCount = 0;
+        $guides = User::where('role', 'guide')->whereIn('id', $guideIds)->get();
+        foreach ($guides as $guide) {
+            if ($guide->is_allowed) {
+                $this->rejectGuide($guide->id);
+                $successfulCount++;
+            }
+        }
+        return [
+            'successful_count' => $successfulCount,
+            'failed_count' => count($guideIds) - $successfulCount,
+            'message' => $successfulCount . '件のガイドを拒否しました',
+        ];
     }
 
     /**

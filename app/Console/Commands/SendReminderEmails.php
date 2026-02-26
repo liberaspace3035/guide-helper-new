@@ -126,10 +126,10 @@ class SendReminderEmails extends Command
             }
         }
 
-        // お知らせ未読リマインド（ユーザー・ガイド向け）
+        // お知らせ未読リマインド（ユーザー・ガイド向け・reminder_enabled が true のお知らせのみ）
         $announcementReminderSetting = EmailNotificationSetting::where('notification_type', 'announcement_reminder')->first();
         if ($announcementReminderSetting && $announcementReminderSetting->is_enabled) {
-            $announcements = Announcement::orderBy('created_at', 'desc')->get();
+            $announcements = Announcement::where('reminder_enabled', true)->orderBy('created_at', 'desc')->get();
             if ($announcements->isNotEmpty()) {
                 $readIdsByUser = AnnouncementRead::get()
                     ->groupBy('user_id')

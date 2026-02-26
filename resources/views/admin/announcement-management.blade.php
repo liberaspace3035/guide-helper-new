@@ -49,6 +49,17 @@
                     </select>
                 </div>
 
+                <div class="form-group form-group-reminder">
+                    <label class="reminder-label">
+                        <input
+                            type="checkbox"
+                            x-model="formData.reminder_enabled"
+                        />
+                        <span>リマインドを送信する（重要なお知らせ・未読の間は毎日通知）</span>
+                    </label>
+                    <p class="form-hint">オフにすると、このお知らせはリマインドメールに含まれません。軽いお知らせはオフにしてください。</p>
+                </div>
+
                 <div class="form-actions">
                     <button type="button" @click="handleCancel()" class="btn-secondary btn-form-action">
                         キャンセル
@@ -67,6 +78,7 @@
                 <tr>
                     <th>タイトル</th>
                     <th>対象者</th>
+                    <th>リマインド</th>
                     <th>作成日時</th>
                     <th>作成者</th>
                     <th>既読状況</th>
@@ -76,7 +88,7 @@
             <tbody>
                 <template x-if="announcements.length === 0">
                     <tr>
-                        <td colspan="6" class="empty-message">
+                        <td colspan="7" class="empty-message">
                             お知らせがありません
                         </td>
                     </tr>
@@ -88,6 +100,9 @@
                         </td>
                         <td class="target-cell">
                             <span class="target-badge" :class="announcement.target_audience" x-text="getTargetLabel(announcement.target_audience)"></span>
+                        </td>
+                        <td class="target-cell">
+                            <span class="reminder-badge" :class="announcement.reminder_enabled !== false ? 'reminder-on' : 'reminder-off'" x-text="announcement.reminder_enabled !== false ? 'する' : 'しない'"></span>
                         </td>
                         <td class="target-cell">
                             <div class="datetime-cell-vertical">

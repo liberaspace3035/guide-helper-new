@@ -58,6 +58,7 @@ class AnnouncementController extends Controller
                     'title' => $announcement->title,
                     'content' => $announcement->content,
                     'target_audience' => $announcement->target_audience,
+                    'reminder_enabled' => $announcement->reminder_enabled ?? true,
                     'created_by' => $announcement->created_by,
                     'created_by_name' => $announcement->createdByUser->name ?? '不明',
                     'created_at' => $announcement->created_at,
@@ -74,13 +75,14 @@ class AnnouncementController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'target_audience' => 'required|in:user,guide,all',
+            'reminder_enabled' => 'sometimes|boolean',
         ]);
 
+        $data = $request->only(['title', 'content', 'target_audience']);
+        $data['reminder_enabled'] = $request->boolean('reminder_enabled', true);
+
         try {
-            $announcement = $this->announcementService->createAnnouncement(
-                $request->only(['title', 'content', 'target_audience']),
-                Auth::id()
-            );
+            $announcement = $this->announcementService->createAnnouncement($data, Auth::id());
 
             $announcement->load('createdByUser:id,name');
 
@@ -90,6 +92,7 @@ class AnnouncementController extends Controller
                     'title' => $announcement->title,
                     'content' => $announcement->content,
                     'target_audience' => $announcement->target_audience,
+                    'reminder_enabled' => $announcement->reminder_enabled,
                     'created_by' => $announcement->created_by,
                     'created_by_name' => $announcement->createdByUser->name ?? '不明',
                     'created_at' => $announcement->created_at,
@@ -107,13 +110,16 @@ class AnnouncementController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'target_audience' => 'required|in:user,guide,all',
+            'reminder_enabled' => 'sometimes|boolean',
         ]);
 
+        $data = $request->only(['title', 'content', 'target_audience']);
+        if ($request->has('reminder_enabled')) {
+            $data['reminder_enabled'] = $request->boolean('reminder_enabled');
+        }
+
         try {
-            $announcement = $this->announcementService->updateAnnouncement(
-                $id,
-                $request->only(['title', 'content', 'target_audience'])
-            );
+            $announcement = $this->announcementService->updateAnnouncement($id, $data);
 
             $announcement->load('createdByUser:id,name');
 
@@ -123,6 +129,7 @@ class AnnouncementController extends Controller
                     'title' => $announcement->title,
                     'content' => $announcement->content,
                     'target_audience' => $announcement->target_audience,
+                    'reminder_enabled' => $announcement->reminder_enabled,
                     'created_by' => $announcement->created_by,
                     'created_by_name' => $announcement->createdByUser->name ?? '不明',
                     'created_at' => $announcement->created_at,
