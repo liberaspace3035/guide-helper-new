@@ -14,7 +14,7 @@
             <p class="login-subtitle">アカウントにログインしてください</p>
         </div>
         
-        <form method="POST" action="{{ route('login') }}" @submit.prevent="loading = true; $el.submit()" aria-label="ログインフォーム">
+        <form method="POST" action="{{ route('login') }}" autocomplete="on" @submit.prevent="loading = true; $el.submit()" aria-label="ログインフォーム">
             @csrf
             <div x-show="error" class="error-message" id="login-error-summary" role="alert" aria-live="polite" aria-atomic="true" x-text="error" x-transition></div>
             @if($errors->any())
