@@ -27,27 +27,40 @@ class SendReminderEmails extends Command
 
     public function handle()
     {
-        $reminderSetting = EmailNotificationSetting::where('notification_type', 'reminder')->first();
-        $scheduledTimeRaw = $reminderSetting && $reminderSetting->scheduled_time
-            ? trim($reminderSetting->scheduled_time)
-            : '09:00';
-        $scheduledTime = $this->normalizeTime($scheduledTimeRaw);
         $now = Carbon::now()->format('H:i');
+        $reminderSetting = EmailNotificationSetting::where('notification_type', 'reminder')->first();
+        $announcementSetting = EmailNotificationSetting::where('notification_type', 'announcement_reminder')->first();
 
-        // --force でない場合は、設定時刻と一致したときだけ送信
+        // 送信時刻: 「リマインド」または「お知らせ未読リマインド」のどちらかで一致すれば送信
+        $reminderTime = $reminderSetting && $reminderSetting->scheduled_time
+            ? $this->normalizeTime(trim($reminderSetting->scheduled_time))
+            : '09:00';
+        $announcementTime = $announcementSetting && $announcementSetting->scheduled_time
+            ? $this->normalizeTime(trim($announcementSetting->scheduled_time))
+            : null;
+
+        $timeMatches = ($now === $reminderTime) || ($announcementTime !== null && $now === $announcementTime);
+
+        // --force でない場合は、いずれかの設定時刻と一致したときだけ送信
         if (! $this->option('force')) {
-            if ($now !== $scheduledTime) {
-                \Log::debug('SendReminderEmails: 送信時刻外のためスキップ', [
+            if (! $timeMatches) {
+                \Log::info('SendReminderEmails: 送信時刻外のためスキップ（送信なし）', [
                     'now' => $now,
-                    'scheduled_time' => $scheduledTime,
-                    'scheduled_time_raw' => $scheduledTimeRaw,
+                    'reminder_scheduled' => $reminderTime,
+                    'announcement_scheduled' => $announcementTime,
                     'timezone' => config('app.timezone'),
                 ]);
                 return 0;
             }
         } else {
-            $this->info("送信時刻を無視して実行します（now={$now}, scheduled={$scheduledTime}）");
+            $this->info("送信時刻を無視して実行します（now={$now}, reminder={$reminderTime}, announcement={$announcementTime}）");
         }
+
+        \Log::info('SendReminderEmails: 送信処理を実行', [
+            'now' => $now,
+            'reminder_scheduled' => $reminderTime,
+            'announcement_scheduled' => $announcementTime,
+        ]);
 
         // リマインド通知が有効かチェック（依頼リマインド・報告書リマインドの送信可否）
         if (!$reminderSetting || !$reminderSetting->is_enabled) {
@@ -173,6 +186,7 @@ class SendReminderEmails extends Command
         }
 
         $this->info("リマインドメールを {$sentCount} 件送信しました");
+        \Log::info('SendReminderEmails: 完了', ['sent_count' => $sentCount]);
         return 0;
     }
 
