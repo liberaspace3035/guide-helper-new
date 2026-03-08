@@ -7,6 +7,7 @@ use App\Models\Request;
 use App\Models\GuideAcceptance;
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\UserBlock;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -40,9 +41,41 @@ class GuideProposalService
         if ($user->userProfile && $user->userProfile->accept_guide_proposals === false) {
             throw new \Exception('この利用者はガイドの提案を受け取らない設定です');
         }
+
+        // ブロック関係のチェック
+        $isBlocked = UserBlock::where(function ($query) use ($guideId, $user) {
+            $query->where('blocker_id', $guideId)->where('blocked_id', $user->id);
+        })->orWhere(function ($query) use ($guideId, $user) {
+            $query->where('blocker_id', $user->id)->where('blocked_id', $guideId);
+        })->exists();
+
+        if ($isBlocked) {
+            throw new \Exception('この利用者に提案することはできません');
+        }
+
         $requestType = $data['request_type'] ?? 'outing';
         if (!in_array($requestType, ['outing', 'home'], true)) {
             throw new \Exception('request_type は outing または home を指定してください');
+        }
+
+        // 資格チェック（依頼タイプに応じた資格を持っているか）
+        $guideProfile = $guide->guideProfile;
+        if ($guideProfile) {
+            if ($requestType === 'outing' && !$guideProfile->canSupportOuting()) {
+                throw new \Exception('外出支援を提案するには、同行援護一般課程または応用課程の資格が必要です');
+            }
+            if ($requestType === 'home' && !$guideProfile->canSupportHome()) {
+                throw new \Exception('自宅支援を提案するには、介護福祉士・介護実務者研修・介護初任者研修のいずれかの資格が必要です');
+            }
+        }
+
+        // 過去の日付での提案は作成不可
+        $proposedDate = $data['proposed_date'] ?? null;
+        if ($proposedDate) {
+            $proposedDateCarbon = $proposedDate instanceof Carbon ? $proposedDate : Carbon::parse($proposedDate);
+            if ($proposedDateCarbon->lt(Carbon::today())) {
+                throw new \Exception('過去の日付での提案はできません');
+            }
         }
 
         $model = GuideProposal::create([
@@ -88,13 +121,32 @@ class GuideProposalService
             throw new \Exception('request_type は outing または home を指定してください');
         }
 
-        $userIds = User::where('role', 'user')
+        // 過去の日付での提案は作成不可
+        $proposedDate = $data['proposed_date'] ?? null;
+        if ($proposedDate) {
+            $proposedDateCarbon = $proposedDate instanceof Carbon ? $proposedDate : Carbon::parse($proposedDate);
+            if ($proposedDateCarbon->lt(Carbon::today())) {
+                throw new \Exception('過去の日付での一斉提案はできません');
+            }
+        }
+
+        // ガイドとブロック関係にあるユーザーIDを取得
+        $blockedUserIds = UserBlock::where('blocker_id', $guideId)->pluck('blocked_id')->toArray();
+        $blockedByUserIds = UserBlock::where('blocked_id', $guideId)->pluck('blocker_id')->toArray();
+        $allBlockedUserIds = array_unique(array_merge($blockedUserIds, $blockedByUserIds));
+
+        $query = User::where('role', 'user')
             ->where('is_allowed', true)
             ->where(function ($q) {
                 $q->whereDoesntHave('userProfile')
                     ->orWhereHas('userProfile', fn ($q2) => $q2->where('accept_guide_proposals', true));
-            })
-            ->pluck('id');
+            });
+        
+        if (!empty($allBlockedUserIds)) {
+            $query->whereNotIn('id', $allBlockedUserIds);
+        }
+        
+        $userIds = $query->pluck('id');
 
         if ($userIds->isEmpty()) {
             throw new \Exception('提案を受け取る設定の利用者がいません');
@@ -136,10 +188,12 @@ class GuideProposalService
 
     /**
      * ガイドが送った提案一覧（一斉提案は bulk_group_id で1件にまとめて返す）
+     * 過去の日付の提案は除外
      */
     public function listForGuide(int $guideId): array
     {
         $proposals = GuideProposal::where('guide_id', $guideId)
+            ->whereDate('proposed_date', '>=', Carbon::today())
             ->with(['user:id,name', 'user.userProfile:id,user_id,show_name_in_proposals'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -196,10 +250,12 @@ class GuideProposalService
 
     /**
      * 利用者に届いている提案一覧（未対応のみ or 全て）
+     * 過去の日付の提案は除外
      */
     public function listForUser(int $userId, bool $pendingOnly = true): array
     {
         $query = GuideProposal::where('user_id', $userId)
+            ->whereDate('proposed_date', '>=', Carbon::today())
             ->with('guide:id,name');
         if ($pendingOnly) {
             $query->where('status', 'pending');
@@ -219,6 +275,15 @@ class GuideProposalService
             ->where('user_id', $userId)
             ->where('status', 'pending')
             ->firstOrFail();
+
+        // 過去の日付の提案は承諾不可
+        $proposedDate = $proposal->proposed_date;
+        if ($proposedDate) {
+            $proposedDateCarbon = $proposedDate instanceof Carbon ? $proposedDate : Carbon::parse($proposedDate);
+            if ($proposedDateCarbon->lt(Carbon::today())) {
+                throw new \Exception('この提案は既に期限が過ぎています（提案日が過去です）');
+            }
+        }
 
         return DB::transaction(function () use ($proposal) {
             $proposal->update(['status' => 'accepted']);
@@ -309,11 +374,21 @@ class GuideProposalService
      */
     public function listUsersForProposal(int $guideId): array
     {
-        return User::where('role', 'user')
+        // ガイドとブロック関係にあるユーザーIDを取得
+        $blockedUserIds = UserBlock::where('blocker_id', $guideId)->pluck('blocked_id')->toArray();
+        $blockedByUserIds = UserBlock::where('blocked_id', $guideId)->pluck('blocker_id')->toArray();
+        $allBlockedUserIds = array_unique(array_merge($blockedUserIds, $blockedByUserIds));
+
+        $query = User::where('role', 'user')
             ->where('is_allowed', true)
             ->with('userProfile:id,user_id,accept_guide_proposals,show_name_in_proposals')
-            ->orderBy('name')
-            ->get(['id', 'name'])
+            ->orderBy('name');
+        
+        if (!empty($allBlockedUserIds)) {
+            $query->whereNotIn('id', $allBlockedUserIds);
+        }
+
+        return $query->get(['id', 'name'])
             ->filter(fn ($u) => !$u->userProfile || $u->userProfile->accept_guide_proposals !== false)
             ->map(fn ($u) => [
                 'id' => $u->id,

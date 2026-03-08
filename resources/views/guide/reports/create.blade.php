@@ -94,6 +94,74 @@
             ></textarea>
         </div>
 
+        {{-- 利用者評価セクション --}}
+        <div class="form-group rating-section">
+            <div class="rating-header">
+                <h3>利用者評価 <span class="required">*</span></h3>
+                <p class="rating-description">本日のご利用について、3段階で評価とコメントを入力してください。誹謗中傷は固くお断りします。</p>
+            </div>
+            
+            <div class="rating-score-group">
+                <label>評価 <span class="required">*</span></label>
+                <div class="rating-buttons">
+                    <button
+                        type="button"
+                        class="rating-btn"
+                        :class="{ 'active': formData.user_rating === 3, 'good': formData.user_rating === 3 }"
+                        @click="formData.user_rating = 3"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
+                        <span>良い</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="rating-btn"
+                        :class="{ 'active': formData.user_rating === 2, 'normal': formData.user_rating === 2 }"
+                        @click="formData.user_rating = 2"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="8" y1="15" x2="16" y2="15"></line>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
+                        <span>普通</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="rating-btn"
+                        :class="{ 'active': formData.user_rating === 1, 'needs-improvement': formData.user_rating === 1 }"
+                        @click="formData.user_rating = 1"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M16 16s-1.5-2-4-2-4 2-4 2"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
+                        <span>改善が必要</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="rating-comment-group">
+                <label for="user_rating_comment">評価コメント <span class="required">*</span></label>
+                <textarea
+                    id="user_rating_comment"
+                    name="user_rating_comment"
+                    x-model="formData.user_rating_comment"
+                    rows="4"
+                    placeholder="利用者の方についてのコメントを入力してください"
+                    required
+                ></textarea>
+            </div>
+        </div>
+
         <div class="form-actions">
             <button
                 type="button"
@@ -135,7 +203,9 @@ function reportForm() {
             report_content: '',
             actual_date: '',
             actual_start_time: '',
-            actual_end_time: ''
+            actual_end_time: '',
+            user_rating: null,
+            user_rating_comment: ''
         },
         saving: false,
         error: '',
@@ -147,7 +217,9 @@ function reportForm() {
                     report_content: this.existingReport.report_content || '',
                     actual_date: this.existingReport.actual_date_formatted || this.existingReport.actual_date || '',
                     actual_start_time: this.existingReport.actual_start_time_formatted || (this.existingReport.actual_start_time ? (typeof this.existingReport.actual_start_time === 'string' ? this.existingReport.actual_start_time.substring(0, 5) : '') : ''),
-                    actual_end_time: this.existingReport.actual_end_time_formatted || (this.existingReport.actual_end_time ? (typeof this.existingReport.actual_end_time === 'string' ? this.existingReport.actual_end_time.substring(0, 5) : '') : '')
+                    actual_end_time: this.existingReport.actual_end_time_formatted || (this.existingReport.actual_end_time ? (typeof this.existingReport.actual_end_time === 'string' ? this.existingReport.actual_end_time.substring(0, 5) : '') : ''),
+                    user_rating: this.existingReport.guide_rating?.score || null,
+                    user_rating_comment: this.existingReport.guide_rating?.comment || ''
                 };
             } else {
                 // マッチング情報から初期値を設定
@@ -195,6 +267,12 @@ function reportForm() {
                 formData.append('actual_date', this.formData.actual_date);
                 formData.append('actual_start_time', this.formData.actual_start_time);
                 formData.append('actual_end_time', this.formData.actual_end_time);
+                if (this.formData.user_rating) {
+                    formData.append('user_rating', this.formData.user_rating);
+                }
+                if (this.formData.user_rating_comment) {
+                    formData.append('user_rating_comment', this.formData.user_rating_comment);
+                }
                 formData.append('_token', '{{ csrf_token() }}');
 
                 const response = await fetch('{{ route("guide.reports.store") }}', {
@@ -282,6 +360,19 @@ function reportForm() {
             // 開始時刻と終了時刻の検証
             if (this.formData.actual_start_time >= this.formData.actual_end_time) {
                 this.error = '終了時刻は開始時刻より後である必要があります。';
+                this.saving = false;
+                return;
+            }
+            
+            // 評価のバリデーション（提出時は必須）
+            if (!this.formData.user_rating) {
+                this.error = '報告書を提出するには、利用者の評価を選択してください。';
+                this.saving = false;
+                return;
+            }
+            
+            if (!this.formData.user_rating_comment || this.formData.user_rating_comment.trim() === '') {
+                this.error = '報告書を提出するには、評価コメントを入力してください。';
                 this.saving = false;
                 return;
             }

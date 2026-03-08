@@ -86,6 +86,73 @@
 
         <template x-if="report.status === 'submitted'">
             <div class="report-actions">
+                {{-- ガイド評価セクション --}}
+                <div class="rating-section">
+                    <div class="rating-header">
+                        <h3>ガイド評価 <span class="required">*</span></h3>
+                        <p class="rating-description">本日の支援について、3段階で評価とコメントを入力してください。</p>
+                    </div>
+                    
+                    <div class="rating-score-group">
+                        <label>評価 <span class="required">*</span></label>
+                        <div class="rating-buttons">
+                            <button
+                                type="button"
+                                class="rating-btn"
+                                :class="{ 'active': guideRating === 3, 'good': guideRating === 3 }"
+                                @click="guideRating = 3"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                                </svg>
+                                <span>良い</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="rating-btn"
+                                :class="{ 'active': guideRating === 2, 'normal': guideRating === 2 }"
+                                @click="guideRating = 2"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="8" y1="15" x2="16" y2="15"></line>
+                                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                                </svg>
+                                <span>普通</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="rating-btn"
+                                :class="{ 'active': guideRating === 1, 'needs-improvement': guideRating === 1 }"
+                                @click="guideRating = 1"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M16 16s-1.5-2-4-2-4 2-4 2"></path>
+                                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                                </svg>
+                                <span>改善が必要</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="rating-comment-group">
+                        <label for="guide_rating_comment">評価コメント <span class="required">*</span></label>
+                        <textarea
+                            id="guide_rating_comment"
+                            x-model="guideRatingComment"
+                            rows="4"
+                            placeholder="ガイドの方についてのコメントを入力してください"
+                            required
+                        ></textarea>
+                    </div>
+                </div>
+
                 <div class="action-section">
                     <h4 class="action-section-title">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -93,7 +160,8 @@
                         </svg>
                         承認
                     </h4>
-                    <p class="action-section-description">報告書の内容に問題がなければ承認してください</p>
+                    <p class="action-section-description">報告書の内容に問題がなければ承認してください（評価の入力が必要です）</p>
+                    <div x-show="ratingError" class="error-message" role="alert" x-text="ratingError"></div>
                     <button
                         type="button"
                         @click="handleApprove"
@@ -156,10 +224,26 @@ function reportDetail() {
         report: @json($report),
         revisionNotes: '',
         processing: false,
+        guideRating: null,
+        guideRatingComment: '',
+        ratingError: '',
         init() {
             // 初期化処理
         },
         async handleApprove() {
+            this.ratingError = '';
+            
+            // 評価のバリデーション
+            if (!this.guideRating) {
+                this.ratingError = '承認するには、ガイドの評価を選択してください。';
+                return;
+            }
+            
+            if (!this.guideRatingComment || this.guideRatingComment.trim() === '') {
+                this.ratingError = '承認するには、評価コメントを入力してください。';
+                return;
+            }
+            
             if (!confirm('この報告書を承認しますか？')) {
                 return;
             }
@@ -169,6 +253,8 @@ function reportDetail() {
                 const formData = new FormData();
                 formData.append('_token', '{{ csrf_token() }}');
                 formData.append('_method', 'POST');
+                formData.append('guide_rating', this.guideRating);
+                formData.append('guide_rating_comment', this.guideRatingComment);
 
                 const response = await fetch('{{ route("reports.approve", $report->id) }}', {
                     method: 'POST',
@@ -182,10 +268,11 @@ function reportDetail() {
                     alert('報告書を承認しました');
                     window.location.href = '{{ route("dashboard") }}';
                 } else {
-                    alert('承認処理に失敗しました');
+                    const errorData = await response.json().catch(() => ({}));
+                    this.ratingError = errorData.error || errorData.message || '承認処理に失敗しました';
                 }
             } catch (err) {
-                alert('承認処理に失敗しました');
+                this.ratingError = '承認処理に失敗しました';
             } finally {
                 this.processing = false;
             }

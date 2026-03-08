@@ -21,12 +21,15 @@ class Matching extends Model
         'completed_at',
         'report_completed_at',
         'status',
+        'cancelled_at',
+        'cancelled_by',
     ];
 
     protected $casts = [
         'matched_at' => 'datetime',
         'completed_at' => 'datetime',
         'report_completed_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     public function request()

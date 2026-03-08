@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\RequestService;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class RequestController extends Controller
 {
@@ -73,6 +74,14 @@ class RequestController extends Controller
             'end_time' => 'required|date_format:H:i',
             'guide_gender' => 'nullable|in:none,male,female',
             'guide_age' => 'nullable|in:none,20s,30s,40s,50s,60s',
+            // 繰り返し設定のバリデーション
+            'repeat_enabled' => 'nullable|in:0,1',
+            'repeat_type' => 'nullable|in:weekly,monthly,custom',
+            'repeat_interval' => 'nullable|integer|min:1|max:4',
+            'repeat_weekdays' => 'nullable|string',
+            'repeat_until' => 'nullable|date|after_or_equal:request_date',
+            'repeat_month_count' => 'nullable|integer|min:2|max:6',
+            'repeat_custom_dates' => 'nullable|string',
         ], [
             'request_type.required' => '依頼タイプを選択してください',
             'request_type.in' => '依頼タイプが不正です',
@@ -92,6 +101,12 @@ class RequestController extends Controller
             'end_time.date_format' => '終了時刻の形式が不正です',
             'guide_gender.in' => '希望するガイドの性別が不正です',
             'guide_age.in' => '希望するガイドの年代が不正です',
+            'repeat_type.in' => '繰り返しパターンが不正です',
+            'repeat_interval.min' => '繰り返し頻度は1以上を指定してください',
+            'repeat_interval.max' => '繰り返し頻度は4以下を指定してください',
+            'repeat_until.after_or_equal' => '終了日は希望日以降を指定してください',
+            'repeat_month_count.min' => '繰り返し回数は2ヶ月以上を指定してください',
+            'repeat_month_count.max' => '繰り返し回数は6ヶ月以下を指定してください',
         ]);
 
         if ($validator->fails()) {
@@ -150,6 +165,14 @@ class RequestController extends Controller
         }
 
         try {
+            \Log::info('依頼作成開始', [
+                'user_id' => Auth::id(),
+                'request_date' => $request->request_date,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+                'repeat_enabled' => $request->repeat_enabled,
+            ]);
+            
             $data = $request->all();
             
             // 日付形式の正規化（DATE型用）
@@ -213,11 +236,44 @@ class RequestController extends Controller
                 $data['start_time'] = $parts[0] . ':' . $parts[1];
             }
             
-            $createdRequest = $this->requestService->createRequest($data, Auth::id());
+            // 繰り返し設定の処理
+            $repeatEnabled = ($request->repeat_enabled ?? '0') === '1';
+            $createdRequests = [];
+            
+            if ($repeatEnabled) {
+                // 繰り返し依頼を生成
+                $repeatDates = $this->generateRepeatDates($request);
+                
+                \Log::info('繰り返し依頼生成', [
+                    'user_id' => Auth::id(),
+                    'dates_count' => count($repeatDates),
+                    'dates' => $repeatDates,
+                ]);
+                
+                foreach ($repeatDates as $date) {
+                    $requestData = $data;
+                    $requestData['request_date'] = $date;
+                    
+                    $createdRequest = $this->requestService->createRequest($requestData, Auth::id());
+                    $createdRequests[] = $createdRequest;
+                }
+                
+                $successMessage = count($createdRequests) . '件の依頼が作成されました';
+            } else {
+                // 単一依頼を作成
+                $createdRequest = $this->requestService->createRequest($data, Auth::id());
+                $createdRequests[] = $createdRequest;
+                
+                $successMessage = $createdRequest->formatted_notes !== null
+                    ? '依頼が作成されました（音声入力をAIで整形しました）'
+                    : '依頼が作成されました';
+            }
 
-            $successMessage = $createdRequest->formatted_notes !== null
-                ? '依頼が作成されました（音声入力をAIで整形しました）'
-                : '依頼が作成されました';
+            \Log::info('依頼作成完了', [
+                'user_id' => Auth::id(),
+                'request_ids' => array_map(fn($r) => $r->id, $createdRequests),
+                'count' => count($createdRequests),
+            ]);
 
             return redirect()->route('requests.index')
                 ->with('success', $successMessage);
@@ -230,6 +286,123 @@ class RequestController extends Controller
                 ->withErrors(['error' => $e->getMessage()])
                 ->withInput();
         }
+    }
+
+    /**
+     * 繰り返し設定から日付の配列を生成
+     */
+    private function generateRepeatDates(Request $request): array
+    {
+        $dates = [];
+        $baseDate = $request->request_date;
+        $repeatType = $request->repeat_type ?? 'weekly';
+        $today = Carbon::today();
+        
+        if (!$baseDate) {
+            return [];
+        }
+        
+        // 基準日を追加（過去でなければ）
+        $baseDateCarbon = Carbon::parse($baseDate);
+        if ($baseDateCarbon->gte($today)) {
+            $dates[] = $baseDate;
+        }
+        
+        if ($repeatType === 'weekly') {
+            // 毎週パターン
+            $weekdays = json_decode($request->repeat_weekdays ?? '[]', true) ?: [];
+            $interval = (int)($request->repeat_interval ?? 1);
+            $until = $request->repeat_until ? Carbon::parse($request->repeat_until) : null;
+            $maxWeeks = 12;
+            
+            if (empty($weekdays)) {
+                // 曜日未指定の場合、基準日の曜日を使用
+                $weekdays = [$baseDateCarbon->dayOfWeek];
+            }
+            
+            // 最大終了日（12週間後）
+            $maxEndDate = $baseDateCarbon->copy()->addWeeks($maxWeeks);
+            if ($until && $until->lt($maxEndDate)) {
+                $maxEndDate = $until;
+            }
+            
+            for ($week = 0; $week < $maxWeeks; $week++) {
+                foreach ($weekdays as $dayOfWeek) {
+                    // 基準日の週の開始日から計算
+                    $weekStart = $baseDateCarbon->copy()->startOfWeek(Carbon::SUNDAY);
+                    $date = $weekStart->copy()
+                        ->addWeeks($week * $interval)
+                        ->addDays($dayOfWeek);
+                    
+                    // 過去の日付はスキップ
+                    if ($date->lt($today)) {
+                        continue;
+                    }
+                    
+                    // 終了日を超えたらスキップ
+                    if ($date->gt($maxEndDate)) {
+                        continue;
+                    }
+                    
+                    $dateStr = $date->format('Y-m-d');
+                    if (!in_array($dateStr, $dates)) {
+                        $dates[] = $dateStr;
+                    }
+                }
+            }
+        } elseif ($repeatType === 'monthly') {
+            // 毎月パターン
+            $monthCount = (int)($request->repeat_month_count ?? 3);
+            $dayOfMonth = $baseDateCarbon->day;
+            
+            for ($i = 1; $i < $monthCount; $i++) {
+                $date = $baseDateCarbon->copy()->addMonths($i);
+                
+                // 月末調整（例：1/31の翌月は2/28に）
+                $lastDayOfMonth = $date->copy()->endOfMonth()->day;
+                if ($dayOfMonth > $lastDayOfMonth) {
+                    $date->day = $lastDayOfMonth;
+                } else {
+                    $date->day = $dayOfMonth;
+                }
+                
+                // 過去の日付はスキップ
+                if ($date->lt($today)) {
+                    continue;
+                }
+                
+                $dateStr = $date->format('Y-m-d');
+                if (!in_array($dateStr, $dates)) {
+                    $dates[] = $dateStr;
+                }
+            }
+        } elseif ($repeatType === 'custom') {
+            // カスタム日付
+            $customDates = json_decode($request->repeat_custom_dates ?? '[]', true) ?: [];
+            
+            foreach ($customDates as $customDate) {
+                if (!$customDate) {
+                    continue;
+                }
+                
+                $date = Carbon::parse($customDate);
+                
+                // 過去の日付はスキップ
+                if ($date->lt($today)) {
+                    continue;
+                }
+                
+                $dateStr = $date->format('Y-m-d');
+                if (!in_array($dateStr, $dates)) {
+                    $dates[] = $dateStr;
+                }
+            }
+        }
+        
+        // 日付順にソート
+        sort($dates);
+        
+        return $dates;
     }
 }
 

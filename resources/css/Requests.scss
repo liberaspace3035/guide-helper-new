@@ -770,3 +770,198 @@
     gap: var(--spacing-xs);
   }
 }
+
+// 利用者情報セクション（ガイド画面用）
+.user-info-section {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid #e9d5ff;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.08);
+}
+
+.user-info-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7c3aed;
+  margin-bottom: var(--spacing-md);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 16px;
+    background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
+    border-radius: 2px;
+  }
+}
+
+.user-info-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+}
+
+.user-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .stat-label {
+    font-size: 11px;
+    color: #9333ea;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .stat-value {
+    font-size: 15px;
+    font-weight: 700;
+
+    &.rating {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #f59e0b;
+
+      .star-icon {
+        width: 16px;
+        height: 16px;
+        filter: drop-shadow(0 1px 2px rgba(245, 158, 11, 0.3));
+      }
+
+      small {
+        color: #78716c;
+        font-weight: 500;
+        font-size: 12px;
+      }
+    }
+
+    &.cancel-rate {
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 14px;
+
+      &.low {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+        box-shadow: 0 2px 6px rgba(6, 95, 70, 0.15);
+      }
+
+      &.medium {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        box-shadow: 0 2px 6px rgba(146, 64, 14, 0.15);
+      }
+
+      &.high {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #991b1b;
+        box-shadow: 0 2px 6px rgba(153, 27, 27, 0.15);
+      }
+    }
+
+    &.no-data {
+      color: #a8a29e;
+      font-size: 14px;
+    }
+  }
+}
+
+.user-priority-points {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: var(--spacing-md);
+
+  .stat-label {
+    font-size: 11px;
+    color: #9333ea;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .priority-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .priority-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: #fff;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3);
+  }
+}
+
+.user-latest-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid #e9d5ff;
+
+  .stat-label {
+    font-size: 11px;
+    color: #9333ea;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .comment-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+  }
+
+  .comment-score {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+
+    &.score-3 {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      color: #065f46;
+    }
+
+    &.score-2 {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      color: #92400e;
+    }
+
+    &.score-1 {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      color: #991b1b;
+    }
+  }
+
+  .comment-text {
+    font-size: 13px;
+    color: #44403c;
+    line-height: 1.5;
+    flex: 1;
+  }
+}

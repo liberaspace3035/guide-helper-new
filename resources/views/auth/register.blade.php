@@ -487,57 +487,51 @@
                     </div>
 
                     <div class="form-group">
-                        <label>保有資格（最大3件） <span class="required">*</span></label>
-                        <div class="qualifications-list">
-                            <template x-for="(qual, index) in formData.qualifications" :key="index">
-                                <div class="qualification-item">
-                                    <div class="form-row">
-                                        <div class="form-group form-group-half">
-                                            <label :for="`qual_name_${index}`" class="sub-label">資格名 <span class="required">*</span></label>
-                                            <input
-                                                type="text"
-                                                :id="`qual_name_${index}`"
-                                                :name="`qualifications[${index}][name]`"
-                                                x-model="qual.name"
-                                                required
-                                                aria-required="true"
-                                                placeholder="例: 同行援護従業者養成研修修了"
-                                            />
-                                        </div>
-                                        <div class="form-group form-group-half">
-                                            <label :for="`qual_date_${index}`" class="sub-label">取得年月日 <span class="required">*</span></label>
-                                            <input
-                                                type="date"
-                                                :id="`qual_date_${index}`"
-                                                :name="`qualifications[${index}][obtained_date]`"
-                                                x-model="qual.obtained_date"
-                                                :max="maxQualificationDate"
-                                                required
-                                                aria-required="true"
-                                            />
-                                        </div>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        class="btn-danger btn-sm"
-                                        @click="removeQualification(index)"
-                                        x-show="formData.qualifications.length > 1"
-                                        aria-label="資格を削除"
-                                    >
-                                        削除
-                                    </button>
-                                </div>
-                            </template>
+                        <label>保有資格 <span class="required">*</span></label>
+                        <p class="form-help-text">該当する資格をすべて選択してください。外出支援・自宅支援を行うには各種資格が必要です。</p>
+                        
+                        <div class="qualification-category">
+                            <h4 class="qualification-category-title">外出支援（同行援護）に必要な資格</h4>
+                            <p class="qualification-category-note">外出支援を行うには、以下のいずれかの資格が必要です。</p>
+                            <div class="checkbox-group qualification-checkboxes">
+                                @foreach(\App\Models\GuideProfile::OUTING_REQUIRED_QUALIFICATIONS as $key)
+                                    <label class="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            name="qualifications[]"
+                                            value="{{ $key }}"
+                                            x-model="formData.qualifications"
+                                        />
+                                        {{ \App\Models\GuideProfile::QUALIFICATION_OPTIONS[$key] }}
+                                    </label>
+                                @endforeach
+                            </div>
                         </div>
-                        <button
-                            type="button"
-                            class="btn-secondary btn-sm"
-                            @click="addQualification()"
-                            x-show="formData.qualifications.length < 3"
-                            aria-label="資格を追加"
-                        >
-                            + 資格を追加
-                        </button>
+
+                        <div class="qualification-category">
+                            <h4 class="qualification-category-title">自宅支援に必要な資格</h4>
+                            <p class="qualification-category-note">自宅支援を行うには、以下のいずれかの資格が必要です。</p>
+                            <div class="checkbox-group qualification-checkboxes">
+                                @foreach(\App\Models\GuideProfile::HOME_REQUIRED_QUALIFICATIONS as $key)
+                                    <label class="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            name="qualifications[]"
+                                            value="{{ $key }}"
+                                            x-model="formData.qualifications"
+                                        />
+                                        {{ \App\Models\GuideProfile::QUALIFICATION_OPTIONS[$key] }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="qualification-summary" x-show="formData.qualifications.length > 0">
+                            <strong>対応可能な支援:</strong>
+                            <span x-show="canSupportOuting()" class="support-badge support-outing">外出支援</span>
+                            <span x-show="canSupportHome()" class="support-badge support-home">自宅支援</span>
+                            <span x-show="!canSupportOuting() && !canSupportHome()" class="support-badge support-none">資格を選択してください</span>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -610,8 +604,12 @@
                             <div class="confirm-row"><span class="confirm-label">実現したいこと</span><span class="confirm-value confirm-text-block" x-text="formData.goal || '—'"></span></div>
                             <div class="confirm-row"><span class="confirm-label">保有資格</span><span class="confirm-value">
                                 <template x-for="(qual, index) in formData.qualifications" :key="index">
-                                    <div class="confirm-qual-item" x-text="(qual.name || '') + (qual.obtained_date ? '（' + qual.obtained_date + '）' : '')"></div>
+                                    <div class="confirm-qual-item" x-text="getQualificationLabel(qual)"></div>
                                 </template>
+                                <div class="confirm-support-types">
+                                    <span x-show="canSupportOuting()" class="support-badge support-outing">外出支援可</span>
+                                    <span x-show="canSupportHome()" class="support-badge support-home">自宅支援可</span>
+                                </div>
                             </span></div>
                             <div class="confirm-row"><span class="confirm-label">希望勤務時間</span><span class="confirm-value confirm-text-block" x-text="formData.preferred_work_hours || '—'"></span></div>
                         </div>
@@ -693,9 +691,13 @@ function registerForm() {
             daily_life_situation: '',
             // ガイド用
             goal: '',
-            qualifications: [{ name: '', obtained_date: '' }],
+            qualifications: [],
             preferred_work_hours: ''
         },
+        // 資格マスタ
+        qualificationOptions: @json(\App\Models\GuideProfile::QUALIFICATION_OPTIONS),
+        outingQualifications: @json(\App\Models\GuideProfile::OUTING_REQUIRED_QUALIFICATIONS),
+        homeQualifications: @json(\App\Models\GuideProfile::HOME_REQUIRED_QUALIFICATIONS),
         error: '',
         fieldErrors: {},
         loading: false,
@@ -745,15 +747,14 @@ function registerForm() {
             const day = String(now.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         },
-        addQualification() {
-            if (this.formData.qualifications.length < 3) {
-                this.formData.qualifications.push({ name: '', obtained_date: '' });
-            }
+        canSupportOuting() {
+            return this.formData.qualifications.some(q => this.outingQualifications.includes(q));
         },
-        removeQualification(index) {
-            if (this.formData.qualifications.length > 1) {
-                this.formData.qualifications.splice(index, 1);
-            }
+        canSupportHome() {
+            return this.formData.qualifications.some(q => this.homeQualifications.includes(q));
+        },
+        getQualificationLabel(key) {
+            return this.qualificationOptions[key] || key;
         },
         getApplicationReasonValue() {
             if (this.formData.role !== 'user') return this.formData.application_reason || '';
@@ -831,14 +832,8 @@ function registerForm() {
             } else if (this.formData.role === 'guide') {
                 if (!this.formData.application_reason) { this.error = '応募理由を入力してください'; this.scrollToFirstError(); return; }
                 if (!this.formData.goal) { this.error = '実現したいことを入力してください'; this.scrollToFirstError(); return; }
-                if (!this.formData.qualifications || this.formData.qualifications.length === 0) { this.error = '保有資格を1件以上入力してください'; this.scrollToFirstError(); return; }
-                for (let i = 0; i < this.formData.qualifications.length; i++) {
-                    if (!this.formData.qualifications[i].name || !this.formData.qualifications[i].obtained_date) {
-                        this.error = '保有資格の資格名と取得年月日を入力してください';
-                        this.scrollToFirstError();
-                        return;
-                    }
-                }
+                if (!this.formData.qualifications || this.formData.qualifications.length === 0) { this.error = '保有資格を1件以上選択してください'; this.scrollToFirstError(); return; }
+                if (!this.canSupportOuting() && !this.canSupportHome()) { this.error = '外出支援または自宅支援が可能な資格を選択してください'; this.scrollToFirstError(); return; }
                 if (!this.formData.preferred_work_hours) { this.error = '希望勤務時間を入力してください'; this.scrollToFirstError(); return; }
             }
             this.step = 'confirm';
@@ -1102,15 +1097,12 @@ function registerForm() {
                     return;
                 }
                 if (!this.formData.qualifications || this.formData.qualifications.length === 0) {
-                    this.error = '保有資格を1件以上入力してください';
+                    this.error = '保有資格を1件以上選択してください';
                     return;
                 }
-                // 資格の必須項目チェック
-                for (let i = 0; i < this.formData.qualifications.length; i++) {
-                    if (!this.formData.qualifications[i].name || !this.formData.qualifications[i].obtained_date) {
-                        this.error = '保有資格の資格名と取得年月日を入力してください';
-                        return;
-                    }
+                if (!this.canSupportOuting() && !this.canSupportHome()) {
+                    this.error = '外出支援または自宅支援が可能な資格を選択してください';
+                    return;
                 }
                 if (!this.formData.preferred_work_hours) {
                     this.error = '希望勤務時間を入力してください';

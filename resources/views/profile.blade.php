@@ -123,6 +123,40 @@
                 <small class="form-help-text">ガイドに表示される内容ですので、配慮事項やガイドを実施する上で重視していることを記載してください。趣味なども記載してください。</small>
             </div>
 
+            <div class="form-group priority-points-group">
+                <fieldset>
+                    <legend>重視するポイント</legend>
+                    <p class="form-help-text">ガイドに求めることを最大2つまで選択できます。</p>
+                    <div class="checkbox-group priority-points-checkboxes">
+                        @foreach(\App\Models\User::PRIORITY_POINT_OPTIONS as $key => $label)
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="priority_points[]"
+                                    value="{{ $key }}"
+                                    x-model="formData.priority_points"
+                                    @click="limitPriorityPoints($event, '{{ $key }}')"
+                                    @if($user->userProfile && is_array($user->userProfile->priority_points) && in_array($key, $user->userProfile->priority_points)) checked @endif
+                                />
+                                {{ $label }}
+                            </label>
+                        @endforeach
+                    </div>
+                    <div class="form-group priority-points-other">
+                        <label for="priority_points_other">その他</label>
+                        <input
+                            type="text"
+                            id="priority_points_other"
+                            name="priority_points_other"
+                            x-model="formData.priority_points_other"
+                            value="{{ $user->userProfile->priority_points_other ?? '' }}"
+                            maxlength="255"
+                            placeholder="その他に重視することがあれば記入"
+                        />
+                    </div>
+                </fieldset>
+            </div>
+
             <div class="form-group proposal-preference-group">
                 <fieldset aria-describedby="proposal-preference-desc">
                     <legend>ガイドの支援提案機能</legend>
@@ -172,6 +206,89 @@
                     aria-required="true"
                 >{{ $user->guideProfile->introduction ?? '' }}</textarea>
                 <small class="form-help-text">利用者に表示される内容ですので、ガイドとして心掛けていることや得意分野などを記載してください。趣味も記載してください。</small>
+            </div>
+
+            <div class="form-group">
+                <label>保有資格</label>
+                <p class="form-help-text">該当する資格をすべて選択してください。外出支援・自宅支援を行うには各種資格が必要です。</p>
+                
+                <div class="qualification-category">
+                    <h4 class="qualification-category-title">外出支援（同行援護）に必要な資格</h4>
+                    <p class="qualification-category-note">外出支援を行うには、以下のいずれかの資格が必要です。</p>
+                    <div class="checkbox-group qualification-checkboxes">
+                        @foreach(\App\Models\GuideProfile::OUTING_REQUIRED_QUALIFICATIONS as $key)
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="qualifications[]"
+                                    value="{{ $key }}"
+                                    x-model="formData.qualifications"
+                                    @if($user->guideProfile && is_array($user->guideProfile->getQualificationKeys()) && in_array($key, $user->guideProfile->getQualificationKeys())) checked @endif
+                                />
+                                {{ \App\Models\GuideProfile::QUALIFICATION_OPTIONS[$key] }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="qualification-category">
+                    <h4 class="qualification-category-title">自宅支援に必要な資格</h4>
+                    <p class="qualification-category-note">自宅支援を行うには、以下のいずれかの資格が必要です。</p>
+                    <div class="checkbox-group qualification-checkboxes">
+                        @foreach(\App\Models\GuideProfile::HOME_REQUIRED_QUALIFICATIONS as $key)
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="qualifications[]"
+                                    value="{{ $key }}"
+                                    x-model="formData.qualifications"
+                                    @if($user->guideProfile && is_array($user->guideProfile->getQualificationKeys()) && in_array($key, $user->guideProfile->getQualificationKeys())) checked @endif
+                                />
+                                {{ \App\Models\GuideProfile::QUALIFICATION_OPTIONS[$key] }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="qualification-summary" x-show="formData.qualifications.length > 0">
+                    <strong>対応可能な支援:</strong>
+                    <span x-show="canSupportOuting()" class="support-badge support-outing">外出支援</span>
+                    <span x-show="canSupportHome()" class="support-badge support-home">自宅支援</span>
+                </div>
+            </div>
+
+            <div class="form-group priority-points-group">
+                <fieldset>
+                    <legend>重視するポイント</legend>
+                    <p class="form-help-text">ガイドとして大切にしていることを最大2つまで選択できます。</p>
+                    <div class="checkbox-group priority-points-checkboxes">
+                        @foreach(\App\Models\User::PRIORITY_POINT_OPTIONS as $key => $label)
+                            <label class="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    name="priority_points[]"
+                                    value="{{ $key }}"
+                                    x-model="formData.priority_points"
+                                    @click="limitPriorityPoints($event, '{{ $key }}')"
+                                    @if($user->guideProfile && is_array($user->guideProfile->priority_points) && in_array($key, $user->guideProfile->priority_points)) checked @endif
+                                />
+                                {{ $label }}
+                            </label>
+                        @endforeach
+                    </div>
+                    <div class="form-group priority-points-other">
+                        <label for="priority_points_other">その他</label>
+                        <input
+                            type="text"
+                            id="priority_points_other"
+                            name="priority_points_other"
+                            x-model="formData.priority_points_other"
+                            value="{{ $user->guideProfile->priority_points_other ?? '' }}"
+                            maxlength="255"
+                            placeholder="その他に重視することがあれば記入"
+                        />
+                    </div>
+                </fieldset>
             </div>
 
             <div class="form-group">
@@ -260,6 +377,187 @@
             </button>
         </div>
     </form>
+
+    @if($user->isUser() || $user->isGuide())
+    <!-- 評価セクション -->
+    <section class="rating-display-section">
+        <h2 class="section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            評価・実績
+        </h2>
+
+        <div class="rating-summary">
+            @php
+                $avgRating = $user->getAverageRating();
+                $ratingCount = $user->getRatingCount();
+                $latestComments = $user->getLatestRatingComments(3);
+                $cancelRate = $user->getLateCancellationRate();
+                $priorityLabels = $user->getPriorityPointLabels();
+            @endphp
+
+            <div class="rating-average-container">
+                <div class="rating-average">
+                    @if($avgRating)
+                        <span class="rating-score-large">{{ number_format($avgRating, 1) }}</span>
+                        <span class="rating-max">/3</span>
+                    @else
+                        <span class="rating-no-data">—</span>
+                    @endif
+                </div>
+                <div class="rating-meta">
+                    <span class="rating-count">{{ $ratingCount }}件の評価</span>
+                    @if($avgRating)
+                        <div class="rating-stars">
+                            @for($i = 1; $i <= 3; $i++)
+                                @if($i <= round($avgRating))
+                                    <svg class="star-filled" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                @else
+                                    <svg class="star-empty" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                @endif
+                            @endfor
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- キャンセル率 --}}
+        <div class="cancel-rate-section">
+            <h3 class="subsection-title">直前キャンセル率</h3>
+            <div class="cancel-rate-display">
+                @if($cancelRate['total'] > 0)
+                    <span class="cancel-rate-value {{ $cancelRate['rate'] > 20 ? 'high' : ($cancelRate['rate'] > 10 ? 'medium' : 'low') }}">
+                        {{ number_format($cancelRate['rate'], 1) }}%
+                    </span>
+                    <span class="cancel-rate-meta">
+                        （{{ $cancelRate['total'] }}件中{{ $cancelRate['late_cancels'] }}件）
+                    </span>
+                @else
+                    <span class="cancel-rate-no-data">—</span>
+                @endif
+            </div>
+            <p class="cancel-rate-note">※ 依頼日3日前以降のキャンセル割合</p>
+        </div>
+
+        {{-- 重視ポイント --}}
+        @if(count($priorityLabels) > 0)
+            <div class="priority-points-display">
+                <h3 class="subsection-title">重視するポイント</h3>
+                <ul class="priority-points-list">
+                    @foreach($priorityLabels as $label)
+                        <li class="priority-point-tag">{{ $label }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if($latestComments->count() > 0)
+            <div class="rating-comments-section">
+                <h3 class="comments-title">
+                    @if($user->isUser())
+                        ガイドからの評価コメント（最新3件）
+                    @else
+                        利用者からの評価コメント（最新3件）
+                    @endif
+                </h3>
+                <ul class="rating-comments-list">
+                    @foreach($latestComments as $rating)
+                        <li class="rating-comment-item">
+                            <div class="comment-header">
+                                <span class="comment-score score-{{ $rating->score }}">
+                                    {{ $rating->score_label }}
+                                </span>
+                                <span class="comment-date">
+                                    {{ $rating->created_at->format('Y/m/d') }}
+                                </span>
+                            </div>
+                            <p class="comment-text">{{ $rating->comment }}</p>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @else
+            <p class="empty-message">まだ評価がありません</p>
+        @endif
+    </section>
+
+    <!-- ブロック管理セクション -->
+    <section class="block-management-section" x-data="blockManagement()" x-init="init()">
+        <h2 class="section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            </svg>
+            @if($user->isUser())
+                ガイドのブロック管理
+            @else
+                利用者のブロック管理
+            @endif
+        </h2>
+        <p class="section-description">
+            @if($user->isUser())
+                ブロックしたガイドは、あなたの依頼を見ることができなくなり、提案を送ることもできなくなります。
+            @else
+                ブロックした利用者の依頼は表示されなくなり、提案を送ることもできなくなります。
+            @endif
+        </p>
+
+        <template x-if="loading">
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <span>読み込み中...</span>
+            </div>
+        </template>
+
+        <template x-if="!loading">
+            <div class="block-list-container">
+                <template x-if="blocks.length === 0">
+                    <p class="empty-message">
+                        @if($user->isUser())
+                            ブロックしているガイドはいません
+                        @else
+                            ブロックしている利用者はいません
+                        @endif
+                    </p>
+                </template>
+
+                <template x-if="blocks.length > 0">
+                    <ul class="block-list">
+                        <template x-for="block in blocks" :key="block.id">
+                            <li class="block-item">
+                                <div class="block-info">
+                                    <span class="block-name" x-text="block.blocked_user.name"></span>
+                                    <span class="block-date" x-text="formatDate(block.created_at)"></span>
+                                    <template x-if="block.reason">
+                                        <span class="block-reason" x-text="'理由: ' + block.reason"></span>
+                                    </template>
+                                    <template x-if="block.is_admin_block">
+                                        <span class="admin-block-badge">管理者設定</span>
+                                    </template>
+                                </div>
+                                <template x-if="!block.is_admin_block">
+                                    <button type="button" @click="unblock(block.blocked_user.id)" class="btn-unblock" :disabled="processing">
+                                        ブロック解除
+                                    </button>
+                                </template>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
+
+                <template x-if="message">
+                    <div class="block-message" :class="messageType" x-text="message"></div>
+                </template>
+            </div>
+        </template>
+    </section>
+    @endif
 </div>
 @endsection
 
@@ -280,16 +578,106 @@ function profileForm() {
             available_areas: @json($user->guideProfile ? ($user->guideProfile->available_areas ?? []) : []),
             available_days: @json($user->guideProfile ? ($user->guideProfile->available_days ?? []) : []),
             available_times: @json($user->guideProfile ? ($user->guideProfile->available_times ?? []) : []),
+            priority_points: @json($user->isGuide() ? ($user->guideProfile->priority_points ?? []) : ($user->userProfile->priority_points ?? [])),
+            priority_points_other: '{{ $user->isGuide() ? ($user->guideProfile->priority_points_other ?? '') : ($user->userProfile->priority_points_other ?? '') }}',
+            qualifications: @json($user->guideProfile ? $user->guideProfile->getQualificationKeys() : []),
         },
+        // 資格マスタ
+        outingQualifications: @json(\App\Models\GuideProfile::OUTING_REQUIRED_QUALIFICATIONS),
+        homeQualifications: @json(\App\Models\GuideProfile::HOME_REQUIRED_QUALIFICATIONS),
         message: '',
         saving: false,
         init() {
             // プロフィール編集画面では統計情報の取得は不要
         },
+        canSupportOuting() {
+            return this.formData.qualifications && this.formData.qualifications.some(q => this.outingQualifications.includes(q));
+        },
+        canSupportHome() {
+            return this.formData.qualifications && this.formData.qualifications.some(q => this.homeQualifications.includes(q));
+        },
+        limitPriorityPoints(event, key) {
+            // 最大2つまで選択可能
+            if (this.formData.priority_points.length >= 2 && !this.formData.priority_points.includes(key)) {
+                event.preventDefault();
+                alert('重視するポイントは最大2つまで選択できます');
+                return false;
+            }
+        },
         handleSubmit() {
             this.saving = true;
             this.message = '';
             this.$el.submit();
+        }
+    }
+}
+
+function blockManagement() {
+    return {
+        blocks: [],
+        loading: true,
+        processing: false,
+        message: '',
+        messageType: '',
+        init() {
+            this.fetchBlocks();
+        },
+        async fetchBlocks() {
+            this.loading = true;
+            try {
+                const res = await fetch('/api/blocks/my', {
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.blocks = data.blocks || [];
+                }
+            } catch (e) {
+                console.error('ブロック一覧取得エラー:', e);
+            } finally {
+                this.loading = false;
+            }
+        },
+        async unblock(userId) {
+            if (!confirm('ブロックを解除しますか？')) return;
+            this.processing = true;
+            this.message = '';
+            try {
+                const res = await fetch('/api/blocks', {
+                    method: 'DELETE',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    this.message = 'ブロックを解除しました';
+                    this.messageType = 'success-message';
+                    this.fetchBlocks();
+                } else {
+                    this.message = data.error || 'ブロック解除に失敗しました';
+                    this.messageType = 'error-message';
+                }
+            } catch (e) {
+                this.message = 'ブロック解除に失敗しました';
+                this.messageType = 'error-message';
+            } finally {
+                this.processing = false;
+            }
+        },
+        formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
         }
     }
 }

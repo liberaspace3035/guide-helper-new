@@ -36,8 +36,10 @@ class ReportController extends Controller
                 ->with('error', 'マッチングが見つかりません');
         }
 
-        // 既存の報告書があるか確認
-        $existingReport = \App\Models\Report::where('matching_id', $matchingId)->first();
+        // 既存の報告書があるか確認（評価データも含む）
+        $existingReport = \App\Models\Report::where('matching_id', $matchingId)
+            ->with(['guideRating'])
+            ->first();
         
         // 既存の報告書がある場合、時刻を適切な形式に変換
         if ($existingReport) {
@@ -84,12 +86,16 @@ class ReportController extends Controller
             'actual_date' => 'required|date',
             'actual_start_time' => 'required|date_format:H:i',
             'actual_end_time' => 'required|date_format:H:i',
+            'user_rating' => 'nullable|integer|in:1,2,3',
+            'user_rating_comment' => 'nullable|string|max:1000',
         ], [
             'service_content.required' => 'サービス内容は必須入力です。',
             'service_content.min' => 'サービス内容を入力してください。',
             'actual_date.required' => '実施日は必須です。',
             'actual_start_time.required' => '開始時刻は必須入力です。',
             'actual_end_time.required' => '終了時刻は必須入力です。',
+            'user_rating.in' => '評価は1〜3の値で選択してください。',
+            'user_rating_comment.max' => '評価コメントは1000文字以内で入力してください。',
         ]);
 
         try {

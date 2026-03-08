@@ -1611,6 +1611,133 @@
                 </template>
             </section>
         </template>
+
+        <!-- ブロック管理タブ -->
+        <template x-if="activeTab === 'blocks'">
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2>
+                        <svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                        </svg>
+                        ブロック一覧
+                    </h2>
+                </div>
+                <p class="section-description">ユーザー・ガイド間のブロック設定を確認・管理できます。</p>
+                
+                <template x-if="loadingBlocks">
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <span>読み込み中...</span>
+                    </div>
+                </template>
+
+                <template x-if="!loadingBlocks && blocks.length === 0">
+                    <p>ブロック設定はありません</p>
+                </template>
+
+                <template x-if="!loadingBlocks && blocks.length > 0">
+                    <div class="table-container">
+                        <table class="admin-table blocks-table">
+                            <thead>
+                                <tr>
+                                    <th>ブロックした側</th>
+                                    <th>ブロックされた側</th>
+                                    <th>理由</th>
+                                    <th>管理者設定</th>
+                                    <th>登録日時</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="block in blocks" :key="block.id">
+                                    <tr>
+                                        <td>
+                                            <div class="user-info-cell">
+                                                <span class="user-name-bold" x-text="block.blocker.name"></span>
+                                                <span class="user-email" x-text="block.blocker.email"></span>
+                                                <span class="role-badge" :class="'role-' + block.blocker.role" x-text="getRoleLabel(block.blocker.role)"></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="user-info-cell">
+                                                <span class="user-name-bold" x-text="block.blocked.name"></span>
+                                                <span class="user-email" x-text="block.blocked.email"></span>
+                                                <span class="role-badge" :class="'role-' + block.blocked.role" x-text="getRoleLabel(block.blocked.role)"></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span x-text="block.reason || '—'" class="block-reason-text"></span>
+                                        </td>
+                                        <td>
+                                            <template x-if="block.is_admin_block">
+                                                <span class="admin-block-badge">
+                                                    管理者設定
+                                                    <template x-if="block.blocked_by_admin">
+                                                        <span x-text="'（' + block.blocked_by_admin.name + '）'"></span>
+                                                    </template>
+                                                </span>
+                                            </template>
+                                            <template x-if="!block.is_admin_block">
+                                                <span class="user-block-badge">ユーザー設定</span>
+                                            </template>
+                                        </td>
+                                        <td>
+                                            <div class="datetime-cell-vertical">
+                                                <span class="datetime-date" x-text="formatDateOnly(block.created_at)"></span>
+                                                <span class="datetime-time" x-text="formatTimeOnly(block.created_at)"></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button type="button" @click="adminUnblock(block.id, block.blocker.name, block.blocked.name)" class="btn-danger btn-sm" :disabled="processingBlock">
+                                                解除
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+
+                <template x-if="blockMessage">
+                    <div class="admin-message" :class="blockMessageType" x-text="blockMessage"></div>
+                </template>
+
+                <!-- 管理者によるブロック追加 -->
+                <div class="admin-block-form">
+                    <h3>管理者によるブロック設定</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="admin-block-blocker">ブロックする側（この人から見えなくなる）</label>
+                            <select id="admin-block-blocker" x-model="adminBlockForm.blocker_id" class="form-control">
+                                <option value="">選択してください</option>
+                                <template x-for="user in allUsersAndGuides" :key="user.id">
+                                    <option :value="user.id" x-text="user.name + ' (' + getRoleLabel(user.role) + ')'"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-block-blocked">ブロックされる側</label>
+                            <select id="admin-block-blocked" x-model="adminBlockForm.blocked_id" class="form-control">
+                                <option value="">選択してください</option>
+                                <template x-for="user in allUsersAndGuides" :key="user.id">
+                                    <option :value="user.id" x-text="user.name + ' (' + getRoleLabel(user.role) + ')'"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-block-reason">理由（任意）</label>
+                        <input type="text" id="admin-block-reason" x-model="adminBlockForm.reason" class="form-control" placeholder="ブロック理由を入力">
+                    </div>
+                    <button type="button" @click="adminAddBlock()" class="btn-primary" :disabled="processingBlock || !adminBlockForm.blocker_id || !adminBlockForm.blocked_id">
+                        ブロックを追加
+                    </button>
+                </div>
+            </section>
+        </template>
     </div>
     <!-- 報告書詳細モーダル（body にテレポートで画面全体トーンダウン） -->
     <template x-teleport="body">
@@ -2276,6 +2403,18 @@ function adminDashboard() {
         bulkImportFileSnapshot: null,
         bulkImportSubmitting: false,
         bulkImportResult: null,
+        // ブロック管理用
+        blocks: [],
+        loadingBlocks: false,
+        processingBlock: false,
+        blockMessage: '',
+        blockMessageType: '',
+        allUsersAndGuides: [],
+        adminBlockForm: {
+            blocker_id: '',
+            blocked_id: '',
+            reason: ''
+        },
 
         // セッション認証用の共通fetch関数
         async apiFetch(url, options = {}) {
@@ -3428,6 +3567,98 @@ function adminDashboard() {
             } catch (error) {
                 console.error('操作ログ取得エラー:', error);
                 alert('操作ログの取得に失敗しました');
+            }
+        },
+
+        async fetchBlocks() {
+            this.loadingBlocks = true;
+            this.blockMessage = '';
+            try {
+                const data = await this.apiFetch('/api/admin/blocks');
+                this.blocks = data.blocks || [];
+                if (this.allUsersAndGuides.length === 0) {
+                    await this.fetchAllUsersAndGuides();
+                }
+            } catch (error) {
+                console.error('ブロック一覧取得エラー:', error);
+                this.blockMessage = 'ブロック一覧の取得に失敗しました';
+                this.blockMessageType = 'error-message';
+            } finally {
+                this.loadingBlocks = false;
+            }
+        },
+
+        async fetchAllUsersAndGuides() {
+            try {
+                const [usersData, guidesData] = await Promise.all([
+                    this.apiFetch('/api/admin/users'),
+                    this.apiFetch('/api/admin/guides')
+                ]);
+                const users = (usersData.users || []).map(u => ({ id: u.id, name: u.name, role: 'user' }));
+                const guides = (guidesData.guides || []).map(g => ({ id: g.id, name: g.name, role: 'guide' }));
+                this.allUsersAndGuides = [...users, ...guides];
+            } catch (error) {
+                console.error('ユーザー/ガイド一覧取得エラー:', error);
+            }
+        },
+
+        getRoleLabel(role) {
+            const labels = { user: '利用者', guide: 'ガイド', admin: '管理者' };
+            return labels[role] || role;
+        },
+
+        async adminUnblock(blockId, blockerName, blockedName) {
+            if (!confirm(`${blockerName}から${blockedName}へのブロックを解除しますか？`)) return;
+            this.processingBlock = true;
+            this.blockMessage = '';
+            try {
+                const data = await this.apiFetch(`/api/admin/blocks/${blockId}`, { method: 'DELETE' });
+                if (data.success) {
+                    this.blockMessage = 'ブロックを解除しました';
+                    this.blockMessageType = 'success-message';
+                    await this.fetchBlocks();
+                } else {
+                    this.blockMessage = data.error || 'ブロック解除に失敗しました';
+                    this.blockMessageType = 'error-message';
+                }
+            } catch (error) {
+                this.blockMessage = 'ブロック解除に失敗しました';
+                this.blockMessageType = 'error-message';
+            } finally {
+                this.processingBlock = false;
+            }
+        },
+
+        async adminAddBlock() {
+            if (this.adminBlockForm.blocker_id === this.adminBlockForm.blocked_id) {
+                alert('ブロックする側とされる側は別の人を選択してください');
+                return;
+            }
+            this.processingBlock = true;
+            this.blockMessage = '';
+            try {
+                const data = await this.apiFetch('/api/admin/blocks', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        blocker_id: this.adminBlockForm.blocker_id,
+                        blocked_id: this.adminBlockForm.blocked_id,
+                        reason: this.adminBlockForm.reason || null
+                    })
+                });
+                if (data.success) {
+                    this.blockMessage = 'ブロックを追加しました';
+                    this.blockMessageType = 'success-message';
+                    this.adminBlockForm = { blocker_id: '', blocked_id: '', reason: '' };
+                    await this.fetchBlocks();
+                } else {
+                    this.blockMessage = data.error || 'ブロック追加に失敗しました';
+                    this.blockMessageType = 'error-message';
+                }
+            } catch (error) {
+                this.blockMessage = error.message || 'ブロック追加に失敗しました';
+                this.blockMessageType = 'error-message';
+            } finally {
+                this.processingBlock = false;
             }
         },
 

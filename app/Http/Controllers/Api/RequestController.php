@@ -318,12 +318,30 @@ class RequestController extends Controller
         $ageMax = $request->has('age_max') ? (int) $request->input('age_max') : null;
         $keyword = $request->input('keyword'); // 自己PR（introduction）のキーワード
         $sort = $request->input('sort', 'name_asc'); // name_asc, name_desc, age_asc, age_desc
+        $requestType = $request->input('request_type'); // outing / home
 
         $query = User::query()
             ->where('users.role', 'guide')
             ->where('users.is_allowed', true)
             ->join('guide_profiles', 'users.id', '=', 'guide_profiles.user_id')
-            ->select('users.id', 'users.name', 'users.gender', 'users.birth_date', 'guide_profiles.introduction', 'guide_profiles.available_areas');
+            ->select('users.id', 'users.name', 'users.gender', 'users.birth_date', 'guide_profiles.introduction', 'guide_profiles.available_areas', 'guide_profiles.qualifications');
+
+        // 依頼タイプに応じた資格フィルタリング
+        if ($requestType === 'outing') {
+            // 外出支援: 同行援護一般課程 or 同行援護応用課程が必要
+            $query->where(function ($q) {
+                foreach (\App\Models\GuideProfile::OUTING_REQUIRED_QUALIFICATIONS as $qualKey) {
+                    $q->orWhereJsonContains('guide_profiles.qualifications', $qualKey);
+                }
+            });
+        } elseif ($requestType === 'home') {
+            // 自宅支援: 介護福祉士 or 介護実務者研修 or 介護初任者研修が必要
+            $query->where(function ($q) {
+                foreach (\App\Models\GuideProfile::HOME_REQUIRED_QUALIFICATIONS as $qualKey) {
+                    $q->orWhereJsonContains('guide_profiles.qualifications', $qualKey);
+                }
+            });
+        }
 
         if (!empty($area)) {
             $query->whereJsonContains('guide_profiles.available_areas', $area);
@@ -360,6 +378,32 @@ class RequestController extends Controller
         $guides = $paginator->getCollection()->map(function ($row) {
             $age = $row->birth_date ? \Carbon\Carbon::parse($row->birth_date)->age : null;
             $availableAreas = is_string($row->available_areas) ? json_decode($row->available_areas, true) : $row->available_areas;
+            
+            // Userモデルを取得して追加情報を取得
+            $user = User::with('guideProfile')->find($row->id);
+            $avgRating = $user ? $user->getAverageRating() : null;
+            $ratingCount = $user ? $user->getRatingCount() : 0;
+            $cancelRate = $user ? $user->getLateCancellationRate() : ['rate' => null, 'total' => 0, 'late_cancels' => 0];
+            $priorityLabels = $user ? $user->getPriorityPointLabels() : [];
+            
+            // 最新の評価コメント（1件）
+            $latestComment = null;
+            if ($user) {
+                $latestRating = $user->receivedRatings()->with('rater')->latest()->first();
+                if ($latestRating) {
+                    $latestComment = [
+                        'score' => $latestRating->score,
+                        'score_label' => $latestRating->score_label,
+                        'comment' => $latestRating->comment,
+                        'date' => $latestRating->created_at->format('Y/m/d'),
+                    ];
+                }
+            }
+            
+            // 対応可能な支援タイプ
+            $canSupportOuting = $user && $user->guideProfile ? $user->guideProfile->canSupportOuting() : false;
+            $canSupportHome = $user && $user->guideProfile ? $user->guideProfile->canSupportHome() : false;
+            
             return [
                 'id' => $row->id,
                 'name' => $row->name,
@@ -367,6 +411,13 @@ class RequestController extends Controller
                 'age' => $age,
                 'introduction' => $row->introduction ?? null,
                 'available_areas' => is_array($availableAreas) ? $availableAreas : [],
+                'average_rating' => $avgRating,
+                'rating_count' => $ratingCount,
+                'cancel_rate' => $cancelRate,
+                'priority_points' => $priorityLabels,
+                'latest_comment' => $latestComment,
+                'can_support_outing' => $canSupportOuting,
+                'can_support_home' => $canSupportHome,
             ];
         });
 

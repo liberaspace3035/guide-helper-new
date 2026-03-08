@@ -110,6 +110,12 @@ class EmailTemplatesSeeder extends Seeder
                 'body' => "{{user_name}} 様\n\nお知らせいたします。\n\nご登録いただいていたガイドアカウントが承認されました。\nログインのうえ、依頼の確認や承諾などを行っていただけます。\n\n今後ともよろしくお願いいたします。\n\n「One Step」視覚障害者向け外出・自宅での生活支援アプリ",
                 'is_active' => true,
             ],
+            [
+                'template_key' => 'reminder_report_approval',
+                'subject' => '報告書の承認をお願いします',
+                'body' => "{{user_name}} 様\n\nガイドから提出された報告書が承認待ちです。\n\n報告書ID: {{report_id}}\n依頼日: {{request_date}}\nガイド名: {{guide_name}}\n\nログインのうえ、報告書の確認・承認をお願いいたします。\n\n「One Step」視覚障害者向け外出・自宅での生活支援アプリ",
+                'is_active' => true,
+            ],
         ];
 
         foreach ($templates as $template) {

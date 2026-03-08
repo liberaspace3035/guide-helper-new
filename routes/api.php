@@ -123,5 +123,19 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [\App\Http\Controllers\AnnouncementController::class, 'updateForAdmin']);
         Route::delete('/{id}', [\App\Http\Controllers\AnnouncementController::class, 'deleteForAdmin']);
     });
+
+    // ブロック機能（ユーザー・ガイド共通）
+    Route::prefix('blocks')->group(function () {
+        Route::post('/', [\App\Http\Controllers\Api\BlockController::class, 'block']);
+        Route::delete('/', [\App\Http\Controllers\Api\BlockController::class, 'unblock']);
+        Route::get('/my', [\App\Http\Controllers\Api\BlockController::class, 'myBlocks']);
+    });
+
+    // 管理者向けブロック管理
+    Route::middleware(['role:admin'])->prefix('admin/blocks')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\BlockController::class, 'adminGetAllBlocks']);
+        Route::post('/', [\App\Http\Controllers\Api\BlockController::class, 'adminBlock']);
+        Route::delete('/{id}', [\App\Http\Controllers\Api\BlockController::class, 'adminUnblock']);
+    });
 });
 

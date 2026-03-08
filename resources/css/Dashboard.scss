@@ -801,6 +801,114 @@
   }
 }
 
+// ブロック管理テーブルとフォーム
+.blocks-table {
+  thead {
+    background-color: #f8fafc;
+    tr th {
+      background-color: #f8fafc;
+      color: #94a3b8;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 12px;
+      padding: var(--spacing-md) var(--spacing-lg);
+      border-bottom: 2px solid var(--border-color);
+    }
+  }
+  tbody tr {
+    min-height: 64px;
+    transition: background-color var(--transition-fast);
+    &:hover {
+      background-color: rgba(59, 130, 246, 0.03);
+    }
+    td {
+      padding: 16px var(--spacing-lg);
+      vertical-align: middle;
+    }
+  }
+}
+
+.user-info-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  &.role-user {
+    background-color: #dbeafe;
+    color: #1e40af;
+  }
+  &.role-guide {
+    background-color: #dcfce7;
+    color: #166534;
+  }
+  &.role-admin {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+}
+
+.admin-block-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background-color: #fef2f2;
+  color: #dc2626;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.user-block-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background-color: #f1f5f9;
+  color: #475569;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.block-reason-text {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-block-form {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+
+  h3 {
+    margin-bottom: 1rem;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+
+    .form-group {
+      flex: 1;
+      min-width: 200px;
+    }
+  }
+}
+
 // プロフィール編集モーダルのボタンスタイル統一
 .modal-header,
 .modal-edit-button,
@@ -2582,6 +2690,72 @@
   }
   .limit-card .limit-type-title {
     font-size: 14px;
+  }
+}
+
+// スクリーンリーダー対応のテキストベース情報リスト
+.limit-info-list {
+  margin: 0 0 var(--spacing-md) 0;
+  padding: 0;
+}
+
+.limit-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid rgba(34, 197, 94, 0.15);
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  dt {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin: 0;
+  }
+  
+  dd {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  
+  &.limit-info-remaining {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin: 0 calc(-1 * var(--spacing-md));
+    border-radius: var(--radius-sm);
+    border-bottom: none;
+    margin-bottom: var(--spacing-xs);
+    
+    dt {
+      color: #16a34a;
+      font-weight: 600;
+    }
+    
+    dd {
+      color: #16a34a;
+      font-size: 18px;
+      font-weight: 700;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .limit-info-row {
+    dt {
+      font-size: 13px;
+    }
+    dd {
+      font-size: 14px;
+    }
+    &.limit-info-remaining dd {
+      font-size: 16px;
+    }
   }
 }
 

@@ -105,6 +105,7 @@ class EmailNotificationService
             'announcement_reminder_unread' => 'announcement_reminder',
             'report_revision_requested' => 'report',
             'report_admin_revision_requested' => 'report',
+            'reminder_report_approval' => 'reminder',
             'user_account_approved' => 'approval',
             'guide_account_approved' => 'approval',
         ];
@@ -267,6 +268,20 @@ class EmailNotificationService
             'report_id' => $data['report_id'] ?? '',
             'actual_date' => $data['actual_date'] ?? '',
             'revision_notes' => $data['revision_notes'] ?? '',
+        ]);
+    }
+
+    /**
+     * 報告書承認待ちリマインドを送信（ユーザー向け）
+     * ガイドが報告書を提出したがユーザーが未承認の場合に毎日送信
+     */
+    public function sendReportApprovalReminderNotification(User $user, array $data): bool
+    {
+        return $this->sendNotification('reminder_report_approval', $user, [
+            'user_name' => $user->name ?? '',
+            'report_id' => $data['report_id'] ?? '',
+            'request_date' => $data['request_date'] ?? '',
+            'guide_name' => $data['guide_name'] ?? '',
         ]);
     }
 

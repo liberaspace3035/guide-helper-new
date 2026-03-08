@@ -9,6 +9,7 @@ use App\Models\Report;
 use App\Models\Notification;
 use App\Models\AdminSetting;
 use App\Models\User;
+use App\Models\UserBlock;
 use App\Services\EmailNotificationService;
 use App\Services\MaskAddressService;
 use Illuminate\Support\Facades\DB;
@@ -32,13 +33,13 @@ class MatchingService
             throw new \Exception('ガイドとして登録されていないユーザーです');
         }
 
-        // 報告書が未提出の場合は承諾不可
+        // 報告書が未作成・未提出・修正依頼中の場合は承諾不可
         $pendingReports = Report::where('guide_id', $guideId)
-            ->whereIn('status', ['draft', 'submitted'])
+            ->whereIn('status', ['draft', 'submitted', 'revision_requested'])
             ->exists();
 
         if ($pendingReports) {
-            throw new \Exception('未提出または承認待ちの報告書があります。報告書を完了してから新しい依頼を承諾してください');
+            throw new \Exception('未作成・未提出または修正依頼中の報告書があります。報告書を完了してから新しい依頼を承諾してください');
         }
 
         // 依頼の存在確認
@@ -47,6 +48,28 @@ class MatchingService
         // キャンセル済みの依頼は応募不可
         if ($request->status === 'cancelled') {
             throw new \Exception('この依頼は既にキャンセルされています');
+        }
+
+        // 過去の日付の依頼には応募不可
+        $requestDate = $request->request_date;
+        if ($requestDate) {
+            $requestDateCarbon = $requestDate instanceof \Carbon\Carbon 
+                ? $requestDate 
+                : \Carbon\Carbon::parse($requestDate);
+            if ($requestDateCarbon->lt(\Carbon\Carbon::today())) {
+                throw new \Exception('この依頼は既に終了しています（依頼日が過去です）');
+            }
+        }
+
+        // ブロック関係のチェック
+        $isBlocked = UserBlock::where(function ($query) use ($guideId, $request) {
+            $query->where('blocker_id', $guideId)->where('blocked_id', $request->user_id);
+        })->orWhere(function ($query) use ($guideId, $request) {
+            $query->where('blocker_id', $request->user_id)->where('blocked_id', $guideId);
+        })->exists();
+
+        if ($isBlocked) {
+            throw new \Exception('この依頼には応募できません');
         }
 
         // ガイドの対応範囲チェック
@@ -84,6 +107,19 @@ class MatchingService
                         throw new \Exception('この依頼の場所は、あなたの対応範囲外です。対応範囲: ' . implode(', ', $availableAreas));
                     }
                 }
+            }
+        }
+
+        // 資格チェック（依頼タイプに応じた資格を持っているか）
+        if ($guideProfile) {
+            $requestType = $request->request_type;
+            
+            if ($requestType === 'outing' && !$guideProfile->canSupportOuting()) {
+                throw new \Exception('外出支援を行うには、同行援護一般課程または応用課程の資格が必要です');
+            }
+            
+            if ($requestType === 'home' && !$guideProfile->canSupportHome()) {
+                throw new \Exception('自宅支援を行うには、介護福祉士・介護実務者研修・介護初任者研修のいずれかの資格が必要です');
             }
         }
 

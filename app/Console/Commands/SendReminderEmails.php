@@ -87,29 +87,83 @@ class SendReminderEmails extends Command
             }
         }
 
-        // 報告書未提出リマインド（ガイド向け・リマインド有効時のみ）
-        $matchingsWithoutReport = $reminderDays > 0 ? Matching::with(['guide', 'request'])
-            ->whereNull('report_completed_at')
-            ->where('status', '!=', 'cancelled')
-            ->where('matched_at', '<=', $targetDate)
-            ->where(function ($q) {
-                $q->whereDoesntHave('report')
-                    ->orWhereHas('report', function ($r) {
-                        $r->whereIn('status', ['draft', 'revision_requested']);
-                    });
-            })
-            ->get() : collect();
+        // 報告書未提出リマインド（ガイド向け）
+        // 条件: 
+        // 1. 依頼日が今日以前（依頼日当日または過去）
+        // 2. 報告書が未作成、下書き、または修正依頼状態
+        // 3. ユーザー承認されていない（ユーザー承認後は送信停止）
+        // 4. 時刻制限: 現在時刻が19時以降（このコマンド自体が19時以降に実行される想定）
+        $currentHour = (int) Carbon::now()->format('H');
+        $shouldSendReportReminder = $currentHour >= 19 || $this->option('force');
+        
+        if ($shouldSendReportReminder) {
+            $matchingsWithoutReport = Matching::with(['guide', 'request', 'report'])
+                ->whereNull('report_completed_at')
+                ->where('status', '!=', 'cancelled')
+                ->whereHas('request', function ($q) {
+                    // 依頼日が今日以前（依頼日当日または過去）
+                    $q->whereDate('request_date', '<=', Carbon::today());
+                })
+                ->where(function ($q) {
+                    // 報告書が未作成、下書き、修正依頼状態、または提出済み（ユーザー未承認）
+                    $q->whereDoesntHave('report')
+                        ->orWhereHas('report', function ($r) {
+                            $r->whereIn('status', ['draft', 'revision_requested', 'submitted']);
+                        });
+                })
+                ->get();
 
-        foreach ($matchingsWithoutReport as $matching) {
-            if ($matching->guide) {
-                $requestDate = $matching->request && $matching->request->request_date
-                    ? $matching->request->request_date->format('Y-m-d')
-                    : '';
-                if ($this->emailService->sendReportMissingReminderNotification($matching->guide, [
-                    'matching_id' => $matching->id,
-                    'request_date' => $requestDate,
-                ])) {
-                    $sentCount++;
+            foreach ($matchingsWithoutReport as $matching) {
+                if ($matching->guide) {
+                    $requestDate = $matching->request && $matching->request->request_date
+                        ? $matching->request->request_date->format('Y-m-d')
+                        : '';
+                    
+                    // 報告書のステータスを確認
+                    $reportStatus = $matching->report ? $matching->report->status : 'none';
+                    
+                    // ユーザー承認済み（user_approved）以降はガイドへの催促は不要
+                    if (in_array($reportStatus, ['user_approved', 'admin_approved', 'approved'], true)) {
+                        continue;
+                    }
+                    
+                    if ($this->emailService->sendReportMissingReminderNotification($matching->guide, [
+                        'matching_id' => $matching->id,
+                        'request_date' => $requestDate,
+                        'report_status' => $reportStatus,
+                    ])) {
+                        $sentCount++;
+                    }
+                }
+            }
+        } else {
+            \Log::info('SendReminderEmails: 報告書リマインドは19時以降に送信', ['current_hour' => $currentHour]);
+        }
+
+        // 報告書承認待ちリマインド（ユーザー向け）
+        // 報告書が提出済み（submitted）だがユーザー未承認のものについて、ユーザーに毎日催促
+        // 19時以降に送信
+        if ($shouldSendReportReminder) {
+            $reportsAwaitingUserApproval = \App\Models\Report::with(['user', 'guide', 'request'])
+                ->where('status', 'submitted')
+                ->get();
+
+            foreach ($reportsAwaitingUserApproval as $report) {
+                if ($report->user) {
+                    $requestDate = $report->request && $report->request->request_date
+                        ? ($report->request->request_date instanceof \Carbon\Carbon 
+                            ? $report->request->request_date->format('Y-m-d') 
+                            : (string)$report->request->request_date)
+                        : '';
+                    $guideName = $report->guide ? $report->guide->name : '';
+                    
+                    if ($this->emailService->sendReportApprovalReminderNotification($report->user, [
+                        'report_id' => $report->id,
+                        'request_date' => $requestDate,
+                        'guide_name' => $guideName,
+                    ])) {
+                        $sentCount++;
+                    }
                 }
             }
         }

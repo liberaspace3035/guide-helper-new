@@ -9,6 +9,7 @@ use App\Models\GuideAcceptance;
 use App\Models\Matching;
 use App\Models\Notification;
 use App\Models\AdminSetting;
+use App\Models\UserBlock;
 use App\Services\UserMonthlyLimitService;
 use App\Services\AIInputService;
 use App\Services\EmailNotificationService;
@@ -53,6 +54,24 @@ class RequestService
 
     public function createRequest(array $data, int $userId): Request
     {
+        // 二重送信防止: 過去30秒以内に同一ユーザーが同じ内容の依頼を作成していないかチェック
+        $recentDuplicate = Request::where('user_id', $userId)
+            ->where('request_date', $data['request_date'] ?? null)
+            ->where('start_time', $data['start_time'] ?? $data['request_time'] ?? null)
+            ->where('end_time', $data['end_time'] ?? null)
+            ->where('prefecture', $data['prefecture'] ?? null)
+            ->where('created_at', '>=', Carbon::now()->subSeconds(30))
+            ->first();
+
+        if ($recentDuplicate) {
+            \Log::warning('二重送信検出: 既存の依頼を返します', [
+                'user_id' => $userId,
+                'existing_request_id' => $recentDuplicate->id,
+                'created_at' => $recentDuplicate->created_at,
+            ]);
+            return $recentDuplicate;
+        }
+
         // 承認待ちの報告書がある場合は新規依頼を作成できない
         $pendingReports = Report::where('user_id', $userId)
             ->where('status', 'submitted')
@@ -181,29 +200,50 @@ class RequestService
         // 待ち合わせ場所も正規化
         $meetingPlace = $this->sanitizeUtf8($data['meeting_place'] ?? null);
 
-        // 依頼作成（DB に渡す文字列はすべて有効な UTF-8）
-        $request = Request::create([
-            'user_id' => $userId,
-            'nominated_guide_id' => $data['nominated_guide_id'] ?? null,
-            'request_type' => $data['request_type'],
-            'prefecture' => $prefecture,
-            'destination_address' => $fullAddress,
-            'meeting_place' => $meetingPlace,
-            'masked_address' => $maskedAddress,
-            'service_content' => $serviceContent,
-            'request_date' => $requestDate,
-            'request_time' => $requestTime,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'duration' => $data['duration'] ?? null,
-            'notes' => $notes,
-            'formatted_notes' => $formattedNotes,
-            'guide_gender' => $data['guide_gender'] ?? null,
-            'guide_age' => $data['guide_age'] ?? null,
-            'status' => 'pending',
-        ]);
+        // トランザクション内で依頼作成（二重作成防止）
+        $request = DB::transaction(function () use ($userId, $data, $prefecture, $fullAddress, $meetingPlace, $maskedAddress, $serviceContent, $requestDate, $requestTime, $startTime, $endTime, $notes, $formattedNotes) {
+            // トランザクション内で再度重複チェック（競合状態対策）
+            $existingRequest = Request::where('user_id', $userId)
+                ->where('request_date', $requestDate)
+                ->where('start_time', $startTime)
+                ->where('end_time', $endTime)
+                ->where('prefecture', $prefecture)
+                ->where('created_at', '>=', Carbon::now()->subSeconds(30))
+                ->lockForUpdate()
+                ->first();
 
-        // 条件に合致するガイドに通知
+            if ($existingRequest) {
+                \Log::warning('トランザクション内で二重送信検出: 既存の依頼を返します', [
+                    'user_id' => $userId,
+                    'existing_request_id' => $existingRequest->id,
+                ]);
+                return $existingRequest;
+            }
+
+            // 依頼作成（DB に渡す文字列はすべて有効な UTF-8）
+            return Request::create([
+                'user_id' => $userId,
+                'nominated_guide_id' => $data['nominated_guide_id'] ?? null,
+                'request_type' => $data['request_type'],
+                'prefecture' => $prefecture,
+                'destination_address' => $fullAddress,
+                'meeting_place' => $meetingPlace,
+                'masked_address' => $maskedAddress,
+                'service_content' => $serviceContent,
+                'request_date' => $requestDate,
+                'request_time' => $requestTime,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'duration' => $data['duration'] ?? null,
+                'notes' => $notes,
+                'formatted_notes' => $formattedNotes,
+                'guide_gender' => $data['guide_gender'] ?? null,
+                'guide_age' => $data['guide_age'] ?? null,
+                'status' => 'pending',
+            ]);
+        });
+
+        // 条件に合致するガイドに通知（トランザクション外で実行）
         $this->notifyMatchingGuides($request);
 
         return $request;
@@ -226,8 +266,24 @@ class RequestService
             $timeType = '夜間';
         }
 
+        // ユーザーがブロックしているガイドIDを取得
+        $blockedGuideIds = UserBlock::where('blocker_id', $request->user_id)->pluck('blocked_id')->toArray();
+        // ユーザーをブロックしているガイドIDも取得（相互ブロック）
+        $blockedByGuideIds = UserBlock::where('blocked_id', $request->user_id)->pluck('blocker_id')->toArray();
+        $allBlockedIds = array_unique(array_merge($blockedGuideIds, $blockedByGuideIds));
+
         // 指名ガイドが指定されている場合、そのガイドに優先的に通知
         if ($request->nominated_guide_id) {
+            // 指名ガイドがブロック関係にある場合は通知しない
+            if (in_array($request->nominated_guide_id, $allBlockedIds)) {
+                \Log::info('指名ガイドへの通知スキップ（ブロック関係）', [
+                    'request_id' => $request->id,
+                    'user_id' => $request->user_id,
+                    'nominated_guide_id' => $request->nominated_guide_id,
+                ]);
+                return;
+            }
+
             $nominatedGuide = User::where('id', $request->nominated_guide_id)
                 ->where('role', 'guide')
                 ->where('is_allowed', true)
@@ -247,9 +303,10 @@ class RequestService
             }
         }
 
-        // 条件に合致するガイドを検索
+        // 条件に合致するガイドを検索（ブロック関係を除外）
         $guides = User::where('role', 'guide')
             ->where('is_allowed', true)
+            ->whereNotIn('id', $allBlockedIds)
             ->with('guideProfile')
             ->get();
 
@@ -377,6 +434,11 @@ class RequestService
                 }
             }
         }
+
+        // ブロック関係にあるユーザーIDを取得
+        $blockedUserIds = UserBlock::where('blocker_id', $guideId)->pluck('blocked_id')->toArray();
+        $blockedByUserIds = UserBlock::where('blocked_id', $guideId)->pluck('blocker_id')->toArray();
+        $allBlockedUserIds = array_unique(array_merge($blockedUserIds, $blockedByUserIds));
         
         // デバッグログ：ガイド情報と対応範囲を確認
         \Log::info('ガイドの依頼一覧取得（詳細デバッグ）', [
@@ -387,6 +449,7 @@ class RequestService
             'available_areas_parsed' => $availableAreas,
             'available_areas_type' => gettype($availableAreas),
             'available_areas_count' => is_array($availableAreas) ? count($availableAreas) : 'not_array',
+            'blocked_user_count' => count($allBlockedUserIds),
         ]);
         
         // ガイドが応募済みの依頼IDを取得（ステータス情報も含む）
@@ -398,24 +461,54 @@ class RequestService
         // 利用可能な依頼（pending または guide_accepted ステータス）
         // 指名ガイドが設定されていない依頼、またはこのガイドが指名されている依頼のみを取得
         // キャンセルされた依頼は除外
-        $requests = Request::whereIn('status', ['pending', 'guide_accepted'])
-            ->where('status', '!=', 'cancelled') // キャンセルされた依頼を除外
+        // ブロック関係にあるユーザーの依頼は除外
+        // 過去の日付の依頼は除外（本日以降のみ表示）
+        $query = Request::whereIn('status', ['pending', 'guide_accepted'])
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('request_date', '>=', Carbon::today())
             ->where(function($query) use ($guideId) {
-                // 指名ガイドが設定されていない依頼、またはこのガイドが指名されている依頼
                 $query->whereNull('nominated_guide_id')
                       ->orWhere('nominated_guide_id', $guideId);
-            })
-            ->orderBy('created_at', 'desc')
-            ->get();
+            });
+        
+        if (!empty($allBlockedUserIds)) {
+            $query->whereNotIn('user_id', $allBlockedUserIds);
+        }
+        
+        $requests = $query->orderBy('created_at', 'desc')->get();
 
         // 自動マッチング設定を確認
         $autoMatching = AdminSetting::where('setting_key', 'auto_matching')
             ->value('setting_value') === 'true';
         
-        // 各依頼に応募済み情報を追加し、対応範囲外の依頼を除外
-        $filteredRequests = $requests->filter(function ($request) use ($availableAreas, $guideId) {
+        // ガイドが対応可能な支援タイプを取得
+        $canSupportOuting = $guideProfile ? $guideProfile->canSupportOuting() : false;
+        $canSupportHome = $guideProfile ? $guideProfile->canSupportHome() : false;
+
+        // 各依頼に応募済み情報を追加し、対応範囲外・資格外の依頼を除外
+        $filteredRequests = $requests->filter(function ($request) use ($availableAreas, $guideId, $canSupportOuting, $canSupportHome) {
+            // 指名ガイドの場合は対応範囲チェックをスキップ（資格チェックは行う）
+            $isNominated = $request->nominated_guide_id == $guideId;
+            
+            // 資格チェック（指名ガイドでもスキップしない - 法令遵守のため）
+            $requestType = $request->request_type;
+            if ($requestType === 'outing' && !$canSupportOuting) {
+                \Log::info('資格不足で依頼を除外（外出支援）', [
+                    'request_id' => $request->id,
+                    'guide_id' => $guideId,
+                ]);
+                return false;
+            }
+            if ($requestType === 'home' && !$canSupportHome) {
+                \Log::info('資格不足で依頼を除外（自宅支援）', [
+                    'request_id' => $request->id,
+                    'guide_id' => $guideId,
+                ]);
+                return false;
+            }
+            
             // 指名ガイドの場合は対応範囲チェックをスキップ
-            if ($request->nominated_guide_id == $guideId) {
+            if ($isNominated) {
                 return true;
             }
             
@@ -468,11 +561,35 @@ class RequestService
                 $displayStatus = $request->status;
             }
             
+            // 利用者情報を取得
+            $user = User::with('userProfile')->find($request->user_id);
+            $userInfo = null;
+            if ($user) {
+                $userInfo = [
+                    'average_rating' => $user->getAverageRating(),
+                    'rating_count' => $user->getRatingCount(),
+                    'cancel_rate' => $user->getLateCancellationRate(),
+                    'priority_points' => $user->getPriorityPointLabels(),
+                ];
+                
+                // 最新の評価コメント（1件）
+                $latestRating = $user->receivedRatings()->with('rater')->latest()->first();
+                if ($latestRating) {
+                    $userInfo['latest_comment'] = [
+                        'score' => $latestRating->score,
+                        'score_label' => $latestRating->score_label,
+                        'comment' => $latestRating->comment,
+                        'date' => $latestRating->created_at->format('Y/m/d'),
+                    ];
+                }
+            }
+            
             // 配列に変換して動的プロパティを追加（JSONシリアライズ時に含まれるようにする）
             $requestArray = $request->toArray();
             $requestArray['has_applied'] = $hasApplied;
             $requestArray['acceptance_status'] = $acceptanceStatus;
             $requestArray['display_status'] = $displayStatus;
+            $requestArray['user_info'] = $userInfo;
             
             // オブジェクトとして返すために stdClass に変換
             return (object) $requestArray;

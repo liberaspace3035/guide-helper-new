@@ -50,7 +50,28 @@
                     </svg>
                     <span>チャットを開く</span>
                 </a>
+                @if(auth()->user()->isUser())
+                <button type="button" @click="blockUser(matching.guide_id, matching.guide_name)" class="btn-danger btn-with-icon" :disabled="blocking" aria-label="このガイドをブロック">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    </svg>
+                    <span x-text="blocking ? 'ブロック中...' : 'このガイドをブロック'"></span>
+                </button>
+                @endif
+                @if(auth()->user()->isGuide())
+                <button type="button" @click="blockUser(matching.user_id, matching.user_name)" class="btn-danger btn-with-icon" :disabled="blocking" aria-label="このユーザーをブロック">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    </svg>
+                    <span x-text="blocking ? 'ブロック中...' : 'このユーザーをブロック'"></span>
+                </button>
+                @endif
             </div>
+            <template x-if="blockMessage">
+                <div class="block-message" :class="blockMessageType" x-text="blockMessage"></div>
+            </template>
         </div>
     </template>
 </div>
@@ -67,6 +88,9 @@ function matchingData() {
         matchingId: {{ $id }},
         matching: null,
         loading: true,
+        blocking: false,
+        blockMessage: '',
+        blockMessageType: '',
         init() {
             this.fetchMatching();
         },
@@ -131,6 +155,42 @@ function matchingData() {
             }
             // どちらもない場合は日付のみ
             return dateDisplay;
+        },
+        async blockUser(userId, userName) {
+            const targetType = '{{ auth()->user()->isUser() ? 'ガイド' : 'ユーザー' }}';
+            const reason = prompt(`${userName}さんをブロックする理由を入力してください（任意）:`);
+            if (reason === null) return;
+            
+            if (!confirm(`${userName}さんをブロックしますか？\n\nブロックすると、今後この${targetType}の依頼や提案が表示されなくなります。`)) return;
+            
+            this.blocking = true;
+            this.blockMessage = '';
+            try {
+                const res = await fetch('/api/blocks', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify({ user_id: userId, reason: reason || null })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    this.blockMessage = `${userName}さんをブロックしました。プロフィール画面でブロック一覧を確認・解除できます。`;
+                    this.blockMessageType = 'success-message';
+                } else {
+                    this.blockMessage = data.error || 'ブロックに失敗しました';
+                    this.blockMessageType = 'error-message';
+                }
+            } catch (e) {
+                this.blockMessage = 'ブロックに失敗しました';
+                this.blockMessageType = 'error-message';
+            } finally {
+                this.blocking = false;
+            }
         }
     }
 }

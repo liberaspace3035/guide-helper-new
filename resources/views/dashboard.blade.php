@@ -351,32 +351,29 @@
                         </div>
                     </template>
                     <template x-if="!loadingMonthlyLimit && monthlyLimits">
-                        <div class="limit-content limit-content-dual">
+                        <div class="limit-content limit-content-dual" role="region" aria-label="月次限度時間">
                             <!-- 外出 -->
                             <div class="limit-type-block" x-show="monthlyLimits.outing">
-                                <h4 class="limit-type-title">外出</h4>
-                                <div class="limit-summary">
-                                    <div class="limit-summary-item remaining">
-                                        <div class="limit-summary-value">
-                                            <span class="limit-number" x-text="(monthlyLimits.outing.remaining_hours || 0).toFixed(1)"></span>
-                                            <span class="limit-unit">時間</span>
-                                        </div>
-                                        <span class="limit-summary-label">残り</span>
+                                <h4 class="limit-type-title">外出支援</h4>
+                                <dl class="limit-info-list">
+                                    <div class="limit-info-row">
+                                        <dt>限度時間</dt>
+                                        <dd x-text="(monthlyLimits.outing.limit_hours || 0).toFixed(1) + '時間'"></dd>
                                     </div>
-                                    <div class="limit-summary-divider"></div>
-                                    <div class="limit-summary-item total">
-                                        <div class="limit-summary-value">
-                                            <span class="limit-number" x-text="(monthlyLimits.outing.limit_hours || 0).toFixed(1)"></span>
-                                            <span class="limit-unit">時間</span>
-                                        </div>
-                                        <span class="limit-summary-label">限度時間</span>
+                                    <div class="limit-info-row">
+                                        <dt>使用済み</dt>
+                                        <dd x-text="(monthlyLimits.outing.used_hours || 0).toFixed(1) + '時間'"></dd>
                                     </div>
-                                </div>
-                                <div class="limit-progress-section">
-                                    <div class="limit-progress-header">
-                                        <span class="limit-progress-label">使用状況</span>
-                                        <span class="limit-progress-percentage" x-text="monthlyLimits.outing.limit_hours > 0 ? `${Math.round(((monthlyLimits.outing.used_hours || 0) / monthlyLimits.outing.limit_hours) * 100)}%` : '0%'"></span>
+                                    <div class="limit-info-row limit-info-remaining">
+                                        <dt>残り</dt>
+                                        <dd x-text="(monthlyLimits.outing.remaining_hours || 0).toFixed(1) + '時間'"></dd>
                                     </div>
+                                    <div class="limit-info-row">
+                                        <dt>使用率</dt>
+                                        <dd x-text="monthlyLimits.outing.limit_hours > 0 ? Math.round(((monthlyLimits.outing.used_hours || 0) / monthlyLimits.outing.limit_hours) * 100) + '%' : '0%'"></dd>
+                                    </div>
+                                </dl>
+                                <div class="limit-progress-section" aria-hidden="true">
                                     <div class="limit-progress-bar">
                                         <div class="limit-progress-fill" 
                                              :class="{
@@ -386,36 +383,30 @@
                                              }"
                                              :style="`width: ${monthlyLimits.outing.limit_hours > 0 ? Math.min(((monthlyLimits.outing.used_hours || 0) / monthlyLimits.outing.limit_hours) * 100, 100) : 0}%`"></div>
                                     </div>
-                                    <div class="limit-progress-details">
-                                        <span class="limit-progress-used">使用: <strong x-text="(monthlyLimits.outing.used_hours || 0).toFixed(1) + '時間'"></strong></span>
-                                    </div>
                                 </div>
                             </div>
                             <!-- 自宅 -->
                             <div class="limit-type-block" x-show="monthlyLimits.home">
-                                <h4 class="limit-type-title">自宅</h4>
-                                <div class="limit-summary">
-                                    <div class="limit-summary-item remaining">
-                                        <div class="limit-summary-value">
-                                            <span class="limit-number" x-text="(monthlyLimits.home.remaining_hours || 0).toFixed(1)"></span>
-                                            <span class="limit-unit">時間</span>
-                                        </div>
-                                        <span class="limit-summary-label">残り</span>
+                                <h4 class="limit-type-title">自宅支援</h4>
+                                <dl class="limit-info-list">
+                                    <div class="limit-info-row">
+                                        <dt>限度時間</dt>
+                                        <dd x-text="(monthlyLimits.home.limit_hours || 0).toFixed(1) + '時間'"></dd>
                                     </div>
-                                    <div class="limit-summary-divider"></div>
-                                    <div class="limit-summary-item total">
-                                        <div class="limit-summary-value">
-                                            <span class="limit-number" x-text="(monthlyLimits.home.limit_hours || 0).toFixed(1)"></span>
-                                            <span class="limit-unit">時間</span>
-                                        </div>
-                                        <span class="limit-summary-label">限度時間</span>
+                                    <div class="limit-info-row">
+                                        <dt>使用済み</dt>
+                                        <dd x-text="(monthlyLimits.home.used_hours || 0).toFixed(1) + '時間'"></dd>
                                     </div>
-                                </div>
-                                <div class="limit-progress-section">
-                                    <div class="limit-progress-header">
-                                        <span class="limit-progress-label">使用状況</span>
-                                        <span class="limit-progress-percentage" x-text="monthlyLimits.home.limit_hours > 0 ? `${Math.round(((monthlyLimits.home.used_hours || 0) / monthlyLimits.home.limit_hours) * 100)}%` : '0%'"></span>
+                                    <div class="limit-info-row limit-info-remaining">
+                                        <dt>残り</dt>
+                                        <dd x-text="(monthlyLimits.home.remaining_hours || 0).toFixed(1) + '時間'"></dd>
                                     </div>
+                                    <div class="limit-info-row">
+                                        <dt>使用率</dt>
+                                        <dd x-text="monthlyLimits.home.limit_hours > 0 ? Math.round(((monthlyLimits.home.used_hours || 0) / monthlyLimits.home.limit_hours) * 100) + '%' : '0%'"></dd>
+                                    </div>
+                                </dl>
+                                <div class="limit-progress-section" aria-hidden="true">
                                     <div class="limit-progress-bar">
                                         <div class="limit-progress-fill" 
                                              :class="{
@@ -424,9 +415,6 @@
                                                'progress-danger': monthlyLimits.home.limit_hours > 0 && ((monthlyLimits.home.used_hours || 0) / monthlyLimits.home.limit_hours) >= 0.9
                                              }"
                                              :style="`width: ${monthlyLimits.home.limit_hours > 0 ? Math.min(((monthlyLimits.home.used_hours || 0) / monthlyLimits.home.limit_hours) * 100, 100) : 0}%`"></div>
-                                    </div>
-                                    <div class="limit-progress-details">
-                                        <span class="limit-progress-used">使用: <strong x-text="(monthlyLimits.home.used_hours || 0).toFixed(1) + '時間'"></strong></span>
                                     </div>
                                 </div>
                             </div>
@@ -658,13 +646,23 @@
                         </svg>
                         <h3>ガイド時間</h3>
                     </div>
-                    <div class="usage-stats">
+                    <div class="usage-stats" role="region" aria-label="ガイド時間統計">
                         <div class="usage-content">
-                            <p class="usage-total">
-                                <span x-text="usageStats?.current_month?.total_hours || 0"></span>
-                                <span class="usage-unit">時間</span>
-                            </p>
-                            <div class="usage-breakdown">
+                            <dl class="limit-info-list">
+                                <div class="limit-info-row limit-info-remaining">
+                                    <dt>今月の合計</dt>
+                                    <dd x-text="(usageStats?.current_month?.total_hours || 0) + '時間'"></dd>
+                                </div>
+                                <div class="limit-info-row">
+                                    <dt>外出支援</dt>
+                                    <dd x-text="(usageStats?.current_month?.by_type?.['外出'] || 0) + '時間'"></dd>
+                                </div>
+                                <div class="limit-info-row">
+                                    <dt>自宅支援</dt>
+                                    <dd x-text="(usageStats?.current_month?.by_type?.['自宅'] || 0) + '時間'"></dd>
+                                </div>
+                            </dl>
+                            <div class="usage-breakdown" aria-hidden="true">
                                 <div class="usage-bar-item">
                                     <div class="usage-bar-header">
                                         <span class="usage-bar-label">

@@ -7,6 +7,7 @@ use App\Models\Matching;
 use App\Models\Request;
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\Rating;
 use App\Services\UserMonthlyLimitService;
 use App\Services\EmailNotificationService;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +49,11 @@ class ReportService
                 'status' => 'draft',
             ]);
 
+            // 評価データの保存（ガイド→ユーザー）
+            if (isset($data['user_rating']) && isset($data['user_rating_comment'])) {
+                $this->saveGuideRating($existingReport, $guideId, $data);
+            }
+
             return $existingReport;
         }
 
@@ -59,7 +65,7 @@ class ReportService
         $fixedDate = $request->request_date ?? null;
 
         // 新しい報告書を作成
-        return Report::create([
+        $report = Report::create([
             'matching_id' => $data['matching_id'],
             'request_id' => $matching->request_id,
             'guide_id' => $guideId,
@@ -71,6 +77,55 @@ class ReportService
             'actual_end_time' => $data['actual_end_time'] ?? null,
             'status' => 'draft',
         ]);
+
+        // 評価データの保存（ガイド→ユーザー）
+        if (isset($data['user_rating']) && isset($data['user_rating_comment'])) {
+            $this->saveGuideRating($report, $guideId, $data);
+        }
+
+        return $report;
+    }
+
+    /**
+     * ガイドによる利用者評価を保存
+     */
+    private function saveGuideRating(Report $report, int $guideId, array $data): void
+    {
+        Rating::updateOrCreate(
+            [
+                'report_id' => $report->id,
+                'rater_id' => $guideId,
+            ],
+            [
+                'rated_id' => $report->user_id,
+                'rater_type' => 'guide',
+                'score' => (int) $data['user_rating'],
+                'comment' => $data['user_rating_comment'],
+            ]
+        );
+    }
+
+    /**
+     * 利用者によるガイド評価を保存
+     */
+    public function saveUserRating(int $reportId, int $userId, int $score, string $comment): void
+    {
+        $report = Report::where('id', $reportId)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        Rating::updateOrCreate(
+            [
+                'report_id' => $report->id,
+                'rater_id' => $userId,
+            ],
+            [
+                'rated_id' => $report->guide_id,
+                'rater_type' => 'user',
+                'score' => $score,
+                'comment' => $comment,
+            ]
+        );
     }
 
     public function submitReport(int $reportId, int $guideId): Report

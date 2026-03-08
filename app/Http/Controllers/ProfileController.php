@@ -46,6 +46,10 @@ class ProfileController extends Controller
             'available_areas' => 'nullable|array',
             'available_days' => 'nullable|array',
             'available_times' => 'nullable|array',
+            'priority_points' => 'nullable|array|max:2',
+            'priority_points_other' => 'nullable|string|max:255',
+            'qualifications' => 'nullable|array',
+            'qualifications.*' => ['nullable', 'string', \Illuminate\Validation\Rule::in(array_keys(\App\Models\GuideProfile::QUALIFICATION_OPTIONS))],
         ];
         $messages = [
             'introduction.required' => $user->isUser()
@@ -74,6 +78,13 @@ class ProfileController extends Controller
             if (array_key_exists('show_name_in_proposals', $validated)) {
                 $profile->show_name_in_proposals = (bool) $validated['show_name_in_proposals'];
             }
+            // 重視ポイント
+            if (array_key_exists('priority_points', $validated)) {
+                $profile->priority_points = $validated['priority_points'];
+            }
+            if (array_key_exists('priority_points_other', $validated)) {
+                $profile->priority_points_other = $validated['priority_points_other'];
+            }
             $profile->save();
         } else if ($user->isGuide()) {
             $profile = $user->guideProfile ?? new \App\Models\GuideProfile(['user_id' => $user->id]);
@@ -83,6 +94,17 @@ class ProfileController extends Controller
             $profile->available_areas = $validated['available_areas'] ?? $profile->available_areas;
             $profile->available_days = $validated['available_days'] ?? $profile->available_days;
             $profile->available_times = $validated['available_times'] ?? $profile->available_times;
+            // 重視ポイント
+            if (array_key_exists('priority_points', $validated)) {
+                $profile->priority_points = $validated['priority_points'];
+            }
+            if (array_key_exists('priority_points_other', $validated)) {
+                $profile->priority_points_other = $validated['priority_points_other'];
+            }
+            // 資格
+            if (array_key_exists('qualifications', $validated)) {
+                $profile->qualifications = $validated['qualifications'] ?? [];
+            }
             $profile->save();
         }
         

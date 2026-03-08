@@ -18,6 +18,8 @@ class UserProfile extends Model
         'recipient_number',
         'admin_comment',
         'introduction',
+        'priority_points',
+        'priority_points_other',
         'accept_guide_proposals',
         'show_name_in_proposals',
         'interview_date_1',
@@ -35,6 +37,7 @@ class UserProfile extends Model
         'interview_date_3' => 'datetime',
         'accept_guide_proposals' => 'boolean',
         'show_name_in_proposals' => 'boolean',
+        'priority_points' => 'array',
     ];
 
     public function user()

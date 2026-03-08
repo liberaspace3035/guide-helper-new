@@ -26,13 +26,55 @@ class ReportController extends Controller
         }
     }
 
-    public function approve($id)
+    public function approve(Request $request, $id)
     {
+        // 評価のバリデーション
+        $request->validate([
+            'guide_rating' => 'required|integer|in:1,2,3',
+            'guide_rating_comment' => 'required|string|max:1000',
+        ], [
+            'guide_rating.required' => '評価を選択してください。',
+            'guide_rating.in' => '評価は1〜3の値で選択してください。',
+            'guide_rating_comment.required' => '評価コメントを入力してください。',
+            'guide_rating_comment.max' => '評価コメントは1000文字以内で入力してください。',
+        ]);
+
         try {
+            // 評価を保存
+            $this->reportService->saveUserRating(
+                $id,
+                Auth::id(),
+                (int) $request->input('guide_rating'),
+                $request->input('guide_rating_comment')
+            );
+
+            // 報告書を承認
             $this->reportService->approveReport($id, Auth::id());
+            
+            // AJAXリクエストの場合はJSONを返す
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => '報告書を承認しました'
+                ]);
+            }
+            
             return redirect()->route('dashboard')
                 ->with('success', '報告書を承認しました');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => '入力内容に誤りがあります。',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            return redirect()->back()
+                ->withErrors($e->errors());
         } catch (\Exception $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'error' => $e->getMessage()
+                ], 400);
+            }
             return redirect()->back()
                 ->withErrors(['error' => $e->getMessage()]);
         }

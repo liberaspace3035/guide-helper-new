@@ -58,5 +58,29 @@ class Report extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    /**
+     * この報告書に関連する評価
+     */
+    public function ratings()
+    {
+        return $this->hasMany(Rating::class);
+    }
+
+    /**
+     * ガイドが利用者に対してつけた評価
+     */
+    public function guideRating()
+    {
+        return $this->hasOne(Rating::class)->where('rater_type', 'guide');
+    }
+
+    /**
+     * 利用者がガイドに対してつけた評価
+     */
+    public function userRating()
+    {
+        return $this->hasOne(Rating::class)->where('rater_type', 'user');
+    }
 }
 

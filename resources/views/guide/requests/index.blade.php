@@ -233,6 +233,56 @@
                         </template>
                         <p><strong>作成日:</strong> <span x-text="formatDate(request.created_at)"></span></p>
                     </div>
+                    <template x-if="request.user_info">
+                        <div class="user-info-section">
+                            <h4 class="user-info-title">利用者プロフィール</h4>
+                            <div class="user-info-stats">
+                                <div class="user-stat">
+                                    <span class="stat-label">評価</span>
+                                    <template x-if="request.user_info.average_rating">
+                                        <span class="stat-value rating">
+                                            <svg class="star-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                            <span x-text="request.user_info.average_rating.toFixed(1)"></span>
+                                            <small>(<span x-text="request.user_info.rating_count"></span>件)</small>
+                                        </span>
+                                    </template>
+                                    <template x-if="!request.user_info.average_rating">
+                                        <span class="stat-value no-data">—</span>
+                                    </template>
+                                </div>
+                                <div class="user-stat">
+                                    <span class="stat-label">直前キャンセル</span>
+                                    <template x-if="request.user_info.cancel_rate && request.user_info.cancel_rate.total > 0">
+                                        <span :class="['stat-value', 'cancel-rate', request.user_info.cancel_rate.rate > 20 ? 'high' : (request.user_info.cancel_rate.rate > 10 ? 'medium' : 'low')]">
+                                            <span x-text="request.user_info.cancel_rate.rate.toFixed(1) + '%'"></span>
+                                        </span>
+                                    </template>
+                                    <template x-if="!request.user_info.cancel_rate || request.user_info.cancel_rate.total === 0">
+                                        <span class="stat-value no-data">—</span>
+                                    </template>
+                                </div>
+                            </div>
+                            <template x-if="request.user_info.priority_points && request.user_info.priority_points.length > 0">
+                                <div class="user-priority-points">
+                                    <span class="stat-label">重視ポイント</span>
+                                    <div class="priority-tags">
+                                        <template x-for="point in request.user_info.priority_points" :key="point">
+                                            <span class="priority-tag" x-text="point"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="request.user_info.latest_comment">
+                                <div class="user-latest-comment">
+                                    <span class="stat-label">最新コメント</span>
+                                    <div class="comment-preview">
+                                        <span :class="['comment-score', 'score-' + request.user_info.latest_comment.score]" x-text="request.user_info.latest_comment.score_label"></span>
+                                        <span class="comment-text" x-text="(request.user_info.latest_comment.comment || '').substring(0, 40) + ((request.user_info.latest_comment.comment || '').length > 40 ? '...' : '')"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
                     <div class="request-actions">
                         <template x-if="!request.has_applied">
                             <button

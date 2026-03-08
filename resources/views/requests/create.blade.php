@@ -69,6 +69,14 @@
                     <button type="button" class="modal-close-btn" @click="closeGuideSearchModal()" aria-label="閉じる">&times;</button>
                 </div>
                 <div class="guide-search-box" aria-labelledby="guide-search-modal-title">
+                    <div class="guide-search-notice">
+                        <template x-if="formData.request_type === 'outing'">
+                            <p class="notice-outing">外出支援に必要な資格（同行援護）を持つガイドのみ表示されます</p>
+                        </template>
+                        <template x-if="formData.request_type === 'home'">
+                            <p class="notice-home">自宅支援に必要な資格（介護系）を持つガイドのみ表示されます</p>
+                        </template>
+                    </div>
                     <div class="guide-search-filters">
                         <div class="guide-filter-item">
                             <label for="guide_filter_area">地域</label>
@@ -176,6 +184,22 @@
                                             <template x-if="guide.age !== null"><span x-text="`${guide.age}歳`"></span></template>
                                             <template x-if="guide.available_areas && guide.available_areas.length"><span x-text="guide.available_areas.join('・')"></span></template>
                                         </span>
+                                        <div class="guide-support-types">
+                                            <template x-if="guide.can_support_outing"><span class="support-badge support-outing-sm">外出</span></template>
+                                            <template x-if="guide.can_support_home"><span class="support-badge support-home-sm">自宅</span></template>
+                                        </div>
+                                        <div class="guide-result-stats">
+                                            <template x-if="guide.average_rating">
+                                                <span class="stat-rating">
+                                                    <svg class="star-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                                    <span x-text="guide.average_rating.toFixed(1)"></span>
+                                                    <small>(<span x-text="guide.rating_count"></span>)</small>
+                                                </span>
+                                            </template>
+                                            <template x-if="guide.cancel_rate && guide.cancel_rate.total > 0">
+                                                <span :class="['stat-cancel', guide.cancel_rate.rate > 20 ? 'high' : (guide.cancel_rate.rate > 10 ? 'medium' : 'low')]" x-text="'キャンセル率: ' + guide.cancel_rate.rate.toFixed(1) + '%'"></span>
+                                            </template>
+                                        </div>
                                         <template x-if="guide.introduction">
                                             <p class="guide-result-intro" x-text="(guide.introduction || '').substring(0, 80) + ((guide.introduction || '').length > 80 ? '...' : '')"></p>
                                         </template>
@@ -226,9 +250,55 @@
                             <dd><span x-text="guideDetailForModal.age !== null ? guideDetailForModal.age + '歳' : '—'"></span></dd>
                             <dt>対応地域</dt>
                             <dd x-text="guideDetailForModal.available_areas && guideDetailForModal.available_areas.length ? guideDetailForModal.available_areas.join('、') : '—'"></dd>
+                            <dt>評価</dt>
+                            <dd>
+                                <template x-if="guideDetailForModal.average_rating">
+                                    <span class="guide-rating">
+                                        <span class="rating-score" x-text="guideDetailForModal.average_rating.toFixed(1)"></span>
+                                        <span class="rating-count">（<span x-text="guideDetailForModal.rating_count"></span>件）</span>
+                                    </span>
+                                </template>
+                                <template x-if="!guideDetailForModal.average_rating">
+                                    <span class="no-data">—</span>
+                                </template>
+                            </dd>
+                            <dt>直前キャンセル</dt>
+                            <dd>
+                                <template x-if="guideDetailForModal.cancel_rate && guideDetailForModal.cancel_rate.total > 0">
+                                    <span :class="['cancel-rate-badge', guideDetailForModal.cancel_rate.rate > 20 ? 'high' : (guideDetailForModal.cancel_rate.rate > 10 ? 'medium' : 'low')]">
+                                        <span x-text="guideDetailForModal.cancel_rate.rate.toFixed(1) + '%'"></span>
+                                    </span>
+                                </template>
+                                <template x-if="!guideDetailForModal.cancel_rate || guideDetailForModal.cancel_rate.total === 0">
+                                    <span class="no-data">—</span>
+                                </template>
+                            </dd>
+                            <dt>重視ポイント</dt>
+                            <dd>
+                                <template x-if="guideDetailForModal.priority_points && guideDetailForModal.priority_points.length > 0">
+                                    <div class="priority-points-tags">
+                                        <template x-for="point in guideDetailForModal.priority_points" :key="point">
+                                            <span class="priority-tag" x-text="point"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template x-if="!guideDetailForModal.priority_points || guideDetailForModal.priority_points.length === 0">
+                                    <span class="no-data">—</span>
+                                </template>
+                            </dd>
                             <dt>自己PR</dt>
                             <dd class="guide-detail-intro" x-text="guideDetailForModal.introduction || '—'"></dd>
                         </dl>
+                        <template x-if="guideDetailForModal.latest_comment">
+                            <div class="guide-latest-comment">
+                                <h4>最新コメント</h4>
+                                <div class="comment-item">
+                                    <span :class="['comment-score', 'score-' + guideDetailForModal.latest_comment.score]" x-text="guideDetailForModal.latest_comment.score_label"></span>
+                                    <span class="comment-date" x-text="guideDetailForModal.latest_comment.date"></span>
+                                    <p class="comment-text" x-text="guideDetailForModal.latest_comment.comment"></p>
+                                </div>
+                            </div>
+                        </template>
                         <div class="guide-detail-actions">
                             <button type="button" class="btn-select-guide" @click="selectGuideFromDetail()">このガイドを指名する</button>
                         </div>
@@ -552,6 +622,147 @@
                     <div id="request_date-error" class="field-error" role="alert" aria-live="polite">{{ $errors->first('request_date') }}</div>
                 @endif
             </div>
+        </div>
+
+        {{-- 繰り返し設定 --}}
+        <div class="form-group full-width repeat-settings-section">
+            <label>繰り返し設定（任意）</label>
+            <div class="repeat-toggle">
+                <label class="toggle-label">
+                    <input type="checkbox" x-model="repeatSettings.enabled" @change="onRepeatToggle()">
+                    <span>複数日程で依頼を作成する</span>
+                </label>
+            </div>
+
+            <template x-if="repeatSettings.enabled">
+                <div class="repeat-options">
+                    <div class="repeat-type-selector">
+                        <label for="repeat_type">繰り返しパターン</label>
+                        <select id="repeat_type" x-model="repeatSettings.type" @change="onRepeatTypeChange()">
+                            <option value="weekly">毎週</option>
+                            <option value="monthly">毎月（同じ日付）</option>
+                            <option value="custom">カスタム（日付を個別指定）</option>
+                        </select>
+                    </div>
+
+                    {{-- 毎週の設定 --}}
+                    <template x-if="repeatSettings.type === 'weekly'">
+                        <div class="repeat-weekly-options">
+                            <div class="repeat-frequency">
+                                <label for="repeat_interval">繰り返し頻度</label>
+                                <div class="frequency-input">
+                                    <select id="repeat_interval" x-model="repeatSettings.interval">
+                                        <option value="1">毎週</option>
+                                        <option value="2">隔週（2週間ごと）</option>
+                                        <option value="3">3週間ごと</option>
+                                        <option value="4">4週間ごと</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="weekday-selector">
+                                <label>曜日を選択</label>
+                                <div class="weekday-buttons">
+                                    <template x-for="(day, index) in ['日', '月', '火', '水', '木', '金', '土']" :key="index">
+                                        <button
+                                            type="button"
+                                            class="weekday-btn"
+                                            :class="{ 'active': repeatSettings.weekdays.includes(index) }"
+                                            @click="toggleWeekday(index)"
+                                            x-text="day"
+                                        ></button>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="repeat-end-date">
+                                <label for="repeat_until">終了日</label>
+                                <input
+                                    type="date"
+                                    id="repeat_until"
+                                    x-model="repeatSettings.until"
+                                    :min="formData.request_date"
+                                />
+                                <small class="form-help-text">この日付まで繰り返し依頼を作成します（最大12週間先まで）</small>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- 毎月の設定 --}}
+                    <template x-if="repeatSettings.type === 'monthly'">
+                        <div class="repeat-monthly-options">
+                            <div class="repeat-frequency">
+                                <label for="repeat_months">繰り返し回数</label>
+                                <select id="repeat_months" x-model="repeatSettings.monthCount">
+                                    <option value="2">2ヶ月間</option>
+                                    <option value="3">3ヶ月間</option>
+                                    <option value="4">4ヶ月間</option>
+                                    <option value="5">5ヶ月間</option>
+                                    <option value="6">6ヶ月間</option>
+                                </select>
+                            </div>
+                            <small class="form-help-text">希望日と同じ日付で毎月依頼を作成します</small>
+                        </div>
+                    </template>
+
+                    {{-- カスタム日付の設定 --}}
+                    <template x-if="repeatSettings.type === 'custom'">
+                        <div class="repeat-custom-options">
+                            <label>追加の日付（最大5件）</label>
+                            <div class="custom-dates-list">
+                                <template x-for="(date, index) in repeatSettings.customDates" :key="index">
+                                    <div class="custom-date-item">
+                                        <input
+                                            type="date"
+                                            :value="date"
+                                            @input="updateCustomDate(index, $event.target.value)"
+                                            :min="new Date().toISOString().split('T')[0]"
+                                        />
+                                        <button
+                                            type="button"
+                                            class="btn-remove-date"
+                                            @click="removeCustomDate(index)"
+                                            aria-label="この日付を削除"
+                                        >&times;</button>
+                                    </div>
+                                </template>
+                            </div>
+                            <button
+                                type="button"
+                                class="btn-add-date"
+                                @click="addCustomDate()"
+                                :disabled="repeatSettings.customDates.length >= 5"
+                            >
+                                + 日付を追加
+                            </button>
+                            <small class="form-help-text">希望日に加えて、追加で最大5件まで日付を指定できます</small>
+                        </div>
+                    </template>
+
+                    {{-- 生成される依頼のプレビュー --}}
+                    <div class="repeat-preview" x-show="getRepeatDates().length > 0">
+                        <label>作成される依頼（<span x-text="getRepeatDates().length"></span>件）</label>
+                        <ul class="preview-dates-list">
+                            <template x-for="date in getRepeatDates().slice(0, 10)" :key="date">
+                                <li x-text="formatDateForDisplay(date)"></li>
+                            </template>
+                            <template x-if="getRepeatDates().length > 10">
+                                <li class="more-dates">...他 <span x-text="getRepeatDates().length - 10"></span> 件</li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+            </template>
+
+            {{-- Hidden inputs for repeat settings --}}
+            <input type="hidden" name="repeat_enabled" :value="repeatSettings.enabled ? '1' : '0'">
+            <input type="hidden" name="repeat_type" :value="repeatSettings.type">
+            <input type="hidden" name="repeat_interval" :value="repeatSettings.interval">
+            <input type="hidden" name="repeat_weekdays" :value="JSON.stringify(repeatSettings.weekdays)">
+            <input type="hidden" name="repeat_until" :value="repeatSettings.until">
+            <input type="hidden" name="repeat_month_count" :value="repeatSettings.monthCount">
+            <input type="hidden" name="repeat_custom_dates" :value="JSON.stringify(repeatSettings.customDates)">
+        </div>
+
+        <div class="form-row">
 
             <div class="form-group">
                 <label for="start_hour">希望時間 <span class="required" aria-label="必須項目">*</span></label>
@@ -639,7 +850,7 @@
             <button
                 type="submit"
                 class="btn-primary"
-                :disabled="loading"
+                :disabled="loading || submitted"
                 :aria-busy="loading"
                 aria-label="依頼を送信"
             >
@@ -737,6 +948,17 @@ function requestForm() {
         },
         error: '',
         loading: false,
+        submitted: false, // 二重送信防止フラグ
+        // 繰り返し設定
+        repeatSettings: {
+            enabled: false,
+            type: 'weekly', // 'weekly', 'monthly', 'custom'
+            interval: 1, // 毎週=1, 隔週=2, etc.
+            weekdays: [], // 0=日, 1=月, ..., 6=土
+            until: '', // 終了日
+            monthCount: 3, // 何ヶ月間
+            customDates: [] // カスタム日付の配列
+        },
         // 指名ガイド検索
         guideFilter: { area: '', gender: '', age_range: '', keyword: '' },
         guideSearchResults: [],
@@ -806,6 +1028,146 @@ function requestForm() {
             const map = { male: '男性', female: '女性', other: 'その他', prefer_not_to_say: '回答しない' };
             return map[gender] || '—';
         },
+        // 繰り返し設定メソッド
+        onRepeatToggle() {
+            if (this.repeatSettings.enabled) {
+                // 繰り返しを有効にしたとき、デフォルト値を設定
+                if (this.repeatSettings.weekdays.length === 0 && this.formData.request_date) {
+                    const date = new Date(this.formData.request_date);
+                    this.repeatSettings.weekdays = [date.getDay()];
+                }
+                if (!this.repeatSettings.until && this.formData.request_date) {
+                    const date = new Date(this.formData.request_date);
+                    date.setDate(date.getDate() + 28); // 4週間後
+                    this.repeatSettings.until = date.toISOString().split('T')[0];
+                }
+            }
+        },
+        onRepeatTypeChange() {
+            // タイプが変わったときの初期化
+            if (this.repeatSettings.type === 'custom') {
+                if (this.repeatSettings.customDates.length === 0) {
+                    // 最初のカスタム日付を追加
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    this.repeatSettings.customDates = [tomorrow.toISOString().split('T')[0]];
+                }
+            }
+        },
+        toggleWeekday(dayIndex) {
+            const idx = this.repeatSettings.weekdays.indexOf(dayIndex);
+            if (idx >= 0) {
+                this.repeatSettings.weekdays.splice(idx, 1);
+            } else {
+                this.repeatSettings.weekdays.push(dayIndex);
+            }
+        },
+        addCustomDate() {
+            if (this.repeatSettings.customDates.length < 5) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                this.repeatSettings.customDates.push(tomorrow.toISOString().split('T')[0]);
+            }
+        },
+        removeCustomDate(index) {
+            this.repeatSettings.customDates.splice(index, 1);
+        },
+        updateCustomDate(index, value) {
+            this.repeatSettings.customDates[index] = value;
+        },
+        getRepeatDates() {
+            if (!this.repeatSettings.enabled) return [];
+            
+            const dates = [];
+            const baseDate = this.formData.request_date;
+            if (!baseDate) return [];
+            
+            // 基準日を最初に追加
+            dates.push(baseDate);
+            
+            if (this.repeatSettings.type === 'weekly') {
+                // 毎週パターン
+                const weekdays = this.repeatSettings.weekdays;
+                if (weekdays.length === 0) return dates;
+                
+                const interval = parseInt(this.repeatSettings.interval) || 1;
+                const until = this.repeatSettings.until ? new Date(this.repeatSettings.until) : null;
+                const maxWeeks = 12; // 最大12週間
+                
+                const start = new Date(baseDate);
+                for (let week = 0; week < maxWeeks; week++) {
+                    for (const dayOfWeek of weekdays) {
+                        const date = new Date(start);
+                        date.setDate(start.getDate() + (week * 7 * interval));
+                        
+                        // 基準日の週の曜日に合わせる
+                        const diff = dayOfWeek - date.getDay();
+                        date.setDate(date.getDate() + diff);
+                        
+                        // 過去の日付はスキップ
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        if (date < today) continue;
+                        
+                        // 終了日を超えたらスキップ
+                        if (until && date > until) continue;
+                        
+                        const dateStr = date.toISOString().split('T')[0];
+                        if (!dates.includes(dateStr)) {
+                            dates.push(dateStr);
+                        }
+                    }
+                }
+            } else if (this.repeatSettings.type === 'monthly') {
+                // 毎月パターン
+                const monthCount = parseInt(this.repeatSettings.monthCount) || 3;
+                const start = new Date(baseDate);
+                const dayOfMonth = start.getDate();
+                
+                for (let i = 1; i < monthCount; i++) {
+                    const date = new Date(start);
+                    date.setMonth(start.getMonth() + i);
+                    
+                    // 月末調整（例：1/31の翌月は2/28に）
+                    if (date.getDate() !== dayOfMonth) {
+                        date.setDate(0); // 前月の最終日に
+                    }
+                    
+                    const dateStr = date.toISOString().split('T')[0];
+                    if (!dates.includes(dateStr)) {
+                        dates.push(dateStr);
+                    }
+                }
+            } else if (this.repeatSettings.type === 'custom') {
+                // カスタム日付
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                for (const customDate of this.repeatSettings.customDates) {
+                    if (!customDate) continue;
+                    const date = new Date(customDate);
+                    if (date < today) continue;
+                    
+                    if (!dates.includes(customDate)) {
+                        dates.push(customDate);
+                    }
+                }
+            }
+            
+            // 日付順にソート
+            dates.sort();
+            return dates;
+        },
+        formatDateForDisplay(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const y = date.getFullYear();
+            const m = date.getMonth() + 1;
+            const d = date.getDate();
+            const dayName = days[date.getDay()];
+            return `${y}/${m}/${d}（${dayName}）`;
+        },
         async fetchGuidesSearch(page) {
             this.guideSearchLoading = true;
             const isFirst = page === 1;
@@ -830,6 +1192,10 @@ function requestForm() {
                 }
                 if (this.guideFilter.keyword && this.guideFilter.keyword.trim()) q.set('keyword', this.guideFilter.keyword.trim());
                 q.set('sort', this.guideSearchSort);
+                // 依頼タイプに応じた資格フィルタリング
+                if (this.formData.request_type) {
+                    q.set('request_type', this.formData.request_type);
+                }
                 const token = localStorage.getItem('token');
                 const response = await fetch('/api/guides/available?' + q.toString(), {
                     headers: { 'Authorization': 'Bearer ' + (token || ''), 'Accept': 'application/json' }
@@ -894,6 +1260,12 @@ function requestForm() {
             this.selectedGuide = null;
         },
         handleSubmit(event) {
+            // 二重送信防止: 既に送信済みの場合は何もしない
+            if (this.submitted || this.loading) {
+                console.log('二重送信防止: 既に送信処理中です');
+                return;
+            }
+            
             this.error = '';
             
             // バリデーション1: 開始時刻 < 終了時刻か（日付を考慮）
@@ -954,22 +1326,30 @@ function requestForm() {
             // バリデーションを通過したら送信
             console.log('クライアントサイドバリデーション通過、フォーム送信開始');
             console.log('フォームデータ:', this.formData);
+            
+            // 二重送信防止フラグを設定
+            this.submitted = true;
             this.loading = true;
             
             // フォーム要素を取得して送信
             const form = this.$refs.requestForm || event.target.closest('form');
             if (form) {
                 console.log('フォーム要素が見つかりました、送信します');
-                // 少し遅延を入れて、ローディング状態がUIに反映されるようにする
-                setTimeout(() => {
-                    console.log('form.submit()を実行します');
+                // 即座に送信（遅延なし）
+                try {
                     form.submit();
-                }, 100);
+                } catch (e) {
+                    console.error('フォーム送信エラー:', e);
+                    this.error = 'フォームの送信に失敗しました。ページをリロードしてください。';
+                    this.loading = false;
+                    this.submitted = false;
+                }
             } else {
                 // フォームが見つからない場合のフォールバック
                 console.error('フォーム要素が見つかりません');
                 this.error = 'フォームの送信に失敗しました。ページをリロードしてください。';
                 this.loading = false;
+                this.submitted = false;
             }
         }
     }
