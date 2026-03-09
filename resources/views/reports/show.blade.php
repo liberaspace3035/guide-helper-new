@@ -86,7 +86,7 @@
 
         <template x-if="report.status === 'submitted'">
             <div class="report-actions">
-                {{-- ガイド評価セクション --}}
+                {{-- ガイド評価セクション（全幅） --}}
                 <div class="rating-section">
                     <div class="rating-header">
                         <h3>ガイド評価 <span class="required">*</span></h3>
@@ -94,8 +94,8 @@
                     </div>
                     
                     <div class="rating-score-group">
-                        <label>評価 <span class="required">*</span></label>
-                        <div class="rating-buttons">
+                        <label id="rating-label" class="rating-score-label">評価 <span class="required">*</span></label>
+                        <div class="rating-buttons" role="group" aria-labelledby="rating-label">
                             <button
                                 type="button"
                                 class="rating-btn"
@@ -153,7 +153,7 @@
                     </div>
                 </div>
 
-                <div class="action-section">
+                <div class="action-section" aria-label="承認">
                     <h4 class="action-section-title">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
@@ -176,7 +176,7 @@
                     </button>
                 </div>
 
-                <div class="revision-section">
+                <div class="revision-section" aria-label="修正依頼">
                     <h4 class="action-section-title">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
