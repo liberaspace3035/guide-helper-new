@@ -13,6 +13,13 @@ if [ "${RAILWAY_SCHEDULER}" = "1" ]; then
     exec bash "$SCRIPT_DIR/scheduler.sh"
 fi
 
+# Railway でキューワーカー用サービスでは環境変数 RAILWAY_QUEUE_WORKER=1 を設定する。
+# Start Command が railway.json で start.sh に固定されていても、この分岐でワーカーが起動する。
+if [ "${RAILWAY_QUEUE_WORKER}" = "1" ]; then
+    echo "🔄 Queue worker mode: starting queue worker..."
+    exec bash "$SCRIPT_DIR/queue-worker.sh"
+fi
+
 echo "🚀 Starting Laravel application..."
 
 # キャッシュファイルを物理削除（artisanコマンドが失敗しても確実に消す）
