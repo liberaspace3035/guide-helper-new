@@ -13,6 +13,7 @@ use App\Models\UserBlock;
 use App\Services\UserMonthlyLimitService;
 use App\Services\AIInputService;
 use App\Services\EmailNotificationService;
+use App\Jobs\NotifyGuidesOfNewRequestsJob;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -104,17 +105,27 @@ class RequestService
                 $durationMinutes = $endMinutes - $startMinutes;
                 $requestHours = round($durationMinutes / 60 * 10) / 10; // 小数点第1位まで
                 
-                // 依頼日から年月を取得
-                $requestDate = Carbon::parse($data['request_date']);
-                $year = $requestDate->year;
-                $month = $requestDate->month;
+                // 依頼日から年月を取得（日付文字列の YYYY-MM-DD 部分のみ使用し、タイムゾーンによる月のずれを防ぐ）
+                $dateStr = $data['request_date'];
+                if (is_string($dateStr) && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $dateStr, $m)) {
+                    $year = (int) $m[1];
+                    $month = (int) $m[2];
+                } else {
+                    $requestDate = Carbon::parse($dateStr);
+                    $year = $requestDate->year;
+                    $month = $requestDate->month;
+                }
                 
                 // 残時間チェック（依頼種別＝外出/自宅ごとの限度で判定）
                 $requestType = $data['request_type'] ?? 'outing';
                 if (!$this->limitService->canCreateRequest($userId, $requestHours, $year, $month, $requestType)) {
                     $remaining = $this->limitService->getRemainingHours($userId, $year, $month, $requestType);
+                    $limitHours = $this->limitService->getOrCreateLimit($userId, $year, $month, $requestType)->limit_hours;
                     $typeLabel = $requestType === 'home' ? '自宅' : '外出';
-                    throw new \Exception("{$typeLabel}の月次限度時間を超過しています。残時間: {$remaining}時間（必要時間: {$requestHours}時間）");
+                    $hint = ((float) $limitHours === 0.0)
+                        ? " {$year}年{$month}月の{$typeLabel}の限度時間が未設定の可能性があります。管理者にご確認ください。"
+                        : '';
+                    throw new \Exception("{$typeLabel}の月次限度時間を超過しています。残時間: {$remaining}時間（必要: {$requestHours}時間・{$year}年{$month}月）。{$hint}");
                 }
             }
         }
@@ -244,9 +255,325 @@ class RequestService
         });
 
         // 条件に合致するガイドに通知（トランザクション外で実行）
-        $this->notifyMatchingGuides($request);
+        NotifyGuidesOfNewRequestsJob::dispatch([$request->id]);
 
         return $request;
+    }
+
+    /**
+     * 複数日付の依頼を一括作成（繰り返し依頼用）。共通処理は1回のみ・1トランザクションで挿入し処理を軽量化する。
+     *
+     * @param array $baseData 依頼の基本データ（request_date は含めず、日付は $requestDates で渡す）
+     * @param array $requestDates 依頼日の配列（Y-m-d 形式）
+     * @param int $userId
+     * @return array{created: Request[], skipped_message: string|null} 作成された依頼と、限度超過でスキップした月のメッセージ（あれば）
+     */
+    public function createRequestsBatch(array $baseData, array $requestDates, int $userId): array
+    {
+        if (empty($requestDates)) {
+            return ['created' => [], 'skipped_message' => null];
+        }
+
+        // 1回だけ: 承認待ち報告書チェック
+        if (Report::where('user_id', $userId)->where('status', 'submitted')->exists()) {
+            throw new \Exception('承認待ちの報告書があります。承認または修正依頼を完了してから新しい依頼を作成してください');
+        }
+
+        $user = User::findOrFail($userId);
+        if ($user->role !== 'user') {
+            $created = $this->createRequestsBatchNoLimitCheck($baseData, $requestDates, $userId);
+            return ['created' => $created, 'skipped_message' => null];
+        }
+
+        // 共通データの正規化（1回だけ）
+        $prefecture = $this->sanitizeUtf8($baseData['prefecture'] ?? '') ?? '';
+        $cityAddress = $this->sanitizeUtf8($baseData['destination_address'] ?? '') ?? '';
+        $fullAddress = $prefecture . $cityAddress;
+        $maskedAddress = $this->sanitizeUtf8($this->maskAddressService->maskAddress($fullAddress)) ?? '';
+
+        $startTime = $this->normalizeTimeString($baseData['start_time'] ?? $baseData['request_time'] ?? null);
+        $endTime = $this->normalizeTimeString($baseData['end_time'] ?? null);
+        $requestTime = $startTime ?: $this->normalizeTimeString($baseData['request_time'] ?? null);
+
+        $notes = $this->sanitizeUtf8($baseData['notes'] ?? null);
+        $formattedNotes = null;
+        $serviceContent = $this->sanitizeUtf8($baseData['service_content'] ?? '') ?? '';
+        if ($serviceContent && !empty($baseData['is_voice_input'])) {
+            $notes = $serviceContent;
+            $formattedNotes = $this->sanitizeUtf8($this->aiService->formatVoiceText($serviceContent));
+            $serviceContent = $formattedNotes ?? $serviceContent;
+        }
+        $meetingPlace = $this->sanitizeUtf8($baseData['meeting_place'] ?? null);
+
+        $requestType = $baseData['request_type'] ?? 'outing';
+        $requestHours = $this->computeRequestHours($startTime, $endTime);
+        if ($requestHours === null) {
+            throw new \Exception('開始時刻・終了時刻が不正です');
+        }
+
+        // 月ごとの必要時間を集計
+        $hoursByMonth = [];
+        $datesByMonth = [];
+        foreach ($requestDates as $dateStr) {
+            if (is_string($dateStr) && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $dateStr, $m)) {
+                $key = $m[1] . '-' . $m[2];
+                $hoursByMonth[$key] = ($hoursByMonth[$key] ?? 0) + $requestHours;
+                $datesByMonth[$key] = $datesByMonth[$key] ?? [];
+                $datesByMonth[$key][] = $dateStr;
+            }
+        }
+
+        // 限度内の月の日付だけ作成対象にする（1ヶ月でも超過していると全件失敗にせず、超過月のみスキップ）
+        $datesToCreate = [];
+        $skippedMessages = [];
+        foreach ($hoursByMonth as $yearMonth => $totalHours) {
+            [$year, $month] = explode('-', $yearMonth);
+            $year = (int) $year;
+            $month = (int) $month;
+            if ($this->limitService->canCreateRequest($userId, (float) $totalHours, $year, $month, $requestType)) {
+                foreach ($datesByMonth[$yearMonth] ?? [] as $d) {
+                    $datesToCreate[] = $d;
+                }
+            } else {
+                $count = count($datesByMonth[$yearMonth] ?? []);
+                $typeLabel = $requestType === 'home' ? '自宅' : '外出';
+                $skippedMessages[] = "{$year}年{$month}月は{$typeLabel}の限度時間のため{$count}件作成できませんでした";
+            }
+        }
+
+        if (empty($datesToCreate)) {
+            $firstMonth = array_key_first($hoursByMonth);
+            [$y, $m] = explode('-', $firstMonth);
+            $totalHours = $hoursByMonth[$firstMonth];
+            $remaining = $this->limitService->getRemainingHours($userId, (int) $y, (int) $m, $requestType);
+            $typeLabel = $requestType === 'home' ? '自宅' : '外出';
+            throw new \Exception("{$typeLabel}の月次限度時間を超過しています。{$y}年{$m}月の残時間: {$remaining}時間（必要: {$totalHours}時間）");
+        }
+
+        \Log::info('createRequestsBatch: 限度チェック通過', [
+            'user_id' => $userId,
+            'dates_to_create' => count($datesToCreate),
+            'skipped' => $skippedMessages,
+        ]);
+
+        $precomputed = compact('prefecture', 'fullAddress', 'maskedAddress', 'startTime', 'endTime', 'requestTime', 'notes', 'formattedNotes', 'serviceContent', 'meetingPlace');
+        $created = $this->createRequestsBatchNoLimitCheck($baseData, $datesToCreate, $userId, $precomputed);
+        $skippedMessage = !empty($skippedMessages) ? implode('。', $skippedMessages) : null;
+        return ['created' => $created, 'skipped_message' => $skippedMessage];
+    }
+
+    /**
+     * 限度時間チェック済みの前提で複数依頼を1トランザクションで作成する。
+     * 既存チェックは「直近30秒以内に同じスロットで作成された依頼」がある場合のみスキップ（二重送信防止）。
+     * @param array|null $precomputed 既に正規化済みの値（渡されない場合は baseData から計算）
+     */
+    private function createRequestsBatchNoLimitCheck(array $baseData, array $requestDates, int $userId, ?array $precomputed = null): array
+    {
+        if ($precomputed !== null) {
+            $prefecture = $precomputed['prefecture'];
+            $fullAddress = $precomputed['fullAddress'];
+            $maskedAddress = $precomputed['maskedAddress'];
+            $startTime = $precomputed['startTime'];
+            $endTime = $precomputed['endTime'];
+            $requestTime = $precomputed['requestTime'];
+            $notes = $precomputed['notes'];
+            $formattedNotes = $precomputed['formattedNotes'];
+            $serviceContent = $precomputed['serviceContent'];
+            $meetingPlace = $precomputed['meetingPlace'];
+        } else {
+            $prefecture = $this->sanitizeUtf8($baseData['prefecture'] ?? '') ?? '';
+            $cityAddress = $this->sanitizeUtf8($baseData['destination_address'] ?? '') ?? '';
+            $fullAddress = $prefecture . $cityAddress;
+            $maskedAddress = $this->sanitizeUtf8($this->maskAddressService->maskAddress($fullAddress)) ?? '';
+            $startTime = $this->normalizeTimeString($baseData['start_time'] ?? $baseData['request_time'] ?? null);
+            $endTime = $this->normalizeTimeString($baseData['end_time'] ?? null);
+            $requestTime = $startTime ?: $this->normalizeTimeString($baseData['request_time'] ?? null);
+            $notes = $this->sanitizeUtf8($baseData['notes'] ?? null);
+            $formattedNotes = null;
+            $serviceContent = $this->sanitizeUtf8($baseData['service_content'] ?? '') ?? '';
+            if ($serviceContent && !empty($baseData['is_voice_input'])) {
+                $notes = $serviceContent;
+                $formattedNotes = $this->sanitizeUtf8($this->aiService->formatVoiceText($serviceContent));
+                $serviceContent = $formattedNotes ?? $serviceContent;
+            }
+            $meetingPlace = $this->sanitizeUtf8($baseData['meeting_place'] ?? null);
+        }
+
+        $cutoff = Carbon::now()->subSeconds(30);
+        $requestType = $baseData['request_type'] ?? 'outing';
+
+        $created = DB::transaction(function () use ($userId, $baseData, $requestDates, $prefecture, $fullAddress, $meetingPlace, $maskedAddress, $serviceContent, $requestTime, $startTime, $endTime, $notes, $formattedNotes, $cutoff, $requestType) {
+            $list = [];
+            foreach ($requestDates as $dateStr) {
+                $requestDate = is_string($dateStr) && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $dateStr, $m)
+                    ? $m[1] . '-' . $m[2] . '-' . $m[3]
+                    : Carbon::parse($dateStr)->format('Y-m-d');
+
+                $existing = Request::where('user_id', $userId)
+                    ->where('request_date', $requestDate)
+                    ->where('start_time', $startTime)
+                    ->where('end_time', $endTime)
+                    ->where('prefecture', $prefecture)
+                    ->where('created_at', '>=', $cutoff)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existing) {
+                    \Log::info('createRequestsBatch: 重複のためスキップ', ['date' => $requestDate]);
+                    continue;
+                }
+
+                $list[] = Request::create([
+                    'user_id' => $userId,
+                    'nominated_guide_id' => $baseData['nominated_guide_id'] ?? null,
+                    'request_type' => $requestType,
+                    'prefecture' => $prefecture,
+                    'destination_address' => $fullAddress,
+                    'meeting_place' => $meetingPlace,
+                    'masked_address' => $maskedAddress,
+                    'service_content' => $serviceContent,
+                    'request_date' => $requestDate,
+                    'request_time' => $requestTime,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime,
+                    'duration' => $baseData['duration'] ?? null,
+                    'notes' => $notes,
+                    'formatted_notes' => $formattedNotes,
+                    'guide_gender' => $baseData['guide_gender'] ?? null,
+                    'guide_age' => $baseData['guide_age'] ?? null,
+                    'status' => 'pending',
+                ]);
+            }
+            return $list;
+        });
+
+        \Log::info('createRequestsBatch: トランザクション完了', [
+            'user_id' => $userId,
+            'created_count' => count($created),
+            'request_dates_count' => count($requestDates),
+        ]);
+
+        $requestIds = array_map(fn ($r) => $r->id, $created);
+        if (!empty($requestIds)) {
+            NotifyGuidesOfNewRequestsJob::dispatch($requestIds);
+        }
+
+        return $created;
+    }
+
+    /**
+     * キュージョブから呼び出す用。作成済み依頼に対してガイドへ通知・メールを行う。
+     */
+    public function notifyGuidesForRequests(array $requests): void
+    {
+        if (count($requests) > 1) {
+            $this->notifyMatchingGuidesBatch($requests);
+        } elseif (count($requests) === 1) {
+            $this->notifyMatchingGuides($requests[0]);
+        }
+    }
+
+    /**
+     * 複数依頼の通知を一括処理（ガイド・ブロック取得は1回のみで高速化）
+     */
+    protected function notifyMatchingGuidesBatch(array $requests): void
+    {
+        if (empty($requests)) {
+            return;
+        }
+        $userId = $requests[0]->user_id;
+        $blockedGuideIds = UserBlock::where('blocker_id', $userId)->pluck('blocked_id')->toArray();
+        $blockedByGuideIds = UserBlock::where('blocked_id', $userId)->pluck('blocker_id')->toArray();
+        $allBlockedIds = array_unique(array_merge($blockedGuideIds, $blockedByGuideIds));
+
+        $guides = User::where('role', 'guide')
+            ->where('is_allowed', true)
+            ->whereNotIn('id', $allBlockedIds)
+            ->with('guideProfile')
+            ->get();
+
+        foreach ($requests as $request) {
+            $this->notifyOneRequestWithPreloadedGuides($request, $guides, $allBlockedIds);
+        }
+    }
+
+    /**
+     * 事前取得したガイド・ブロック一覧を使って1件の依頼を通知
+     */
+    protected function notifyOneRequestWithPreloadedGuides(Request $request, \Illuminate\Support\Collection $guides, array $allBlockedIds): void
+    {
+        $time = $request->start_time ?? $request->request_time ?? '';
+
+        if ($request->nominated_guide_id && !in_array($request->nominated_guide_id, $allBlockedIds)) {
+            $nominatedGuide = $guides->firstWhere('id', $request->nominated_guide_id);
+            if ($nominatedGuide) {
+                Notification::create([
+                    'user_id' => $nominatedGuide->id,
+                    'type' => 'request',
+                    'title' => '指名依頼が作成されました',
+                    'message' => "あなたが指名された依頼が作成されました。{$request->masked_address}で{$request->request_date} {$time}の依頼です。",
+                    'related_id' => $request->id,
+                ]);
+                $this->emailService->sendRequestNotification($nominatedGuide, $this->buildRequestDataForEmail($request));
+                return;
+            }
+        }
+
+        $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
+        foreach ($guides as $guide) {
+            if (!$guide->guideProfile) {
+                continue;
+            }
+            $availableAreas = $guide->guideProfile->available_areas;
+            if (!is_array($availableAreas)) {
+                $availableAreas = is_string($availableAreas) ? (json_decode($availableAreas, true) ?? []) : [];
+            }
+            if (!empty($availableAreas) && $requestPrefecture && !in_array($requestPrefecture, $availableAreas, true)) {
+                continue;
+            }
+            Notification::create([
+                'user_id' => $guide->id,
+                'type' => 'request',
+                'title' => '新しい依頼が作成されました',
+                'message' => "新しい依頼が作成されました。{$request->masked_address}で{$request->request_date} {$time}の依頼です。",
+                'related_id' => $request->id,
+            ]);
+            $this->emailService->sendRequestNotification($guide, $this->buildRequestDataForEmail($request));
+        }
+    }
+
+    private function normalizeTimeString(?string $time): ?string
+    {
+        if (!$time) {
+            return null;
+        }
+        if (strpos($time, ' ') !== false) {
+            $time = explode(' ', $time)[1] ?? $time;
+        }
+        if (strpos($time, 'T') !== false) {
+            $time = explode('T', $time)[1] ?? $time;
+        }
+        if (substr_count($time, ':') === 2) {
+            $parts = explode(':', $time);
+            $time = $parts[0] . ':' . $parts[1];
+        }
+        return $time;
+    }
+
+    private function computeRequestHours(?string $startTime, ?string $endTime): ?float
+    {
+        if (!$startTime || !$endTime) {
+            return null;
+        }
+        $parts = explode(':', $startTime);
+        $startMinutes = (int) ($parts[0] ?? 0) * 60 + (int) ($parts[1] ?? 0);
+        $parts = explode(':', $endTime);
+        $endMinutes = (int) ($parts[0] ?? 0) * 60 + (int) ($parts[1] ?? 0);
+        if ($endMinutes < $startMinutes) {
+            $endMinutes += 24 * 60;
+        }
+        $durationMinutes = $endMinutes - $startMinutes;
+        return round($durationMinutes / 60 * 10) / 10;
     }
 
     protected function notifyMatchingGuides(Request $request)

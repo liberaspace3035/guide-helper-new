@@ -241,7 +241,7 @@ class RequestController extends Controller
             $createdRequests = [];
             
             if ($repeatEnabled) {
-                // 繰り返し依頼を生成
+                // 繰り返し依頼：バッチで一括作成を試行し、0件のときだけ1件ずつフォールバック
                 $repeatDates = $this->generateRepeatDates($request);
                 
                 \Log::info('繰り返し依頼生成', [
@@ -250,15 +250,21 @@ class RequestController extends Controller
                     'dates' => $repeatDates,
                 ]);
                 
-                foreach ($repeatDates as $date) {
-                    $requestData = $data;
-                    $requestData['request_date'] = $date;
-                    
-                    $createdRequest = $this->requestService->createRequest($requestData, Auth::id());
-                    $createdRequests[] = $createdRequest;
+                $batchResult = $this->requestService->createRequestsBatch($data, $repeatDates, Auth::id());
+                $createdRequests = $batchResult['created'];
+                if (count($createdRequests) === 0 && count($repeatDates) > 0) {
+                    \Log::warning('createRequestsBatch が0件のため、1件ずつ作成にフォールバック', ['user_id' => Auth::id()]);
+                    foreach ($repeatDates as $date) {
+                        $requestData = $data;
+                        $requestData['request_date'] = $date;
+                        $createdRequest = $this->requestService->createRequest($requestData, Auth::id());
+                        $createdRequests[] = $createdRequest;
+                    }
                 }
-                
                 $successMessage = count($createdRequests) . '件の依頼が作成されました';
+                if (!empty($batchResult['skipped_message'])) {
+                    $successMessage .= '（' . $batchResult['skipped_message'] . '）';
+                }
             } else {
                 // 単一依頼を作成
                 $createdRequest = $this->requestService->createRequest($data, Auth::id());

@@ -131,11 +131,12 @@ class UserMonthlyLimitService
 
     /**
      * 依頼作成可能かチェック（指定種別の残時間が十分か）
+     * 浮動小数点誤差を避けるため、残時間が必要時間より 0.01 時間以上あれば可とする。
      */
     public function canCreateRequest(int $userId, float $requestHours, int $year = null, int $month = null, string $requestType = 'outing'): bool
     {
         $remaining = $this->getRemainingHours($userId, $year, $month, $requestType);
-        return $remaining >= $requestHours;
+        return $remaining >= $requestHours - 0.01;
     }
 
     /**

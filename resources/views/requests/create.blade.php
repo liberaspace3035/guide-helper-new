@@ -1259,7 +1259,7 @@ function requestForm() {
             this.formData.nominated_guide_id = '';
             this.selectedGuide = null;
         },
-        handleSubmit(event) {
+        async handleSubmit(event) {
             // 二重送信防止: 既に送信済みの場合は何もしない
             if (this.submitted || this.loading) {
                 console.log('二重送信防止: 既に送信処理中です');
@@ -1331,23 +1331,40 @@ function requestForm() {
             this.submitted = true;
             this.loading = true;
             
-            // フォーム要素を取得して送信
             const form = this.$refs.requestForm || event.target.closest('form');
-            if (form) {
-                console.log('フォーム要素が見つかりました、送信します');
-                // 即座に送信（遅延なし）
-                try {
-                    form.submit();
-                } catch (e) {
-                    console.error('フォーム送信エラー:', e);
-                    this.error = 'フォームの送信に失敗しました。ページをリロードしてください。';
-                    this.loading = false;
-                    this.submitted = false;
-                }
-            } else {
-                // フォームが見つからない場合のフォールバック
+            if (!form) {
                 console.error('フォーム要素が見つかりません');
                 this.error = 'フォームの送信に失敗しました。ページをリロードしてください。';
+                this.loading = false;
+                this.submitted = false;
+                return;
+            }
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (response.redirected && response.url) {
+                    window.location.href = response.url;
+                    return;
+                }
+                if (response.ok) {
+                    window.location.href = '{{ route('requests.index') }}';
+                    return;
+                }
+                const text = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const errEl = doc.querySelector('.error-message, .field-error, [role="alert"]');
+                this.error = errEl ? errEl.textContent.trim() : '依頼の作成に失敗しました。入力内容を確認してください。';
+            } catch (e) {
+                console.error('フォーム送信エラー:', e);
+                this.error = 'フォームの送信に失敗しました。ページをリロードしてください。';
+            } finally {
                 this.loading = false;
                 this.submitted = false;
             }
