@@ -24,7 +24,7 @@
         </div>
     </template>
 
-    <template x-if="!loading && !error && requests.length === 0">
+    <template x-if="!loading && !error && upcomingRequests.length === 0">
         <div class="empty-state">
             <p>依頼がありません</p>
             <a href="{{ route('requests.create') }}" class="btn-primary">
@@ -33,9 +33,9 @@
         </div>
     </template>
 
-    <template x-if="!loading && !error && requests.length > 0">
+    <template x-if="!loading && !error && upcomingRequests.length > 0">
         <div class="requests-list">
-            <template x-for="request in requests" :key="request.id">
+            <template x-for="request in upcomingRequests" :key="request.id">
                 <div class="request-card">
                     <div class="request-header">
                         <h3 x-text="getRequestTypeLabel(request.request_type)"></h3>
@@ -226,6 +226,17 @@ function requestsData() {
         selecting: {},
         matchedGuideMap: {},
         selectMessageMap: {},
+        isDateTodayOrLater(dateStr) {
+            if (!dateStr) return false;
+            const d = new Date(dateStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            d.setHours(0, 0, 0, 0);
+            return d.getTime() >= today.getTime();
+        },
+        get upcomingRequests() {
+            return this.requests.filter(r => this.isDateTodayOrLater(r.request_date));
+        },
         init() {
             // selecting状態を明示的にリセット
             this.selecting = {};
