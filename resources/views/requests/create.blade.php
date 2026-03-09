@@ -35,7 +35,7 @@
             <label id="guide-nomination-label">指名ガイド（任意）</label>
             <template x-if="formData.nominated_guide_id">
                 <div class="nominated-guide-selected-block" aria-live="polite">
-                    <p class="guide-nomination-desc">現在選択中のガイドです。変更するには「変更」ボタンを押してください。</p>
+                    <p class="guide-nomination-desc">選択中のガイドです。変更する場合は「変更」を押してください。</p>
                     <div class="nominated-guide-selected">
                         <span class="nominated-guide-name" x-text="selectedGuide ? selectedGuide.name : '—'"></span>
                         <button type="button" class="btn-change-guide" @click="openGuideSearchModal()" aria-label="指名ガイドを変更する">変更</button>
@@ -44,7 +44,7 @@
             </template>
             <template x-if="!formData.nominated_guide_id">
                 <div>
-                    <p class="guide-nomination-desc">特定のガイドを指名して依頼を投稿できます。地域・性別・年齢・自己PRのキーワードで検索して選択してください。</p>
+                    <p class="guide-nomination-desc">指名したいガイドがいる場合は、地域・性別・年齢・自己PRで検索して選択できます。</p>
                     <button type="button" class="btn-open-guide-search" @click="openGuideSearchModal()" aria-label="指名ガイドを選択する（モーダルを開く）">ガイドを選択</button>
                 </div>
             </template>

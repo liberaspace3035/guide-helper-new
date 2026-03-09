@@ -24,7 +24,7 @@
         @if($user->isUser() && !empty($introduction_required))
             <!-- 自己PR未入力時の促し（ユーザーのみ） -->
             <div class="dashboard-intro-required" role="alert">
-                <p class="dashboard-intro-required-text">依頼を作成するには、プロフィールの<strong>自己PR（自己紹介）</strong>の入力が必要です。下のボタンからプロフィールを開いて入力してください。</p>
+                <p class="dashboard-intro-required-text">依頼を作成するには、プロフィールの<strong>自己PR</strong>の入力が必要です。下のボタンから入力してください。</p>
                 <a href="{{ route('profile') }}" class="btn-primary dashboard-intro-required-btn">プロフィールで自己PRを入力する</a>
             </div>
         @endif
@@ -32,7 +32,7 @@
         @if($user->isGuide() && !empty($introduction_required))
             <!-- 自己PR未入力時の促し（ガイドのみ） -->
             <div class="dashboard-intro-required" role="alert">
-                <p class="dashboard-intro-required-text">依頼に応募するには、プロフィールの<strong>自己PR（自己紹介）</strong>の入力が必要です。下のボタンからプロフィールを開いて入力してください。</p>
+                <p class="dashboard-intro-required-text">依頼に応募するには、プロフィールの<strong>自己PR</strong>の入力が必要です。下のボタンから入力してください。</p>
                 <a href="{{ route('profile') }}" class="btn-primary dashboard-intro-required-btn">プロフィールで自己PRを入力する</a>
             </div>
         @endif
@@ -107,7 +107,7 @@
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="12" cy="7" r="4"></circle>
                             </svg>
-                            <span>自己PRを入力して依頼を可能にする</span>
+                            <span>自己PRを入力する</span>
                         </a>
                     @else
                         <a href="{{ route('requests.create') }}" class="quick-action-btn primary">
@@ -429,8 +429,8 @@
             </div>
         </div>
 
-            <!-- 予定（マッチング済み）一覧 -->
-            <template x-if="matchings.length > 0">
+            <!-- 予定（マッチング済み）一覧（日程が今日以降のもののみ表示） -->
+            <template x-if="upcomingMatchings.length > 0">
                 <section class="matchings-section" aria-label="今後確定している予定">
                     <div class="section-header">
                         <h2>
@@ -458,7 +458,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <template x-for="matching in matchings" :key="matching.id">
+                            <template x-for="matching in upcomingMatchings" :key="matching.id">
                                 <tr>
                                     <td class="text-center">
                                         <span class="status-badge" :class="getStatusBadgeClass(matching.status)" :aria-label="getStatusLabel(matching.status) + 'の状態'">
@@ -504,8 +504,8 @@
             </section>
         </template>
 
-            <!-- マッチングがない場合 -->
-            <template x-if="matchings.length === 0">
+            <!-- 今日以降の予定がない場合 -->
+            <template x-if="upcomingMatchings.length === 0">
                 <section class="empty-state">
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -513,8 +513,8 @@
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    <h3>現在進行中のガイド確定はありません</h3>
-                    <p>新しい依頼を作成して、ガイドを確定させましょう</p>
+                    <h3>進行中の予定はありません</h3>
+                    <p>新規依頼を作成すると、ガイドが確定した予定がここに表示されます。</p>
                     <a href="{{ route('requests.create') }}" class="btn-primary">
                         依頼を作成する
                     </a>
@@ -533,7 +533,7 @@
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="12" cy="7" r="4"></circle>
                             </svg>
-                            <span>自己PRを入力して依頼に応募可能にする</span>
+                            <span>自己PRを入力する</span>
                         </a>
                     @else
                         <a href="{{ route('guide.requests.index') }}" class="quick-action-btn secondary">
@@ -826,8 +826,8 @@
                         <line x1="3" y1="12" x2="3.01" y2="12"></line>
                         <line x1="3" y1="18" x2="3.01" y2="18"></line>
                     </svg>
-                    <h3>現在進行中のガイド確定はありません</h3>
-                    <p>新しい依頼を確認して、ガイドを始めましょう</p>
+                    <h3>進行中の予定はありません</h3>
+                    <p>依頼一覧から応募して、ガイドが確定するとここに表示されます。</p>
                     <a href="{{ route('guide.requests.index') }}" class="btn-primary">
                         依頼を探す
                     </a>
@@ -875,10 +875,22 @@ function dashboardData() {
         monthlyLimit: null,
         monthlyLimits: null,
         loadingMonthlyLimit: false,
+        isDateTodayOrLater(dateStr) {
+            if (!dateStr) return false;
+            const d = new Date(dateStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            d.setHours(0, 0, 0, 0);
+            return d.getTime() >= today.getTime();
+        },
+        get upcomingMatchings() {
+            return this.matchings.filter(m => this.isDateTodayOrLater(m.request_date));
+        },
         get activeMatchings() {
-            return this.matchings.filter(m => 
-                (m.status === 'matched' || m.status === 'in_progress') && 
-                !m.report_completed_at
+            return this.matchings.filter(m =>
+                (m.status === 'matched' || m.status === 'in_progress') &&
+                !m.report_completed_at &&
+                this.isDateTodayOrLater(m.request_date)
             );
         },
         init() {

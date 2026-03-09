@@ -556,13 +556,13 @@
             <div x-show="step === 'confirm'" x-cloak class="confirm-section" role="region" aria-label="入力内容の確認">
                 <div class="confirm-header">
                     <h2 class="confirm-title">入力内容の確認</h2>
-                    <p class="confirm-description">以下の内容に誤りがなければ「送信する」を押してください。修正する場合は「修正する」から入力画面に戻れます。</p>
+                    <p class="confirm-description">内容をご確認のうえ「送信する」を押してください。修正する場合は「修正する」で入力画面に戻れます。</p>
                 </div>
 
                 <div class="confirm-block">
                     <h3 class="confirm-block-title">基本情報</h3>
                     <div class="confirm-list">
-                        <div class="confirm-row"><span class="confirm-label">登録種別</span><span class="confirm-value" x-text="formData.role === 'user' ? '利用者' : 'ガイド'"></span></div>
+                        <div class="confirm-row"><span class="confirm-label">登録タイプ</span><span class="confirm-value" x-text="formData.role === 'user' ? '利用者' : 'ガイド'"></span></div>
                         <div class="confirm-row"><span class="confirm-label">お名前</span><span class="confirm-value" x-text="(formData.last_name || '') + ' ' + (formData.first_name || '')"></span></div>
                         <div class="confirm-row"><span class="confirm-label">お名前（カナ）</span><span class="confirm-value" x-text="(formData.last_name_kana || '') + ' ' + (formData.first_name_kana || '')"></span></div>
                         <div class="confirm-row"><span class="confirm-label">生年月日</span><span class="confirm-value" x-text="formData.birth_date || '—'"></span></div>
@@ -843,18 +843,18 @@ function registerForm() {
             const kanaPattern = /^[ァ-ヶー\s]+$/;
             if (this.formData.last_name_kana !== undefined && this.formData.last_name_kana !== null) {
                 if (!String(this.formData.last_name_kana).trim()) {
-                    this.fieldErrors.last_name_kana = '【名前の読み・姓（カナ）】を入力してください。';
+                    this.fieldErrors.last_name_kana = '姓（カナ）を入力してください。';
                 } else if (!kanaPattern.test(String(this.formData.last_name_kana))) {
-                    this.fieldErrors.last_name_kana = '【名前の読み・姓（カナ）】全角カタカナで入力してください。';
+                    this.fieldErrors.last_name_kana = '姓（カナ）は全角カタカナで入力してください。';
                 } else {
                     delete this.fieldErrors.last_name_kana;
                 }
             }
             if (this.formData.first_name_kana !== undefined && this.formData.first_name_kana !== null) {
                 if (!String(this.formData.first_name_kana).trim()) {
-                    this.fieldErrors.first_name_kana = '【名前の読み・名（カナ）】を入力してください。';
+                    this.fieldErrors.first_name_kana = '名（カナ）を入力してください。';
                 } else if (!kanaPattern.test(String(this.formData.first_name_kana))) {
-                    this.fieldErrors.first_name_kana = '【名前の読み・名（カナ）】全角カタカナで入力してください。';
+                    this.fieldErrors.first_name_kana = '名（カナ）は全角カタカナで入力してください。';
                 } else {
                     delete this.fieldErrors.first_name_kana;
                 }
@@ -862,28 +862,28 @@ function registerForm() {
         },
         validateBirthDate() {
             if (!this.formData.birth_date) {
-                this.fieldErrors.birth_date = '【生年月日】を入力してください。';
+                this.fieldErrors.birth_date = '生年月日を入力してください。';
                 return;
             }
             const d = new Date(this.formData.birth_date);
             if (isNaN(d.getTime())) {
-                this.fieldErrors.birth_date = '【生年月日】は正しい日付を入力してください。';
+                this.fieldErrors.birth_date = '生年月日は正しい日付を入力してください。';
                 return;
             }
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const birth = new Date(d.getFullYear(), d.getMonth(), d.getDate());
             if (birth >= today) {
-                this.fieldErrors.birth_date = '【生年月日】未来の日付は入力できません。今日より前の日付を入力してください。';
+                this.fieldErrors.birth_date = '生年月日は今日より前の日付を入力してください。';
                 return;
             }
             const age = Math.floor((today - birth) / (365.25 * 24 * 60 * 60 * 1000));
             if (age < 18) {
-                this.fieldErrors.birth_date = '【生年月日】から計算した年齢は18歳以上である必要があります。';
+                this.fieldErrors.birth_date = '18歳以上である必要があります。';
                 return;
             }
             if (age > 120) {
-                this.fieldErrors.birth_date = '【生年月日】から計算した年齢は120歳以下である必要があります。';
+                this.fieldErrors.birth_date = '120歳以下で入力してください。';
                 return;
             }
             delete this.fieldErrors.birth_date;

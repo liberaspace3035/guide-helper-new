@@ -11,7 +11,7 @@
     <div class="login-card">
         <div class="login-header">
             <h1>ログイン</h1>
-            <p class="login-subtitle">アカウントにログインしてください</p>
+            <p class="login-subtitle">メールアドレスとパスワードを入力してください</p>
         </div>
         
         <form method="POST" action="{{ route('login') }}" autocomplete="on" @submit.prevent="loading = true; $el.submit()" aria-label="ログインフォーム">

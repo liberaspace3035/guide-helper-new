@@ -116,7 +116,7 @@
                     name="introduction"
                     x-model="formData.introduction"
                     rows="4"
-                    placeholder="ガイドに表示される内容ですので、配慮事項やガイドを実施する上で重視していることを記載してください。趣味なども記載してください。"
+                    placeholder="ガイドに表示されます。配慮事項・重視していること・趣味などを記載してください。"
                     required
                     aria-required="true"
                 >{{ $user->userProfile->introduction ?? '' }}</textarea>

@@ -74,8 +74,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--background-color);
   color: var(--text-primary);
-  line-height: 1.5;
-  font-size: 14px;
+  line-height: 1.6;
+  font-size: 15px;
   letter-spacing: 0.01em;
   overflow-x: hidden;
   overflow-y: hidden;
@@ -458,9 +458,9 @@ small {
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-md) var(--spacing-lg);
-  margin: var(--spacing-md) var(--spacing-lg);
+  margin: var(--spacing-lg) var(--spacing-lg) var(--spacing-md);
   border-radius: var(--radius-md);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   box-shadow: var(--shadow-md);
   animation: slideDown 0.3s ease-out;

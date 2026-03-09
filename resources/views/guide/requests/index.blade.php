@@ -11,7 +11,7 @@
     <section class="proposal-section">
         <h2>支援を提案する</h2>
         <p class="proposal-section-desc">利用者に外出支援・自宅支援を提案できます。承諾されるとガイドが確定します。</p>
-        <p class="proposal-section-note">提案先で「氏名を表示する」を選択した利用者には氏名が表示され、「表示しない」を選択した利用者には「利用者」と表示されます。全体向けの一斉提案も行えます。</p>
+        <p class="proposal-section-note">提案先の利用者が氏名表示を許可している場合は氏名、していない場合は「利用者」と表示されます。一斉提案もできます。</p>
         <button type="button" @click="showProposalForm = !showProposalForm" class="btn-primary proposal-toggle-btn">
             <span x-text="showProposalForm ? 'フォームを閉じる' : '支援を提案する'"></span>
         </button>
