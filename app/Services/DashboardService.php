@@ -99,9 +99,8 @@ class DashboardService
         $completedMatchings = Matching::where('guide_id', $guideId)
             ->where('status', 'completed')
             ->count();
-        $pendingReports = Report::where('guide_id', $guideId)
-            ->whereIn('status', ['draft', 'revision_requested'])
-            ->count();
+        // 要報告書 = 報告書が未提出・未完了のマッチング数（画面で目立たせるため activeMatchings と同一）
+        $pendingReports = $activeMatchings;
         $totalReports = Report::where('guide_id', $guideId)->count();
 
         return [

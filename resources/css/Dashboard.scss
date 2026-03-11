@@ -2211,6 +2211,52 @@
   margin-left: var(--spacing-xs);
 }
 
+// ガイド用：報告書の提出が必要です（目立つ案内）
+.report-required-notice {
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 2px solid var(--primary-color, #2563eb);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.report-required-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+}
+
+.report-required-icon {
+  flex-shrink: 0;
+  color: var(--primary-color, #2563eb);
+}
+
+.report-required-title {
+  margin: 0 0 var(--spacing-xs);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.report-required-desc {
+  margin: 0 0 var(--spacing-md);
+  font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.report-required-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: var(--transition-fast);
+}
+
 // 承認待ち報告書セクション
 .pending-reports-section {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);

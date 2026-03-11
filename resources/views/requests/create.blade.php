@@ -3,6 +3,23 @@
 @section('content')
 <div class="request-form-container" x-data="requestForm()" x-init="init()">
     <h1>依頼作成</h1>
+
+    @if(!empty($remainingHours))
+    <div
+        class="remaining-hours-notice"
+        role="status"
+        aria-live="polite"
+        tabindex="0"
+        x-ref="remainingHoursNotice"
+        @keydown.enter.prevent="focusFormStart()"
+        @keydown.space.prevent="focusFormStart()"
+    >
+        <p class="remaining-hours-text">
+            今月（{{ $remainingHours['year'] }}年{{ $remainingHours['month'] }}月）の<strong>外出</strong>は残り<strong>{{ $remainingHours['outing'] }}</strong>時間、<strong>自宅</strong>は残り<strong>{{ $remainingHours['home'] }}</strong>時間です。作成に進む場合はエンターキーを押してください。
+        </p>
+    </div>
+    @endif
+
     <form method="POST" action="{{ route('requests.store') }}" @submit.prevent="handleSubmit($event)" x-ref="requestForm" class="request-form" aria-label="依頼作成フォーム">
         @csrf
         <div x-show="error" class="error-message full-width" id="request-form-error-client" role="alert" aria-live="polite" aria-atomic="true" x-text="error"></div>
@@ -972,6 +989,13 @@ function requestForm() {
         showGuideSearchModal: false,
         showGuideDetailModal: false,
         guideDetailForModal: null,
+        focusFormStart() {
+            const form = this.$refs.requestForm;
+            if (form) {
+                const first = form.querySelector('select, input:not([type="hidden"])');
+                if (first) first.focus();
+            }
+        },
         openDatePicker() {
             // 日付入力フィールドをクリックしてカレンダーを開く
             const dateInput = this.$refs.dateInput;
@@ -999,7 +1023,14 @@ function requestForm() {
             console.log('defaultDateTime', defaultDateTime);
             this.formData.request_date = defaultDateTime.request_date;
             console.log('this.formData.request_date', this.formData.request_date);
-            
+
+            // 残り時間の案内がある場合はそこにフォーカスし、エンターでフォームへ進める
+            this.$nextTick(() => {
+                if (this.$refs.remainingHoursNotice) {
+                    this.$refs.remainingHoursNotice.focus();
+                }
+            });
+
             // 時刻を15分刻みに丸める
             const roundToQuarter = (timeStr) => {
                 const [hour, minute] = timeStr.split(':').map(Number);

@@ -5,16 +5,19 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Services\RequestService;
+use App\Services\UserMonthlyLimitService;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 
 class RequestController extends Controller
 {
     protected $requestService;
+    protected $limitService;
 
-    public function __construct(RequestService $requestService)
+    public function __construct(RequestService $requestService, UserMonthlyLimitService $limitService)
     {
         $this->requestService = $requestService;
+        $this->limitService = $limitService;
     }
 
     public function index()
@@ -31,6 +34,7 @@ class RequestController extends Controller
     public function create()
     {
         $user = Auth::user();
+        $remainingHours = null;
         if ($user->isUser()) {
             $user->load('userProfile');
             $introduction = trim($user->userProfile->introduction ?? '');
@@ -38,8 +42,15 @@ class RequestController extends Controller
                 return redirect()->route('profile')
                     ->withErrors(['error' => '依頼を作成するには、プロフィールの自己PR（自己紹介）の入力が必要です。下記の「自己PR（自己紹介）」欄に入力してください。']);
             }
+            $now = Carbon::now();
+            $remainingHours = [
+                'outing' => round($this->limitService->getRemainingHours($user->id, $now->year, $now->month, 'outing'), 1),
+                'home' => round($this->limitService->getRemainingHours($user->id, $now->year, $now->month, 'home'), 1),
+                'year' => $now->year,
+                'month' => $now->month,
+            ];
         }
-        return view('requests.create');
+        return view('requests.create', ['remainingHours' => $remainingHours]);
     }
 
     public function store(Request $request)

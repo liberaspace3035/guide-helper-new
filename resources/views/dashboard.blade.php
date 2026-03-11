@@ -565,6 +565,29 @@
             </div>
         </section>
 
+            <!-- 報告書の提出が必要です（ガイド・要報告書があるとき目立たせる） -->
+            <template x-if="stats?.pendingReports > 0 || activeMatchings.length > 0">
+                <section class="report-required-notice" aria-label="報告書の提出が必要です">
+                    <div class="report-required-inner">
+                        <svg class="report-required-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        <div>
+                            <h2 class="report-required-title">報告書の提出が必要です</h2>
+                            <p class="report-required-desc">
+                                <span x-text="stats?.pendingReports ?? activeMatchings.length"></span>件、報告書が未提出です。下の「進行中のガイド確定」から該当の報告書を作成・提出してください。
+                            </p>
+                            <a :href="activeMatchings.length > 0 ? `{{ url('/guide/reports/new') }}/${activeMatchings[0].id}` : '#'" class="btn-primary report-required-btn">
+                                報告書を作成する
+                            </a>
+                        </div>
+                    </div>
+                </section>
+            </template>
+
             <!-- 修正依頼が来た報告書 -->
             <template x-if="revisionRequestedReports.length > 0">
             <section class="pending-reports-section">
@@ -887,11 +910,16 @@ function dashboardData() {
             return this.matchings.filter(m => this.isDateTodayOrLater(m.request_date));
         },
         get activeMatchings() {
-            return this.matchings.filter(m =>
+            const base = this.matchings.filter(m =>
                 (m.status === 'matched' || m.status === 'in_progress') &&
-                !m.report_completed_at &&
-                this.isDateTodayOrLater(m.request_date)
+                !m.report_completed_at
             );
+            // ユーザー: 今後確定している予定は「今日以降」のみ表示
+            if (this.isUser) {
+                return base.filter(m => this.isDateTodayOrLater(m.request_date));
+            }
+            // ガイド: 報告書が提出されていなければ日付に関係なく表示
+            return base;
         },
         init() {
             const hour = new Date().getHours();

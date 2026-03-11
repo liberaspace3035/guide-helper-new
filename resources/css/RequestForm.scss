@@ -21,6 +21,30 @@
   }
 }
 
+.remaining-hours-notice {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid var(--primary-color, #2563eb);
+  border-radius: var(--radius-md);
+  outline: none;
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  }
+
+  .remaining-hours-text {
+    margin: 0;
+    font-size: 15px;
+    color: var(--text-primary);
+    line-height: 1.6;
+
+    strong {
+      font-weight: 600;
+    }
+  }
+}
+
 .request-form {
   background-color: var(--surface-color);
   padding: var(--spacing-2xl);

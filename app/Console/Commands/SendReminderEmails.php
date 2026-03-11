@@ -88,11 +88,7 @@ class SendReminderEmails extends Command
         }
 
         // 報告書未提出リマインド（ガイド向け）
-        // 条件: 
-        // 1. 依頼日が今日以前（依頼日当日または過去）
-        // 2. 報告書が未作成、下書き、または修正依頼状態
-        // 3. ユーザー承認されていない（ユーザー承認後は送信停止）
-        // 4. 時刻制限: 現在時刻が19時以降（このコマンド自体が19時以降に実行される想定）
+        // 条件: 1. 依頼日が今日以前 2. 報告書が未作成/下書き/修正依頼 3. ユーザー承認前 4. 時刻が19時以降（コマンドが19時以降に実行される想定）
         $currentHour = (int) Carbon::now()->format('H');
         $shouldSendReportReminder = $currentHour >= 19 || $this->option('force');
         
@@ -206,9 +202,9 @@ class SendReminderEmails extends Command
             }
         }
 
-        // お知らせ未読リマインド（ユーザー・ガイド向け・reminder_enabled が true のお知らせのみ）
-        $announcementReminderSetting = EmailNotificationSetting::where('notification_type', 'announcement_reminder')->first();
-        if ($announcementReminderSetting && $announcementReminderSetting->is_enabled) {
+            // お知らせ未読リマインド（ユーザー・ガイド向け・reminder_enabled が true のお知らせのみ）
+            $announcementReminderSetting = EmailNotificationSetting::where('notification_type', 'announcement_reminder')->first();
+            if ($announcementReminderSetting && $announcementReminderSetting->is_enabled) {
             $announcements = Announcement::where('reminder_enabled', true)->orderBy('created_at', 'desc')->get();
             if ($announcements->isNotEmpty()) {
                 $readIdsByUser = AnnouncementRead::get()
