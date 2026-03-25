@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Event;
 use App\Services\RequestService;
 use App\Services\UserMonthlyLimitService;
+use App\Services\EventCalendarService;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 
@@ -13,11 +15,13 @@ class RequestController extends Controller
 {
     protected $requestService;
     protected $limitService;
+    protected EventCalendarService $eventCalendarService;
 
-    public function __construct(RequestService $requestService, UserMonthlyLimitService $limitService)
+    public function __construct(RequestService $requestService, UserMonthlyLimitService $limitService, EventCalendarService $eventCalendarService)
     {
         $this->requestService = $requestService;
         $this->limitService = $limitService;
+        $this->eventCalendarService = $eventCalendarService;
     }
 
     public function index()
@@ -50,7 +54,18 @@ class RequestController extends Controller
                 'month' => $now->month,
             ];
         }
-        return view('requests.create', ['remainingHours' => $remainingHours]);
+        $prefillEvent = null;
+        if (request()->filled('event_id')) {
+            $event = Event::find((int) request('event_id'));
+            if ($event && $this->eventCalendarService->canViewForPrefill($user, $event)) {
+                $prefillEvent = $this->eventCalendarService->toPrefillForRequest($event);
+            }
+        }
+
+        return view('requests.create', [
+            'remainingHours' => $remainingHours,
+            'prefillEvent' => $prefillEvent,
+        ]);
     }
 
     public function store(Request $request)

@@ -16,14 +16,21 @@ use Carbon\Carbon;
 
 class AuthController extends Controller
 {
-    public function showLoginForm()
+    public function showLoginForm(Request $request)
     {
-        return view('auth.login');
+        return view('auth.login', [
+            'fromEvent' => $request->query('from_event'),
+        ]);
     }
 
-    public function showRegisterForm()
+    public function showRegisterForm(Request $request)
     {
-        return view('auth.register');
+        $role = $request->query('role') === 'guide' ? 'guide' : 'user';
+
+        return view('auth.register', [
+            'defaultRole' => $role,
+            'fromEventId' => $request->query('from_event') ? (int) $request->query('from_event') : null,
+        ]);
     }
 
     public function register(Request $request)
@@ -57,6 +64,7 @@ class AuthController extends Controller
                 },
             ],
             'role' => 'required|in:user,guide',
+            'from_event' => 'nullable|integer|exists:events,id',
         ];
 
         // ロール別の追加バリデーション
@@ -201,7 +209,12 @@ class AuthController extends Controller
         }
 
         // Webリクエストの場合はログインせずにログインページにリダイレクト
-        return redirect()->route('login')
+        $loginParams = [];
+        if ($request->filled('from_event')) {
+            $loginParams['from_event'] = (int) $request->from_event;
+        }
+
+        return redirect()->route('login', $loginParams)
             ->with('success', '登録が完了しました。内容を確認し、運営からメールでご連絡さしあげますので今しばらくお待ちください');
     }
 
@@ -210,6 +223,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required',
+            'from_event' => 'nullable|integer|exists:events,id',
         ]);
 
         if ($validator->fails()) {
@@ -270,6 +284,13 @@ class AuthController extends Controller
         // ロールに応じてリダイレクト
         if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
+        }
+
+        if ($request->filled('from_event')) {
+            $eventId = (int) $request->from_event;
+            if (\App\Models\Event::where('id', $eventId)->where('status', \App\Models\Event::STATUS_PUBLISHED)->exists()) {
+                return redirect()->route('events.show', $eventId);
+            }
         }
 
         return redirect()->route('dashboard');

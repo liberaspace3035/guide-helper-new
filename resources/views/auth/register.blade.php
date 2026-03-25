@@ -19,6 +19,9 @@
 
         <form method="POST" action="{{ route('register') }}" @submit="handleSubmit($event)" aria-label="ユーザー登録フォーム">
             @csrf
+            @if(!empty($fromEventId) || old('from_event'))
+                <input type="hidden" name="from_event" value="{{ old('from_event', $fromEventId ?? '') }}">
+            @endif
             <div x-show="error" class="error-message" id="register-error-client" role="alert" aria-live="polite" aria-atomic="true" x-text="error"></div>
             @if($errors->any())
                 <div class="error-message" id="register-error-summary" role="alert" aria-live="polite" aria-atomic="true">
@@ -703,6 +706,7 @@ function registerForm() {
         loading: false,
         step: 'input',
         init() {
+            this.formData.role = '{{ $defaultRole ?? 'user' }}';
             // サーバーサイドのエラーをfieldErrorsに設定
             @if($errors->has('postal_code'))
                 this.fieldErrors.postal_code = '{{ addslashes($errors->first('postal_code')) }}';

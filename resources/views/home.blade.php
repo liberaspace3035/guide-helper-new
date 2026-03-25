@@ -40,6 +40,9 @@
                     視覚障害がある方の『行きたい』を、専門のガイドがサポート。One Stepならもっと気軽に、もっと便利に。
                 </p>
                 <div class="hero-actions">
+                    <a href="{{ route('events.index') }}" class="btn-secondary btn-hero-secondary" aria-label="イベントカレンダーへ">
+                        イベントカレンダー
+                    </a>
                     @auth
                         <a href="{{ route('dashboard') }}" class="btn-primary btn-hero-primary" aria-label="ダッシュボードへ移動">
                             ダッシュボードへ

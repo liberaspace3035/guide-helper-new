@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@php($prefillEvent = $prefillEvent ?? null)
+
 @section('content')
 <div class="requests-container" x-data="guideRequestsData()" x-init="init()">
     <h1>依頼一覧</h1>
@@ -327,6 +329,9 @@
 {{-- スタイルは layouts/app の @vite(['resources/css/app.scss']) で SCSS からビルドされたものを読み込み --}}
 
 @push('scripts')
+@if(!empty($prefillEvent))
+<script>window.__guideProposalPrefill = @json($prefillEvent);</script>
+@endif
 <script>
 function guideRequestsData() {
     return {
@@ -354,6 +359,20 @@ function guideRequestsData() {
             this.fetchRequests();
             this.fetchProposalUsers();
             this.fetchMyProposals();
+            if (window.__guideProposalPrefill) {
+                const p = window.__guideProposalPrefill;
+                this.proposalForm.proposal_target = p.proposal_target || 'individual';
+                this.proposalForm.request_type = p.request_type || 'outing';
+                this.proposalForm.prefecture = p.prefecture || '';
+                this.proposalForm.destination_address = p.destination_address || '';
+                this.proposalForm.meeting_place = p.meeting_place || '';
+                this.proposalForm.proposed_date = p.proposed_date || '';
+                this.proposalForm.start_time = p.start_time || '';
+                this.proposalForm.end_time = p.end_time || '';
+                this.proposalForm.service_content = p.service_content || '';
+                this.proposalForm.message = p.message || '';
+                this.showProposalForm = true;
+            }
         },
         async fetchProposalUsers() {
             try {

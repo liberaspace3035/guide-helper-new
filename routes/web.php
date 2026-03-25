@@ -7,6 +7,8 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\PersonalCalendarController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,6 +17,13 @@ use App\Http\Controllers\ProfileController;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// 公開イベントカレンダー（未登録者も閲覧可）
+Route::get('/events', [EventController::class, 'index'])->name('events.index');
+Route::get('/events/new', [EventController::class, 'create'])->name('events.create');
+Route::post('/events', [EventController::class, 'store'])->name('events.store');
+Route::get('/events/verify', [EventController::class, 'verify'])->name('events.verify');
+Route::get('/events/{id}', [EventController::class, 'show'])->name('events.show');
 
 // キャッシュクリア（Railway 等で環境変数変更後に設定を反映させる用・本番では削除またはアクセス制限を推奨）
 Route::get('/clear', function () {
@@ -128,5 +137,18 @@ Route::middleware(['auth'])->group(function () {
 
     // 依頼関連（セッション認証用）
     Route::get('/api/requests/guide/available', [\App\Http\Controllers\Api\RequestController::class, 'availableForGuide']);
+
+    // 個人カレンダー（本人のみ）
+    Route::get('/calendar/personal', [PersonalCalendarController::class, 'index'])->name('calendar.personal.index');
+    Route::get('/calendar/personal/new', [PersonalCalendarController::class, 'create'])->name('calendar.personal.create');
+    Route::post('/calendar/personal', [PersonalCalendarController::class, 'store'])->name('calendar.personal.store');
+    Route::get('/calendar/personal/{id}/edit', [PersonalCalendarController::class, 'edit'])->name('calendar.personal.edit');
+    Route::put('/calendar/personal/{id}', [PersonalCalendarController::class, 'update'])->name('calendar.personal.update');
+    Route::delete('/calendar/personal/{id}', [PersonalCalendarController::class, 'destroy'])->name('calendar.personal.destroy');
+
+    Route::middleware(['role:admin'])->group(function () {
+        Route::post('/events/{id}/admin-publish', [EventController::class, 'adminPublish'])->name('events.admin.publish');
+        Route::post('/events/{id}/admin-cancel', [EventController::class, 'adminCancel'])->name('events.admin.cancel');
+    });
 });
 

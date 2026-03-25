@@ -16,6 +16,9 @@
         
         <form method="POST" action="{{ route('login') }}" autocomplete="on" @submit.prevent="loading = true; $el.submit()" aria-label="ログインフォーム">
             @csrf
+            @if(!empty($fromEvent) || old('from_event'))
+                <input type="hidden" name="from_event" value="{{ old('from_event', $fromEvent ?? '') }}">
+            @endif
             <div x-show="error" class="error-message" id="login-error-summary" role="alert" aria-live="polite" aria-atomic="true" x-text="error" x-transition></div>
             @if($errors->any())
                 <div class="error-message" id="login-error-summary" role="alert" aria-live="polite" aria-atomic="true">

@@ -887,6 +887,9 @@
 
 
 @push('scripts')
+@if(!empty($prefillEvent))
+<script>window.__requestPrefillEvent = @json($prefillEvent);</script>
+@endif
 <script>
 function requestForm() {
     const getDefaultDateTime = () => {
@@ -1054,6 +1057,26 @@ function requestForm() {
             // 時刻を更新
             this.updateStartTime();
             this.updateEndTime();
+
+            if (window.__requestPrefillEvent) {
+                const p = window.__requestPrefillEvent;
+                this.formData.request_type = p.request_type || this.formData.request_type;
+                this.formData.prefecture = p.prefecture || this.formData.prefecture;
+                this.formData.destination_address = p.destination_address || this.formData.destination_address;
+                this.formData.meeting_place = p.meeting_place || this.formData.meeting_place;
+                this.formData.service_content = p.service_content || this.formData.service_content;
+                this.formData.request_date = p.request_date || this.formData.request_date;
+                this.formData.start_time = p.start_time || this.formData.start_time;
+                this.formData.end_time = p.end_time || this.formData.end_time;
+                const sp = parseTime(this.formData.start_time);
+                this.startHour = sp.hour;
+                this.startMinute = sp.minute;
+                const ep = parseTime(this.formData.end_time);
+                this.endHour = ep.hour;
+                this.endMinute = ep.minute;
+                this.updateStartTime();
+                this.updateEndTime();
+            }
         },
         getGenderLabel(gender) {
             const map = { male: '男性', female: '女性', other: 'その他', prefer_not_to_say: '回答しない' };
