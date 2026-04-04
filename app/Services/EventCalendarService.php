@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Event;
+use App\Models\PersonalCalendarEntry;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -105,6 +106,30 @@ class EventCalendarService
         ];
     }
 
+    public function toPrefillForRequestFromPersonal(PersonalCalendarEntry $entry): array
+    {
+        $split = $this->splitPlace($entry->prefecture, $entry->place);
+        $start = Carbon::parse($entry->start_at);
+        $end = $entry->end_at ? Carbon::parse($entry->end_at) : null;
+
+        $serviceLines = array_filter([$entry->title, $entry->description]);
+        if ($entry->url) {
+            $serviceLines[] = '関連URL: ' . $entry->url;
+        }
+
+        return [
+            'request_type' => 'outing',
+            'prefecture' => $split['prefecture'],
+            'destination_address' => $split['destination_address'] !== '' ? $split['destination_address'] : ($split['prefecture'] . '（マイカレンダー予定）'),
+            'meeting_place' => $split['destination_address'] !== '' ? $split['destination_address'] : ($entry->place ?? ''),
+            'service_content' => implode("\n", $serviceLines) ?: $entry->title,
+            'request_date' => $start->format('Y-m-d'),
+            'start_time' => $start->format('H:i'),
+            'end_time' => $end ? $end->format('H:i') : $start->copy()->addHour()->format('H:i'),
+            'event_id' => $entry->event_id,
+        ];
+    }
+
     public function toPrefillForPersonal(Event $event): array
     {
         return [
@@ -124,6 +149,8 @@ class EventCalendarService
         return [
             'id' => $event->id,
             'title' => $event->title,
+            'category' => $event->category,
+            'category_label' => $event->getCategoryLabel(),
             'prefecture' => $event->prefecture,
             'place' => $event->place,
             'start_at' => $event->start_at->toIso8601String(),

@@ -9,6 +9,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\PersonalCalendarController;
+use App\Http\Controllers\Admin\EventAdminController;
+use App\Http\Controllers\Admin\SitePublicNoticeAdminController;
+use App\Http\Controllers\SitePublicNoticeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +20,7 @@ use App\Http\Controllers\PersonalCalendarController;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/public-notices', [SitePublicNoticeController::class, 'index'])->name('public-notices.index');
 
 // 公開イベントカレンダー（未登録者も閲覧可）
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
@@ -109,6 +113,12 @@ Route::middleware(['auth'])->group(function () {
            
            // ガイド専用ルート
            Route::middleware(['role:guide'])->group(function () {
+               Route::get('/guide/availability', [\App\Http\Controllers\Guide\GuideAvailabilityController::class, 'index'])->name('guide.availability.index');
+               Route::get('/guide/availability/new', [\App\Http\Controllers\Guide\GuideAvailabilityController::class, 'create'])->name('guide.availability.create');
+               Route::post('/guide/availability', [\App\Http\Controllers\Guide\GuideAvailabilityController::class, 'store'])->name('guide.availability.store');
+               Route::get('/guide/availability/{id}/edit', [\App\Http\Controllers\Guide\GuideAvailabilityController::class, 'edit'])->name('guide.availability.edit');
+               Route::put('/guide/availability/{id}', [\App\Http\Controllers\Guide\GuideAvailabilityController::class, 'update'])->name('guide.availability.update');
+               Route::delete('/guide/availability/{id}', [\App\Http\Controllers\Guide\GuideAvailabilityController::class, 'destroy'])->name('guide.availability.destroy');
                Route::get('/guide/requests', [\App\Http\Controllers\Guide\RequestController::class, 'index'])->name('guide.requests.index');
                Route::get('/guide/reports/new/{matchingId}', [\App\Http\Controllers\Guide\ReportController::class, 'create'])->name('guide.reports.create');
                Route::post('/guide/reports', [\App\Http\Controllers\Guide\ReportController::class, 'store'])->name('guide.reports.store');
@@ -125,6 +135,18 @@ Route::middleware(['auth'])->group(function () {
     // 管理者専用ルート
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/admin', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/admin/events', [EventAdminController::class, 'index'])->name('admin.events.index');
+        Route::get('/admin/events/{id}/edit', [EventAdminController::class, 'edit'])->name('admin.events.edit');
+        Route::put('/admin/events/{id}', [EventAdminController::class, 'update'])->name('admin.events.update');
+        Route::delete('/admin/events/{id}', [EventAdminController::class, 'destroy'])->name('admin.events.destroy');
+        Route::post('/admin/events/bulk-destroy', [EventAdminController::class, 'bulkDestroy'])->name('admin.events.bulk-destroy');
+        Route::post('/admin/events/import-csv', [EventAdminController::class, 'importCsv'])->name('admin.events.import-csv');
+        Route::get('/admin/public-notices', [SitePublicNoticeAdminController::class, 'index'])->name('admin.public-notices.index');
+        Route::get('/admin/public-notices/create', [SitePublicNoticeAdminController::class, 'create'])->name('admin.public-notices.create');
+        Route::post('/admin/public-notices', [SitePublicNoticeAdminController::class, 'store'])->name('admin.public-notices.store');
+        Route::get('/admin/public-notices/{id}/edit', [SitePublicNoticeAdminController::class, 'edit'])->name('admin.public-notices.edit');
+        Route::put('/admin/public-notices/{id}', [SitePublicNoticeAdminController::class, 'update'])->name('admin.public-notices.update');
+        Route::delete('/admin/public-notices/{id}', [SitePublicNoticeAdminController::class, 'destroy'])->name('admin.public-notices.destroy');
     });
     
     // ユーザー自身の月次限度時間関連（セッション認証用）

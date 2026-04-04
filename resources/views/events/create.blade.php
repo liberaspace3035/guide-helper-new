@@ -3,7 +3,7 @@
 @section('content')
 <div class="container" style="max-width: 760px; margin: 0 auto; padding: 1rem;">
     <h1>イベント登録</h1>
-    <p>非会員でも登録できます。非会員登録時はメール認証後に公開されます。</p>
+    <p>どなたでも登録できます。ログインしていない場合は、主催者名とメールアドレスの入力が必須です。メール認証完了後に公開されます。</p>
 
     @if($errors->any())
         <div class="error-message" role="alert">{{ $errors->first() }}</div>
@@ -11,6 +11,10 @@
 
     <form method="POST" action="{{ route('events.store') }}" class="request-form">
         @csrf
+        <div class="form-group">
+            <label for="submitter_name">主催者名 @guest<span class="required">*</span>@endguest</label>
+            <input id="submitter_name" name="submitter_name" type="text" value="{{ old('submitter_name', optional(auth()->user())->name) }}" @guest required @endguest>
+        </div>
         @guest
             <div class="form-group">
                 <label for="submitter_email">メールアドレス <span class="required">*</span></label>
@@ -20,6 +24,14 @@
         <div class="form-group">
             <label for="title">タイトル <span class="required">*</span></label>
             <input id="title" name="title" type="text" value="{{ old('title') }}" required>
+        </div>
+        <div class="form-group">
+            <label for="category">カテゴリ <span class="required">*</span></label>
+            <select id="category" name="category" required>
+                @foreach(\App\Models\Event::CATEGORIES as $key => $label)
+                    <option value="{{ $key }}" @selected(old('category', \App\Models\Event::CATEGORY_OUTING_EXPERIENCE) === $key)>{{ $label }}</option>
+                @endforeach
+            </select>
         </div>
         <div class="form-group">
             <label for="prefecture">都道府県</label>

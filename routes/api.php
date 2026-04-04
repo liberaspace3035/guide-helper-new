@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\MatchingController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\EventController as ApiEventController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,6 +17,7 @@ use App\Http\Controllers\Api\ChatController;
 // 認証ルート
 Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::get('/events/{id}', [ApiEventController::class, 'show']);
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/auth/user', [AuthController::class, 'user']);

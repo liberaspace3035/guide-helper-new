@@ -50,6 +50,7 @@ class ProfileController extends Controller
             'priority_points_other' => 'nullable|string|max:255',
             'qualifications' => 'nullable|array',
             'qualifications.*' => ['nullable', 'string', \Illuminate\Validation\Rule::in(array_keys(\App\Models\GuideProfile::QUALIFICATION_OPTIONS))],
+            'filter_requests_by_availability' => 'nullable|boolean',
         ];
         $messages = [
             'introduction.required' => $user->isUser()
@@ -105,6 +106,7 @@ class ProfileController extends Controller
             if (array_key_exists('qualifications', $validated)) {
                 $profile->qualifications = $validated['qualifications'] ?? [];
             }
+            $profile->filter_requests_by_availability = $request->boolean('filter_requests_by_availability');
             $profile->save();
         }
         

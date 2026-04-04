@@ -955,6 +955,10 @@ class AdminController extends Controller
                 ['user_id' => $id, 'request_type' => 'home', 'effective_from' => $effectiveFrom],
                 ['limit_hours' => $home]
             );
+            app(\App\Services\UserMonthlyLimitService::class)->syncMonthlyLimitHoursFromRules(
+                $id,
+                \Carbon\Carbon::parse($effectiveFrom)->startOfMonth()
+            );
             return response()->json(['message' => '継続ルールを保存しました']);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['error' => 'ユーザーが見つかりません'], 404);

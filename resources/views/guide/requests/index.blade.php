@@ -47,9 +47,12 @@
                     <div class="form-group" style="margin-bottom: 0.75rem;">
                         <label>依頼タイプ *</label>
                         <select x-model="proposalForm.request_type" required>
-                            <option value="outing">外出</option>
-                            <option value="home">自宅</option>
+                            <option value="outing" :disabled="!canSupportOuting">外出</option>
+                            <option value="home" :disabled="!canSupportHome">自宅</option>
                         </select>
+                        <p class="form-help-text" x-show="!canSupportOuting || !canSupportHome" x-cloak>
+                            保有資格に応じて選択可能な依頼タイプのみ表示しています。
+                        </p>
                     </div>
                     <div class="form-group" style="margin-bottom: 0.75rem;">
                         <label for="proposal-prefecture">都道府県</label>
@@ -335,6 +338,8 @@
 <script>
 function guideRequestsData() {
     return {
+        canSupportOuting: @json(optional(Auth::user()->guideProfile)->canSupportOuting() ?? false),
+        canSupportHome: @json(optional(Auth::user()->guideProfile)->canSupportHome() ?? false),
         requests: [],
         loading: true,
         error: '',
@@ -356,6 +361,7 @@ function guideRequestsData() {
         },
         proposalSubmitting: false,
         init() {
+            this.ensureProposalRequestTypeByQualification();
             this.fetchRequests();
             this.fetchProposalUsers();
             this.fetchMyProposals();
@@ -371,7 +377,16 @@ function guideRequestsData() {
                 this.proposalForm.end_time = p.end_time || '';
                 this.proposalForm.service_content = p.service_content || '';
                 this.proposalForm.message = p.message || '';
+                this.ensureProposalRequestTypeByQualification();
                 this.showProposalForm = true;
+            }
+        },
+        ensureProposalRequestTypeByQualification() {
+            if (this.proposalForm.request_type === 'outing' && !this.canSupportOuting) {
+                this.proposalForm.request_type = this.canSupportHome ? 'home' : 'outing';
+            }
+            if (this.proposalForm.request_type === 'home' && !this.canSupportHome) {
+                this.proposalForm.request_type = this.canSupportOuting ? 'outing' : 'home';
             }
         },
         async fetchProposalUsers() {
@@ -393,6 +408,14 @@ function guideRequestsData() {
             } catch (e) { console.error('提案一覧取得エラー:', e); }
         },
         async submitProposal() {
+            if (this.proposalForm.request_type === 'outing' && !this.canSupportOuting) {
+                alert('外出支援を提案する資格がありません。プロフィールで資格をご確認ください。');
+                return;
+            }
+            if (this.proposalForm.request_type === 'home' && !this.canSupportHome) {
+                alert('自宅支援を提案する資格がありません。プロフィールで資格をご確認ください。');
+                return;
+            }
             const isIndividual = this.proposalForm.proposal_target === 'individual';
             if (isIndividual && !this.proposalForm.user_id) {
                 alert('提案先の利用者を選択してください');
@@ -443,6 +466,7 @@ function guideRequestsData() {
                         service_content: '',
                         message: ''
                     };
+                    this.ensureProposalRequestTypeByQualification();
                     this.showProposalForm = false;
                     this.fetchMyProposals();
                 } else {

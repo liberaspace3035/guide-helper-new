@@ -17,25 +17,33 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('register') }}" @submit="handleSubmit($event)" aria-label="ユーザー登録フォーム">
+        <form method="POST" action="{{ route('register') }}" novalidate @submit="handleSubmit($event)" aria-label="ユーザー登録フォーム">
             @csrf
             @if(!empty($fromEventId) || old('from_event'))
                 <input type="hidden" name="from_event" value="{{ old('from_event', $fromEventId ?? '') }}">
             @endif
-            <div x-show="error" class="error-message" id="register-error-client" role="alert" aria-live="polite" aria-atomic="true" x-text="error"></div>
             @if($errors->any())
                 <div class="error-message" id="register-error-summary" role="alert" aria-live="polite" aria-atomic="true">
                     <p><span class="sr-only">入力内容に誤りがあります。該当する項目は以下のとおりです。</span></p>
                     <ul class="error-summary-list" aria-label="誤りがある項目">
-                        @foreach($errors->keys() as $key)
+                        @foreach($errors->getMessages() as $key => $messages)
                             @php
-                                $attrLabel = __("validation.attributes.{$key}");
-                                if (str_starts_with($attrLabel, 'validation.')) {
-                                    $attrLabel = preg_replace('/\.\d+\./', ' ', $key);
-                                    $attrLabel = str_replace('_', ' ', $attrLabel);
+                                if (str_starts_with($key, 'qualifications.')) {
+                                    $attrLabel = '保有資格';
+                                } elseif ($key === 'confirmPassword') {
+                                    $attrLabel = 'パスワード（確認）';
+                                } elseif ($key === 'email_confirmation') {
+                                    $attrLabel = 'メールアドレス（確認）';
+                                } else {
+                                    $attrLabel = __("validation.attributes.{$key}");
+                                    if (str_starts_with($attrLabel, 'validation.')) {
+                                        $attrLabel = str_replace('_', ' ', preg_replace('/\.\d+\./', ' ', $key));
+                                    }
                                 }
                             @endphp
-                            <li><span class="error-summary-field">{{ $attrLabel }}</span>：{{ $errors->first($key) }}</li>
+                            @foreach($messages as $msg)
+                                <li><span class="error-summary-field">{{ $attrLabel }}</span>：{{ $msg }}</li>
+                            @endforeach
                         @endforeach
                     </ul>
                 </div>
@@ -124,19 +132,35 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group form-group-half">
-                            <label for="birth_date">生年月日 <span class="required">*</span></label>
-                            <span id="birth_date-description" class="sr-only">今日より前の日付を入力してください。18歳以上である必要があります。</span>
-                            <input
-                                type="date"
-                                id="birth_date"
-                                name="birth_date"
-                                x-model="formData.birth_date"
-                                required
-                                aria-required="true"
-                                aria-label="生年月日"
-                                :aria-invalid="!!fieldErrors.birth_date"
-                                :aria-describedby="fieldErrors.birth_date ? 'birth_date-description birth_date-error' : 'birth_date-description'"
-                            />
+                            <label for="birth_year">生年月日 <span class="required">*</span></label>
+                            <span id="birth_date-description" class="sr-only">今日より前の日付を選択してください。</span>
+                            <div class="form-row">
+                                <div class="form-group form-group-third">
+                                    <select id="birth_year" x-model="formData.birth_year" @change="updateBirthDate()" required aria-required="true" :aria-invalid="!!fieldErrors.birth_date">
+                                        <option value="">年</option>
+                                        <template x-for="year in getBirthYears()" :key="year">
+                                            <option :value="String(year)" x-text="year + '年'"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="form-group form-group-third">
+                                    <select id="birth_month" x-model="formData.birth_month" @change="updateBirthDate()" required aria-required="true" :aria-invalid="!!fieldErrors.birth_date">
+                                        <option value="">月</option>
+                                        <template x-for="month in 12" :key="month">
+                                            <option :value="String(month).padStart(2, '0')" x-text="month + '月'"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="form-group form-group-third">
+                                    <select id="birth_day" x-model="formData.birth_day" @change="updateBirthDate()" required aria-required="true" :aria-invalid="!!fieldErrors.birth_date">
+                                        <option value="">日</option>
+                                        <template x-for="day in getBirthDays()" :key="day">
+                                            <option :value="String(day).padStart(2, '0')" x-text="day + '日'"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </div>
+                            <input type="hidden" id="birth_date" name="birth_date" :value="formData.birth_date">
                             <span id="birth_date-error" class="error-message-field" role="alert" aria-live="polite" aria-atomic="true" x-show="fieldErrors.birth_date" x-text="fieldErrors.birth_date"></span>
                         </div>
                         <div class="form-group form-group-half">
@@ -538,16 +562,40 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="preferred_work_hours">希望勤務時間 <span class="required">*</span></label>
-                        <textarea
-                            id="preferred_work_hours"
-                            name="preferred_work_hours"
-                            x-model="formData.preferred_work_hours"
-                            rows="3"
-                            required
-                            aria-required="true"
-                            placeholder="例: 平日 9:00-17:00、土日 10:00-16:00"
-                        ></textarea>
+                        <label>希望勤務条件 <span class="required">*</span></label>
+                        <p class="form-help-text">対応可能な曜日と時間帯を選択してください（複数選択可）。</p>
+                        <div class="form-group">
+                            <label>対応可能日 <span class="required">*</span></label>
+                            <div class="checkbox-group">
+                                @foreach(['月','火','水','木','金','土','日','祝日'] as $day)
+                                    <label class="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            name="available_days[]"
+                                            value="{{ $day }}"
+                                            x-model="formData.available_days"
+                                        />
+                                        {{ $day }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>対応可能時間帯 <span class="required">*</span></label>
+                            <div class="checkbox-group">
+                                @foreach(['午前から可','午後から可','1日フリー可','その都度調整'] as $time)
+                                    <label class="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            name="available_times[]"
+                                            value="{{ $time }}"
+                                            x-model="formData.available_times"
+                                        />
+                                        {{ $time }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
                 </div>
             </template>
@@ -614,7 +662,8 @@
                                     <span x-show="canSupportHome()" class="support-badge support-home">自宅支援可</span>
                                 </div>
                             </span></div>
-                            <div class="confirm-row"><span class="confirm-label">希望勤務時間</span><span class="confirm-value confirm-text-block" x-text="formData.preferred_work_hours || '—'"></span></div>
+                            <div class="confirm-row"><span class="confirm-label">対応可能日</span><span class="confirm-value" x-text="(formData.available_days || []).length ? formData.available_days.join('・') : '—'"></span></div>
+                            <div class="confirm-row"><span class="confirm-label">対応可能時間帯</span><span class="confirm-value" x-text="(formData.available_times || []).length ? formData.available_times.join('・') : '—'"></span></div>
                         </div>
                     </div>
                 </template>
@@ -641,15 +690,24 @@
             </div>
             <!-- /入力内容確認画面 -->
 
-            <div x-show="step === 'input'">
-            <button
-                type="button"
-                class="btn-primary btn-block"
-                @click="validateAndGoToConfirm()"
-                aria-label="入力内容を確認する"
-            >
-                入力内容を確認する
-            </button>
+            <div x-show="step === 'input'" id="register-errors-anchor" tabindex="-1">
+                <div x-show="error" class="error-message" id="register-error-client" role="alert" aria-live="polite" aria-atomic="true" x-text="error"></div>
+                <div class="error-message" role="alert" aria-live="polite" x-show="Object.keys(fieldErrors).length > 0" x-cloak>
+                    <p class="error-summary-intro">入力内容をご確認ください。</p>
+                    <ul class="error-summary-list">
+                        <template x-for="[key, msg] in Object.entries(fieldErrors)" :key="key">
+                            <li x-text="msg"></li>
+                        </template>
+                    </ul>
+                </div>
+                <button
+                    type="button"
+                    class="btn-primary btn-block"
+                    @click="validateAndGoToConfirm()"
+                    aria-label="入力内容を確認する"
+                >
+                    入力内容を確認する
+                </button>
             </div>
         </form>
         <p class="login-link">
@@ -662,6 +720,19 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/Register.css') }}">
+<style>
+    #register-error-summary { margin-bottom: 1rem; }
+    #register-errors-anchor { margin-top: 1.5rem; margin-bottom: 0.75rem; }
+    .error-summary-intro { margin: 0 0 0.35rem; font-weight: 600; }
+    .error-summary-list { margin: 0.25rem 0 0; padding-left: 1.25rem; }
+    .error-summary-field { font-weight: 700; }
+    .register-card input[aria-invalid="true"],
+    .register-card select[aria-invalid="true"],
+    .register-card textarea[aria-invalid="true"] {
+        border: 2px solid #dc2626 !important;
+        background-color: #fff7f7;
+    }
+</style>
 @endpush
 
 @push('scripts')
@@ -669,33 +740,37 @@
 function registerForm() {
     return {
         formData: {
-            email: '',
-            email_confirmation: '',
+            email: @json(old('email', '')),
+            email_confirmation: @json(old('email_confirmation', '')),
             password: '',
             confirmPassword: '',
-            last_name: '',
-            first_name: '',
-            last_name_kana: '',
-            first_name_kana: '',
-            birth_date: '',
-            gender: '',
-            postal_code: '',
-            address: '',
-            phone: '',
-            role: 'user',
+            last_name: @json(old('last_name', '')),
+            first_name: @json(old('first_name', '')),
+            last_name_kana: @json(old('last_name_kana', '')),
+            first_name_kana: @json(old('first_name_kana', '')),
+            birth_date: @json(old('birth_date', '')),
+            birth_year: '',
+            birth_month: '',
+            birth_day: '',
+            gender: @json(old('gender', '')),
+            postal_code: @json(old('postal_code', '')),
+            address: @json(old('address', '')),
+            phone: @json(old('phone', '')),
+            role: @json(old('role', $defaultRole ?? 'user')),
             // ユーザー用
-            interview_date_1: '',
-            interview_date_2: '',
-            interview_date_3: '',
-            application_reason: '',
+            interview_date_1: @json(old('interview_date_1', '')),
+            interview_date_2: @json(old('interview_date_2', '')),
+            interview_date_3: @json(old('interview_date_3', '')),
+            application_reason: @json(old('application_reason', '')),
             application_reason_other: '',
-            visual_disability_status: '',
-            disability_support_level: '',
-            daily_life_situation: '',
+            visual_disability_status: @json(old('visual_disability_status', '')),
+            disability_support_level: @json(old('disability_support_level', '')),
+            daily_life_situation: @json(old('daily_life_situation', '')),
             // ガイド用
-            goal: '',
-            qualifications: [],
-            preferred_work_hours: ''
+            goal: @json(old('goal', '')),
+            qualifications: @json(old('qualifications', [])),
+            available_days: @json(old('available_days', [])),
+            available_times: @json(old('available_times', []))
         },
         // 資格マスタ
         qualificationOptions: @json(\App\Models\GuideProfile::QUALIFICATION_OPTIONS),
@@ -706,32 +781,47 @@ function registerForm() {
         loading: false,
         step: 'input',
         init() {
-            this.formData.role = '{{ $defaultRole ?? 'user' }}';
-            // サーバーサイドのエラーをfieldErrorsに設定
-            @if($errors->has('postal_code'))
-                this.fieldErrors.postal_code = '{{ addslashes($errors->first('postal_code')) }}';
-            @endif
-            @if($errors->has('email'))
-                this.fieldErrors.email = '{{ addslashes($errors->first('email')) }}';
-            @endif
-            @if($errors->has('email_confirmation'))
-                this.fieldErrors.email_confirmation = '{{ addslashes($errors->first('email_confirmation')) }}';
-            @endif
-            @if($errors->has('password'))
-                this.fieldErrors.password = '{{ addslashes($errors->first('password')) }}';
-            @endif
-            @if($errors->has('confirmPassword'))
-                this.fieldErrors.confirmPassword = '{{ addslashes($errors->first('confirmPassword')) }}';
-            @endif
-            @if($errors->has('last_name_kana'))
-                this.fieldErrors.last_name_kana = '{{ addslashes($errors->first('last_name_kana')) }}';
-            @endif
-            @if($errors->has('first_name_kana'))
-                this.fieldErrors.first_name_kana = '{{ addslashes($errors->first('first_name_kana')) }}';
-            @endif
-            @if($errors->has('birth_date'))
-                this.fieldErrors.birth_date = '{{ addslashes($errors->first('birth_date')) }}';
-            @endif
+            this.parseBirthDateToParts();
+            const serverErrors = @json($errors->toArray());
+            const keyMap = {
+                confirmPassword: 'confirmPassword',
+                email_confirmation: 'email_confirmation',
+            };
+            Object.keys(serverErrors || {}).forEach((key) => {
+                const target = keyMap[key] || key;
+                const messages = serverErrors[key];
+                if (Array.isArray(messages) && messages.length > 0) {
+                    this.fieldErrors[target] = messages[0];
+                }
+            });
+            this.step = 'input';
+        },
+        parseBirthDateToParts() {
+            if (!this.formData.birth_date || !this.formData.birth_date.includes('-')) return;
+            const [y, m, d] = this.formData.birth_date.split('-');
+            this.formData.birth_year = y || '';
+            this.formData.birth_month = m || '';
+            this.formData.birth_day = d || '';
+        },
+        updateBirthDate() {
+            if (this.formData.birth_year && this.formData.birth_month && this.formData.birth_day) {
+                this.formData.birth_date = `${this.formData.birth_year}-${this.formData.birth_month}-${this.formData.birth_day}`;
+            } else {
+                this.formData.birth_date = '';
+            }
+        },
+        getBirthYears() {
+            const currentYear = new Date().getFullYear();
+            const years = [];
+            for (let y = currentYear; y >= 1900; y--) years.push(y);
+            return years;
+        },
+        getBirthDays() {
+            const y = parseInt(this.formData.birth_year || '0', 10);
+            const m = parseInt(this.formData.birth_month || '0', 10);
+            if (!y || !m) return Array.from({ length: 31 }, (_, i) => i + 1);
+            const lastDay = new Date(y, m, 0).getDate();
+            return Array.from({ length: lastDay }, (_, i) => i + 1);
         },
         // 面談日の最小値（今日以降）
         get minInterviewDate() {
@@ -774,16 +864,37 @@ function registerForm() {
         },
         formatConfirmDateTime(str) {
             if (!str) return '';
+            const s = String(str).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+                const [y, m, day] = s.split('-');
+                return `${y}/${m}/${day}（時刻は 9:00 として登録されます）`;
+            }
             try {
-                const d = new Date(str);
-                if (isNaN(d.getTime())) return str;
+                const d = new Date(s);
+                if (isNaN(d.getTime())) return s;
                 const y = d.getFullYear();
                 const m = String(d.getMonth() + 1).padStart(2, '0');
                 const day = String(d.getDate()).padStart(2, '0');
                 const h = String(d.getHours()).padStart(2, '0');
                 const min = String(d.getMinutes()).padStart(2, '0');
                 return y + '/' + m + '/' + day + ' ' + h + ':' + min;
-            } catch (e) { return str; }
+            } catch (e) { return s; }
+        },
+        normalizeInterviewOptional(key) {
+            let v = this.formData[key];
+            if (v === undefined || v === null || String(v).trim() === '') return;
+            let s = String(v).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+                this.formData[key] = s + 'T09:00';
+                return;
+            }
+            if (/^\d{4}-\d{2}-\d{2}T$/.test(s)) {
+                this.formData[key] = s + '09:00';
+                return;
+            }
+            if (/^\d{4}-\d{2}-\d{2}T\d{2}$/.test(s)) {
+                this.formData[key] = s + ':00';
+            }
         },
         validateAndGoToConfirm() {
             this.error = '';
@@ -827,8 +938,15 @@ function registerForm() {
                 return;
             }
             if (this.formData.role === 'user') {
+                this.normalizeInterviewOptional('interview_date_2');
+                this.normalizeInterviewOptional('interview_date_3');
                 if (!this.formData.interview_date_1) { this.error = '面談希望日時（第1希望）を入力してください'; this.scrollToFirstError(); return; }
-                if (!this.formData.application_reason) { this.error = '応募のきっかけを選択してください'; this.scrollToFirstError(); return; }
+                if (!this.formData.application_reason) {
+                    this.fieldErrors.application_reason = '応募のきっかけを選択してください';
+                    this.error = '';
+                    this.scrollToFirstError();
+                    return;
+                }
                 if (this.formData.application_reason === 'その他（自由記述）' && !this.formData.application_reason_other?.trim()) { this.error = 'その他の内容を記入してください'; this.scrollToFirstError(); return; }
                 if (!this.formData.visual_disability_status) { this.error = '視覚障害の状況を入力してください'; this.scrollToFirstError(); return; }
                 if (!this.formData.disability_support_level) { this.error = '障害支援区分を選択してください'; this.scrollToFirstError(); return; }
@@ -838,7 +956,8 @@ function registerForm() {
                 if (!this.formData.goal) { this.error = '実現したいことを入力してください'; this.scrollToFirstError(); return; }
                 if (!this.formData.qualifications || this.formData.qualifications.length === 0) { this.error = '保有資格を1件以上選択してください'; this.scrollToFirstError(); return; }
                 if (!this.canSupportOuting() && !this.canSupportHome()) { this.error = '外出支援または自宅支援が可能な資格を選択してください'; this.scrollToFirstError(); return; }
-                if (!this.formData.preferred_work_hours) { this.error = '希望勤務時間を入力してください'; this.scrollToFirstError(); return; }
+                if (!this.formData.available_days || this.formData.available_days.length === 0) { this.error = '対応可能日を1つ以上選択してください'; this.scrollToFirstError(); return; }
+                if (!this.formData.available_times || this.formData.available_times.length === 0) { this.error = '対応可能時間帯を1つ以上選択してください'; this.scrollToFirstError(); return; }
             }
             this.step = 'confirm';
             this.$el.querySelector('.confirm-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -881,15 +1000,6 @@ function registerForm() {
                 this.fieldErrors.birth_date = '生年月日は今日より前の日付を入力してください。';
                 return;
             }
-            const age = Math.floor((today - birth) / (365.25 * 24 * 60 * 60 * 1000));
-            if (age < 18) {
-                this.fieldErrors.birth_date = '18歳以上である必要があります。';
-                return;
-            }
-            if (age > 120) {
-                this.fieldErrors.birth_date = '120歳以下で入力してください。';
-                return;
-            }
             delete this.fieldErrors.birth_date;
         },
         validatePhone() {
@@ -903,11 +1013,14 @@ function registerForm() {
             }
         },
         scrollToFirstError() {
-            // 一般エラー（this.error）のみの場合はそのメッセージへスクロール（読み上げは role="alert" aria-live で行われる）
+            const anchor = document.getElementById('register-errors-anchor');
+            if (anchor && (this.error || Object.keys(this.fieldErrors).length > 0)) {
+                anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
             if (this.error) {
                 const alertEl = document.getElementById('register-error-client');
                 if (alertEl) {
-                    alertEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    alertEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
                 if (Object.keys(this.fieldErrors).length === 0) return;
             }
@@ -1026,8 +1139,24 @@ function registerForm() {
             }
         },
         handleSubmit(ev) {
-            // 確認画面からの送信: そのまま送信させる（prevent しない）
             if (this.step === 'confirm') {
+                this.error = '';
+                if (this.formData.role === 'user') {
+                    if (!this.formData.application_reason) {
+                        ev.preventDefault();
+                        this.error = '応募のきっかけが未選択のため送信できません。入力画面に戻って選択してください。';
+                        this.step = 'input';
+                        this.$nextTick(() => this.scrollToFirstError());
+                        return;
+                    }
+                    if (this.formData.application_reason === 'その他（自由記述）' && !this.formData.application_reason_other?.trim()) {
+                        ev.preventDefault();
+                        this.error = '「その他」の内容を入力してください。';
+                        this.step = 'input';
+                        this.$nextTick(() => this.scrollToFirstError());
+                        return;
+                    }
+                }
                 this.loading = true;
                 return;
             }
@@ -1108,8 +1237,12 @@ function registerForm() {
                     this.error = '外出支援または自宅支援が可能な資格を選択してください';
                     return;
                 }
-                if (!this.formData.preferred_work_hours) {
-                    this.error = '希望勤務時間を入力してください';
+                if (!this.formData.available_days || this.formData.available_days.length === 0) {
+                    this.error = '対応可能日を1つ以上選択してください';
+                    return;
+                }
+                if (!this.formData.available_times || this.formData.available_times.length === 0) {
+                    this.error = '対応可能時間帯を1つ以上選択してください';
                     return;
                 }
             }

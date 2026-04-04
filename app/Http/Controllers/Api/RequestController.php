@@ -411,6 +411,8 @@ class RequestController extends Controller
                 'age' => $age,
                 'introduction' => $row->introduction ?? null,
                 'available_areas' => is_array($availableAreas) ? $availableAreas : [],
+                'available_days' => $user && $user->guideProfile ? ($user->guideProfile->available_days ?? []) : [],
+                'available_times' => $user && $user->guideProfile ? ($user->guideProfile->available_times ?? []) : [],
                 'average_rating' => $avgRating,
                 'rating_count' => $ratingCount,
                 'cancel_rate' => $cancelRate,

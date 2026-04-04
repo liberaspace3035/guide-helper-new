@@ -3,20 +3,42 @@
 @section('content')
 <div class="request-form-container" x-data="requestForm()" x-init="init()">
     <h1>依頼作成</h1>
+    <p class="sr-only" role="status" aria-live="assertive" x-text="screenReaderAnnouncement"></p>
 
     @if(!empty($remainingHours))
     <div
         class="remaining-hours-notice"
         role="status"
         aria-live="polite"
-        tabindex="0"
-        x-ref="remainingHoursNotice"
-        @keydown.enter.prevent="focusFormStart()"
-        @keydown.space.prevent="focusFormStart()"
     >
         <p class="remaining-hours-text">
-            今月（{{ $remainingHours['year'] }}年{{ $remainingHours['month'] }}月）の<strong>外出</strong>は残り<strong>{{ $remainingHours['outing'] }}</strong>時間、<strong>自宅</strong>は残り<strong>{{ $remainingHours['home'] }}</strong>時間です。作成に進む場合はエンターキーを押してください。
+            今月（{{ $remainingHours['year'] }}年{{ $remainingHours['month'] }}月）の<strong>外出</strong>は残り<strong>{{ $remainingHours['outing'] }}</strong>時間、<strong>自宅</strong>は残り<strong>{{ $remainingHours['home'] }}</strong>時間です。
         </p>
+    </div>
+    @endif
+
+    @if(!empty($remainingHours))
+    <div
+        class="modal-backdrop"
+        x-show="showRemainingHoursModal"
+        x-cloak
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="remaining-hours-modal-title"
+    >
+        <div class="modal-content modal-content-sm" tabindex="-1" x-ref="remainingHoursModal">
+            <div class="modal-header">
+                <h2 id="remaining-hours-modal-title">残り時間のご案内</h2>
+            </div>
+            <div class="guide-detail-modal-body">
+                <p class="remaining-hours-text">
+                    今月（{{ $remainingHours['year'] }}年{{ $remainingHours['month'] }}月）の<strong>外出</strong>は残り<strong>{{ $remainingHours['outing'] }}</strong>時間、<strong>自宅</strong>は残り<strong>{{ $remainingHours['home'] }}</strong>時間です。
+                </p>
+                <div class="guide-detail-actions">
+                    <button type="button" class="btn-primary" @click="closeRemainingHoursModalAndFocusForm()">確認して入力に進む</button>
+                </div>
+            </div>
+        </div>
     </div>
     @endif
 
@@ -80,12 +102,13 @@
             aria-modal="true"
             aria-labelledby="guide-search-modal-title"
         >
-            <div class="modal-content guide-search-modal-content">
+            <div class="modal-content guide-search-modal-content" tabindex="-1" x-ref="guideSearchModal">
                 <div class="modal-header">
                     <h2 id="guide-search-modal-title">指名ガイドを選択</h2>
                     <button type="button" class="modal-close-btn" @click="closeGuideSearchModal()" aria-label="閉じる">&times;</button>
                 </div>
                 <div class="guide-search-box" aria-labelledby="guide-search-modal-title">
+                    <p class="sr-only" x-show="guideSearchLoading" aria-live="polite">ガイドを検索中です。しばらくお待ちください。</p>
                     <div class="guide-search-notice">
                         <template x-if="formData.request_type === 'outing'">
                             <p class="notice-outing">外出支援に必要な資格（同行援護）を持つガイドのみ表示されます</p>
@@ -188,6 +211,12 @@
                             </button>
                         </div>
                     </div>
+                    <template x-if="guideSearchLoading && guideSearchResults.length === 0">
+                        <p class="guide-search-empty">検索中です。しばらくお待ちください...</p>
+                    </template>
+                    <template x-if="guideSearchError">
+                        <p class="guide-search-empty" role="alert" x-text="guideSearchError"></p>
+                    </template>
 
                     <template x-if="guideSearchResults.length > 0">
                         <div class="guide-search-results" role="list" x-ref="guideSearchResultsContainer">
@@ -251,7 +280,7 @@
             aria-modal="true"
             aria-labelledby="guide-detail-modal-title"
         >
-            <div class="modal-content modal-content-sm">
+            <div class="modal-content modal-content-sm" tabindex="-1" x-ref="guideDetailModal">
                 <div class="modal-header">
                     <h2 id="guide-detail-modal-title">ガイドの詳細</h2>
                     <button type="button" class="modal-close-btn" @click="closeGuideDetailModal()" aria-label="閉じる">&times;</button>
@@ -267,6 +296,10 @@
                             <dd><span x-text="guideDetailForModal.age !== null ? guideDetailForModal.age + '歳' : '—'"></span></dd>
                             <dt>対応地域</dt>
                             <dd x-text="guideDetailForModal.available_areas && guideDetailForModal.available_areas.length ? guideDetailForModal.available_areas.join('、') : '—'"></dd>
+                            <dt>対応可能日</dt>
+                            <dd x-text="guideDetailForModal.available_days && guideDetailForModal.available_days.length ? guideDetailForModal.available_days.join('、') : '—'"></dd>
+                            <dt>対応可能時間帯</dt>
+                            <dd x-text="guideDetailForModal.available_times && guideDetailForModal.available_times.length ? guideDetailForModal.available_times.join('、') : '—'"></dd>
                             <dt>評価</dt>
                             <dd>
                                 <template x-if="guideDetailForModal.average_rating">
@@ -987,17 +1020,27 @@ function requestForm() {
         guideSearchLastPage: 1,
         guideSearchLoading: false,
         guideSearchDone: false,
+        guideSearchError: '',
+        screenReaderAnnouncement: '',
+        reopenGuideSearchOnDetailClose: false,
         selectedGuide: null,
         guideSearchSort: 'name_asc',
         showGuideSearchModal: false,
         showGuideDetailModal: false,
+        showRemainingHoursModal: false,
         guideDetailForModal: null,
+        hasRemainingHoursNotice: @json(!empty($remainingHours)),
         focusFormStart() {
             const form = this.$refs.requestForm;
             if (form) {
                 const first = form.querySelector('select, input:not([type="hidden"])');
                 if (first) first.focus();
             }
+        },
+        closeRemainingHoursModalAndFocusForm() {
+            this.showRemainingHoursModal = false;
+            this.screenReaderAnnouncement = '';
+            this.$nextTick(() => this.focusFormStart());
         },
         openDatePicker() {
             // 日付入力フィールドをクリックしてカレンダーを開く
@@ -1027,12 +1070,15 @@ function requestForm() {
             this.formData.request_date = defaultDateTime.request_date;
             console.log('this.formData.request_date', this.formData.request_date);
 
-            // 残り時間の案内がある場合はそこにフォーカスし、エンターでフォームへ進める
-            this.$nextTick(() => {
-                if (this.$refs.remainingHoursNotice) {
-                    this.$refs.remainingHoursNotice.focus();
-                }
-            });
+            if (this.hasRemainingHoursNotice) {
+                this.showRemainingHoursModal = true;
+                this.screenReaderAnnouncement = '残り時間のご案内モーダルを表示しました。内容を確認して入力に進んでください。';
+                this.$nextTick(() => {
+                    if (this.$refs.remainingHoursModal) {
+                        this.$refs.remainingHoursModal.focus();
+                    }
+                });
+            }
 
             // 時刻を15分刻みに丸める
             const roundToQuarter = (timeStr) => {
@@ -1224,6 +1270,8 @@ function requestForm() {
         },
         async fetchGuidesSearch(page) {
             this.guideSearchLoading = true;
+            this.guideSearchError = '';
+            let timeoutId = null;
             const isFirst = page === 1;
             if (isFirst) {
                 this.guideSearchResults = [];
@@ -1251,9 +1299,18 @@ function requestForm() {
                     q.set('request_type', this.formData.request_type);
                 }
                 const token = localStorage.getItem('token');
+                const headers = { 'Accept': 'application/json' };
+                if (token) {
+                    headers['Authorization'] = 'Bearer ' + token;
+                }
+                const controller = new AbortController();
+                timeoutId = setTimeout(() => controller.abort(), 10000);
                 const response = await fetch('/api/guides/available?' + q.toString(), {
-                    headers: { 'Authorization': 'Bearer ' + (token || ''), 'Accept': 'application/json' }
+                    headers,
+                    credentials: 'include',
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
                 if (response.ok) {
                     const data = await response.json();
                     const guides = data.guides || [];
@@ -1274,28 +1331,59 @@ function requestForm() {
                 } else {
                     if (isFirst) this.guideSearchResults = [];
                     this.guideSearchTotal = 0;
+                    this.guideSearchError = '検索に失敗しました。時間をおいて再度お試しください。';
                 }
             } catch (err) {
                 console.error('ガイド検索エラー:', err);
                 if (isFirst) this.guideSearchResults = [];
+                this.guideSearchError = err && err.name === 'AbortError'
+                    ? '検索に時間がかかっています。ネットワーク状況をご確認のうえ、再度お試しください。'
+                    : '検索中にエラーが発生しました。時間をおいて再度お試しください。';
             } finally {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
                 this.guideSearchLoading = false;
                 this.guideSearchDone = true;
             }
         },
         openGuideSearchModal() {
             this.showGuideSearchModal = true;
+            this.screenReaderAnnouncement = '指名ガイド検索モーダルを表示しました。条件を指定して検索できます。';
+            this.$nextTick(() => {
+                if (this.$refs.guideSearchModal) {
+                    this.$refs.guideSearchModal.focus();
+                }
+            });
+            if (!this.guideSearchDone && this.guideSearchResults.length === 0 && !this.guideSearchLoading) {
+                this.fetchGuidesSearch(1);
+            }
         },
         closeGuideSearchModal() {
             this.showGuideSearchModal = false;
+            this.screenReaderAnnouncement = '';
         },
         openGuideDetailModal(guide) {
             this.guideDetailForModal = guide;
+            this.reopenGuideSearchOnDetailClose = this.showGuideSearchModal;
+            this.showGuideSearchModal = false;
             this.showGuideDetailModal = true;
+            this.screenReaderAnnouncement = 'ガイド詳細モーダルを表示しました。';
+            this.$nextTick(() => {
+                if (this.$refs.guideDetailModal) {
+                    this.$refs.guideDetailModal.focus();
+                }
+            });
         },
         closeGuideDetailModal() {
             this.showGuideDetailModal = false;
             this.guideDetailForModal = null;
+            if (this.reopenGuideSearchOnDetailClose) {
+                this.reopenGuideSearchOnDetailClose = false;
+                this.openGuideSearchModal();
+                return;
+            }
+            this.screenReaderAnnouncement = '';
         },
         selectGuideFromDetail() {
             if (this.guideDetailForModal) {

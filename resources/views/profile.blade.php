@@ -3,6 +3,17 @@
 @section('content')
 <div class="profile-container" x-data="profileForm()" x-init="init()">
     <h1>プロフィール編集</h1>
+    @php($supportEmail = config('mail.from.address'))
+    <div class="form-group">
+        <p class="form-help-text">登録情報のうち「表示のみ」の項目は、運営承認後にのみ修正されます。</p>
+        <a
+            class="btn-secondary"
+            href="mailto:{{ $supportEmail }}?subject={{ rawurlencode('プロフィール修正申請') }}&body={{ rawurlencode('【ユーザーID】' . $user->id . '\n【お名前】' . $user->name . '\n【修正希望項目】\n【修正理由】') }}"
+            aria-label="プロフィール修正申請をメールで送る"
+        >
+            プロフィール修正申請・お問い合わせ
+        </a>
+    </div>
     <form method="POST" action="{{ route('profile.update') }}" @submit.prevent="handleSubmit" class="profile-form" aria-label="プロフィール編集フォーム">
         @csrf
         @method('PUT')
@@ -15,77 +26,67 @@
         @endif
 
         <div class="form-group">
-            <label for="name">お名前 
-                <span class="required">*</span>
-                @if(!$user->isAdmin())
-                    <span class="readonly-label">（閲覧のみ）</span>
-                @endif
-            </label>
-            <input
-                type="text"
-                id="name"
-                name="name"
-                x-model="formData.name"
-                value="{{ $user->name }}"
-                required
-                aria-required="true"
-                @if(!$user->isAdmin()) readonly disabled @endif
-            />
+            <label for="name">お名前 @if(!$user->isAdmin())<span class="readonly-label">（表示のみ）</span>@endif</label>
+            @if($user->isAdmin())
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    x-model="formData.name"
+                    value="{{ $user->name }}"
+                    required
+                    aria-required="true"
+                />
+            @else
+                <div class="readonly-value" role="note">{{ $user->name }}</div>
+            @endif
         </div>
 
         <div class="form-group">
             <label for="phone">電話番号
                 @if(!$user->isAdmin())
-                    <span class="readonly-label">（閲覧のみ）</span>
+                    <span class="readonly-label">（表示のみ）</span>
                 @endif
             </label>
-            <input
-                type="tel"
-                id="phone"
-                name="phone"
-                x-model="formData.phone"
-                value="{{ $user->phone }}"
-                @if(!$user->isAdmin()) readonly disabled @endif
-            />
+            @if($user->isAdmin())
+                <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    x-model="formData.phone"
+                    value="{{ $user->phone }}"
+                />
+            @else
+                <div class="readonly-value" role="note">{{ $user->phone ?: '未登録' }}</div>
+            @endif
         </div>
 
         <div class="form-group">
             <label for="address">住所
                 @if(!$user->isAdmin())
-                    <span class="readonly-label">（閲覧のみ）</span>
+                    <span class="readonly-label">（表示のみ）</span>
                 @endif
             </label>
-            <textarea
-                id="address"
-                name="address"
-                x-model="formData.address"
-                rows="2"
-                @if(!$user->isAdmin()) readonly disabled @endif
-            >{{ $user->address }}</textarea>
+            @if($user->isAdmin())
+                <textarea
+                    id="address"
+                    name="address"
+                    x-model="formData.address"
+                    rows="2"
+                >{{ $user->address }}</textarea>
+            @else
+                <div class="readonly-value" role="note">{{ $user->address ?: '未登録' }}</div>
+            @endif
         </div>
 
         <div class="form-group">
             <label for="age">年齢（表示のみ）</label>
-            <input
-                type="text"
-                id="age"
-                name="age"
-                value="{{ $user->age ?? '' }}"
-                readonly
-                disabled
-            />
+            <div class="readonly-value" role="note">{{ $user->age ?? '未登録' }}</div>
         </div>
 
         <div class="form-group">
             <label for="birth_date">生年月日（表示のみ）</label>
-            <input
-                type="date"
-                id="birth_date"
-                name="birth_date"
-                value="{{ $user->birth_date ? $user->birth_date->format('Y-m-d') : '' }}"
-                readonly
-                disabled
-            />
+            <div class="readonly-value" role="note">{{ $user->birth_date ? $user->birth_date->format('Y-m-d') : '未登録' }}</div>
         </div>
 
         @if($user->isUser())
@@ -100,7 +101,7 @@
             </div>
             @if(!$user->isAdmin())
                 <div class="form-group">
-                    <label>受給者証番号（閲覧のみ）</label>
+                    <label>受給者証番号（表示のみ）</label>
                     <input
                         type="text"
                         value="{{ $user->userProfile->recipient_number ?? '' }}"
@@ -321,7 +322,7 @@
             <div class="form-group">
                 <label>対応可能日</label>
                 <div class="checkbox-group">
-                    @foreach(['平日', '土日', '祝日'] as $day)
+                    @foreach(['月','火','水','木','金','土','日','祝日'] as $day)
                         <label class="checkbox-label">
                             <input
                                 type="checkbox"
@@ -339,7 +340,7 @@
             <div class="form-group">
                 <label>対応可能時間帯</label>
                 <div class="checkbox-group">
-                    @foreach(['午前', '午後', '夜間'] as $time)
+                    @foreach(['午前から可', '午後から可', '1日フリー可', 'その都度調整'] as $time)
                         <label class="checkbox-label">
                             <input
                                 type="checkbox"
@@ -355,7 +356,26 @@
             </div>
 
             <div class="form-group">
-                <label>従業員番号（閲覧のみ）</label>
+                <fieldset aria-describedby="filter-availability-desc">
+                    <legend>依頼の通知・一覧表示</legend>
+                    <p id="filter-availability-desc" class="form-help-text">
+                        オンにすると、<a href="{{ route('guide.availability.index') }}">対応可能枠</a>に登録した日時と重なる依頼だけが通知され、依頼一覧にも表示されます。枠が1件もない間は、指名以外の依頼は通知・一覧に出ません。指名依頼は従来どおり対象外です。
+                    </p>
+                    <label class="checkbox-label">
+                        <input
+                            type="checkbox"
+                            name="filter_requests_by_availability"
+                            value="1"
+                            x-model="formData.filter_requests_by_availability"
+                            @if(old('filter_requests_by_availability', optional($user->guideProfile)->filter_requests_by_availability ?? false)) checked @endif
+                        />
+                        枠に合う依頼のみ通知・一覧表示する
+                    </label>
+                </fieldset>
+            </div>
+
+            <div class="form-group">
+                <label>従業員番号（表示のみ）</label>
                 <input
                     type="text"
                     value="{{ $user->guideProfile->employee_number ?? '' }}"
@@ -581,6 +601,7 @@ function profileForm() {
             priority_points: @json($user->isGuide() ? ($user->guideProfile->priority_points ?? []) : ($user->userProfile->priority_points ?? [])),
             priority_points_other: '{{ $user->isGuide() ? ($user->guideProfile->priority_points_other ?? '') : ($user->userProfile->priority_points_other ?? '') }}',
             qualifications: @json($user->guideProfile ? $user->guideProfile->getQualificationKeys() : []),
+            filter_requests_by_availability: {{ old('filter_requests_by_availability', optional($user->guideProfile)->filter_requests_by_availability ?? false) ? 'true' : 'false' }},
         },
         // 資格マスタ
         outingQualifications: @json(\App\Models\GuideProfile::OUTING_REQUIRED_QUALIFICATIONS),

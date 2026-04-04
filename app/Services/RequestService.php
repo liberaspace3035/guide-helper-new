@@ -489,7 +489,7 @@ class RequestService
         $guides = User::where('role', 'guide')
             ->where('is_allowed', true)
             ->whereNotIn('id', $allBlockedIds)
-            ->with('guideProfile')
+            ->with(['guideProfile', 'guideAvailabilitySlots'])
             ->get();
 
         foreach ($requests as $request) {
@@ -521,14 +521,7 @@ class RequestService
 
         $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
         foreach ($guides as $guide) {
-            if (!$guide->guideProfile) {
-                continue;
-            }
-            $availableAreas = $guide->guideProfile->available_areas;
-            if (!is_array($availableAreas)) {
-                $availableAreas = is_string($availableAreas) ? (json_decode($availableAreas, true) ?? []) : [];
-            }
-            if (!empty($availableAreas) && $requestPrefecture && !in_array($requestPrefecture, $availableAreas, true)) {
+            if (!$this->shouldNotifyGuideForOpenRequest($guide, $request, $requestPrefecture)) {
                 continue;
             }
             Notification::create([
@@ -540,6 +533,38 @@ class RequestService
             ]);
             $this->emailService->sendRequestNotification($guide, $this->buildRequestDataForEmail($request));
         }
+    }
+
+    /**
+     * 指名以外の新規依頼について、ガイドへ通知するか（対応エリア・対応可能枠）
+     */
+    protected function shouldNotifyGuideForOpenRequest(User $guide, Request $request, ?string $requestPrefecture): bool
+    {
+        if (!$guide->guideProfile) {
+            return false;
+        }
+
+        $availableAreas = $guide->guideProfile->available_areas;
+        if (!is_array($availableAreas)) {
+            $availableAreas = is_string($availableAreas) ? (json_decode($availableAreas, true) ?? []) : [];
+        }
+        if (!empty($availableAreas) && $requestPrefecture && !in_array($requestPrefecture, $availableAreas, true)) {
+            return false;
+        }
+
+        if ($guide->guideProfile->filter_requests_by_availability) {
+            $slots = $guide->relationLoaded('guideAvailabilitySlots')
+                ? $guide->guideAvailabilitySlots
+                : $guide->guideAvailabilitySlots()->get();
+            if ($slots->isEmpty()) {
+                return false;
+            }
+            if (!GuideAvailabilityService::requestOverlapsAnySlot($request, $slots)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function normalizeTimeString(?string $time): ?string
@@ -630,74 +655,27 @@ class RequestService
             }
         }
 
+        $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
+
         // 条件に合致するガイドを検索（ブロック関係を除外）
         $guides = User::where('role', 'guide')
             ->where('is_allowed', true)
             ->whereNotIn('id', $allBlockedIds)
-            ->with('guideProfile')
+            ->with(['guideProfile', 'guideAvailabilitySlots'])
             ->get();
 
         foreach ($guides as $guide) {
-            if (!$guide->guideProfile) continue;
-
-            // GuideProfileモデルで'array'としてキャストされているため、通常は既に配列として取得される
-            // ただし、念のため文字列の場合はjson_decode()を呼ぶ
-            $availableAreas = $guide->guideProfile->available_areas;
-            $availableDays = $guide->guideProfile->available_days;
-            $availableTimes = $guide->guideProfile->available_times;
-            
-            // 配列でない場合の処理
-            if (!is_array($availableAreas)) {
-                if (is_string($availableAreas)) {
-                    $availableAreas = json_decode($availableAreas, true) ?? [];
-                } else {
-                    $availableAreas = [];
-                }
+            if (!$this->shouldNotifyGuideForOpenRequest($guide, $request, $requestPrefecture)) {
+                continue;
             }
-            if (!is_array($availableDays)) {
-                if (is_string($availableDays)) {
-                    $availableDays = json_decode($availableDays, true) ?? [];
-                } else {
-                    $availableDays = [];
-                }
-            }
-            if (!is_array($availableTimes)) {
-                if (is_string($availableTimes)) {
-                    $availableTimes = json_decode($availableTimes, true) ?? [];
-                } else {
-                    $availableTimes = [];
-                }
-            }
-
-            // 条件チェック
-            $matches = true;
-            
-            // 対応範囲のチェック
-            if (!empty($availableAreas)) {
-                // 依頼の都道府県を取得（prefectureカラムがあればそれを使用、なければ住所から抽出）
-                $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
-                
-                if ($requestPrefecture) {
-                    // ガイドの対応範囲に依頼の都道府県が含まれているかチェック（完全一致）
-                    if (!in_array($requestPrefecture, $availableAreas, true)) {
-                        $matches = false;
-                    }
-                }
-            }
-            
-            // 日付・時間帯のチェック（将来実装予定）
-            // 現時点では対応範囲のみチェック
-
-            if ($matches) {
-                Notification::create([
-                    'user_id' => $guide->id,
-                    'type' => 'request',
-                    'title' => '新しい依頼が作成されました',
-                    'message' => "新しい依頼が作成されました。{$request->masked_address}で{$request->request_date} {$time}の依頼です。",
-                    'related_id' => $request->id,
-                ]);
-                $this->emailService->sendRequestNotification($guide, $this->buildRequestDataForEmail($request));
-            }
+            Notification::create([
+                'user_id' => $guide->id,
+                'type' => 'request',
+                'title' => '新しい依頼が作成されました',
+                'message' => "新しい依頼が作成されました。{$request->masked_address}で{$request->request_date} {$time}の依頼です。",
+                'related_id' => $request->id,
+            ]);
+            $this->emailService->sendRequestNotification($guide, $this->buildRequestDataForEmail($request));
         }
     }
 
@@ -744,9 +722,10 @@ class RequestService
 
     public function getAvailableRequestsForGuide(int $guideId)
     {
-        // ガイド情報を取得
-        $guide = User::findOrFail($guideId);
+        $guide = User::with(['guideProfile', 'guideAvailabilitySlots'])->findOrFail($guideId);
         $guideProfile = $guide->guideProfile;
+        $availabilitySlots = $guide->guideAvailabilitySlots;
+        $filterByAvailability = $guideProfile && $guideProfile->filter_requests_by_availability;
         
         // ガイドの対応範囲を取得
         $availableAreas = [];
@@ -813,7 +792,7 @@ class RequestService
         $canSupportHome = $guideProfile ? $guideProfile->canSupportHome() : false;
 
         // 各依頼に応募済み情報を追加し、対応範囲外・資格外の依頼を除外
-        $filteredRequests = $requests->filter(function ($request) use ($availableAreas, $guideId, $canSupportOuting, $canSupportHome) {
+        $filteredRequests = $requests->filter(function ($request) use ($availableAreas, $guideId, $canSupportOuting, $canSupportHome, $filterByAvailability, $availabilitySlots) {
             // 指名ガイドの場合は対応範囲チェックをスキップ（資格チェックは行う）
             $isNominated = $request->nominated_guide_id == $guideId;
             
@@ -834,9 +813,18 @@ class RequestService
                 return false;
             }
             
-            // 指名ガイドの場合は対応範囲チェックをスキップ
+            // 指名ガイドの場合は対応範囲・対応枠の絞り込みをスキップ
             if ($isNominated) {
                 return true;
+            }
+
+            if ($filterByAvailability) {
+                if ($availabilitySlots->isEmpty()) {
+                    return false;
+                }
+                if (!GuideAvailabilityService::requestOverlapsAnySlot($request, $availabilitySlots)) {
+                    return false;
+                }
             }
             
             // 対応範囲が設定されていない場合はすべて表示

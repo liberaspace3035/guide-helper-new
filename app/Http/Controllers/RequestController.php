@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Event;
+use App\Models\PersonalCalendarEntry;
 use App\Services\RequestService;
 use App\Services\UserMonthlyLimitService;
 use App\Services\EventCalendarService;
@@ -59,6 +60,11 @@ class RequestController extends Controller
             $event = Event::find((int) request('event_id'));
             if ($event && $this->eventCalendarService->canViewForPrefill($user, $event)) {
                 $prefillEvent = $this->eventCalendarService->toPrefillForRequest($event);
+            }
+        } elseif ($user->isUser() && request()->filled('personal_entry_id')) {
+            $entry = PersonalCalendarEntry::where('user_id', $user->id)->find((int) request('personal_entry_id'));
+            if ($entry) {
+                $prefillEvent = $this->eventCalendarService->toPrefillForRequestFromPersonal($entry);
             }
         }
 

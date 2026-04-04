@@ -204,6 +204,10 @@ return [
         'available_areas' => '対応可能エリア',
         'available_days' => '対応可能日',
         'available_times' => '対応可能時間',
+        'application_reason' => '応募のきっかけ／応募理由',
+        'interview_date_1' => '面談希望日時（第1希望）',
+        'interview_date_2' => '面談希望日時（第2希望）',
+        'interview_date_3' => '面談希望日時（第3希望）',
     ],
 
 ];

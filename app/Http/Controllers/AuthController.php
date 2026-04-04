@@ -35,6 +35,13 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        foreach (['interview_date_2', 'interview_date_3'] as $interviewField) {
+            $v = $request->input($interviewField);
+            if (is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($v))) {
+                $request->merge([$interviewField => trim($v) . 'T09:00:00']);
+            }
+        }
+
         // 共通バリデーション
         $rules = [
             'email' => 'required|email|unique:users,email',
@@ -53,15 +60,6 @@ class AuthController extends Controller
                 'required',
                 'date',
                 'before:today',
-                function ($attribute, $value, $fail) {
-                    $age = Carbon::parse($value)->age;
-                    if ($age < 18) {
-                        $fail('【生年月日】から計算した年齢は18歳以上である必要があります。');
-                    }
-                    if ($age > 120) {
-                        $fail('【生年月日】から計算した年齢は120歳以下である必要があります。');
-                    }
-                },
             ],
             'role' => 'required|in:user,guide',
             'from_event' => 'nullable|integer|exists:events,id',
@@ -73,19 +71,21 @@ class AuthController extends Controller
                 'interview_date_1' => 'required|date',
                 'interview_date_2' => 'nullable|date',
                 'interview_date_3' => 'nullable|date',
-                'application_reason' => 'required|string',
+                'application_reason' => 'required|string|min:1',
                 'visual_disability_status' => 'required|string',
                 'disability_support_level' => 'required|string|in:１,２,３,４,５,６,なし',
                 'daily_life_situation' => 'required|string',
             ]);
         } else if ($request->role === 'guide') {
             $rules = array_merge($rules, [
-                'application_reason' => 'required|string',
+                'application_reason' => 'required|string|min:1',
                 'goal' => 'required|string',
                 'qualifications' => 'required|array|max:3',
-                'qualifications.*.name' => 'required|string',
-                'qualifications.*.obtained_date' => 'required|date',
-                'preferred_work_hours' => 'required|string',
+                'qualifications.*' => ['required', 'string', \Illuminate\Validation\Rule::in(array_keys(\App\Models\GuideProfile::QUALIFICATION_OPTIONS))],
+                'available_days' => 'required|array|min:1',
+                'available_days.*' => 'required|string|in:月,火,水,木,金,土,日,祝日',
+                'available_times' => 'required|array|min:1',
+                'available_times.*' => 'required|string|in:午前から可,午後から可,1日フリー可,その都度調整',
             ]);
         }
 
@@ -150,25 +150,14 @@ class AuthController extends Controller
                 'daily_life_situation' => $request->daily_life_situation,
             ]);
         } else if ($request->role === 'guide') {
-            // qualificationsを配列からJSONに変換
-            $qualifications = [];
-            if ($request->has('qualifications') && is_array($request->qualifications)) {
-                foreach ($request->qualifications as $qual) {
-                    if (!empty($qual['name']) && !empty($qual['obtained_date'])) {
-                        $qualifications[] = [
-                            'name' => $qual['name'],
-                            'obtained_date' => $qual['obtained_date'],
-                        ];
-                    }
-                }
-            }
-            
             GuideProfile::create([
                 'user_id' => $user->id,
                 'application_reason' => $request->application_reason,
                 'goal' => $request->goal,
-                'qualifications' => $qualifications,
-                'preferred_work_hours' => $request->preferred_work_hours,
+                'qualifications' => $request->qualifications ?? [],
+                'available_days' => $request->available_days ?? [],
+                'available_times' => $request->available_times ?? [],
+                'preferred_work_hours' => '対応日: ' . implode('・', $request->available_days ?? []) . "\n" . '対応時間: ' . implode('・', $request->available_times ?? []),
             ]);
         }
 

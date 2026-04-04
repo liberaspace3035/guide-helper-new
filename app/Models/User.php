@@ -59,6 +59,11 @@ class User extends Authenticatable
         return $this->hasOne(GuideProfile::class);
     }
 
+    public function guideAvailabilitySlots()
+    {
+        return $this->hasMany(GuideAvailabilitySlot::class);
+    }
+
     public function requests()
     {
         return $this->hasMany(Request::class);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Services\EventCalendarService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -15,17 +16,76 @@ class EventController extends Controller
     {
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $events = Event::published()->orderBy('start_at')->paginate(20);
+        $search = trim((string) $request->query('q', ''));
+        $category = $request->query('category');
+        $sort = $request->query('sort', 'start_asc');
+        $calMonth = $request->query('cal_month'); // YYYY-MM
+
+        $applyFilters = function ($query) use ($search, $category) {
+            if ($search !== '') {
+                $term = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $search) . '%';
+                $query->where(function ($q) use ($term) {
+                    $q->where('title', 'like', $term)
+                        ->orWhere('description', 'like', $term)
+                        ->orWhere('place', 'like', $term)
+                        ->orWhere('prefecture', 'like', $term);
+                });
+            }
+            if ($category && array_key_exists($category, Event::CATEGORIES)) {
+                $query->where('category', $category);
+            }
+        };
+
+        $upcomingQuery = Event::published()->where('start_at', '>=', now()->startOfDay());
+        $applyFilters($upcomingQuery);
+        match ($sort) {
+            'start_desc' => $upcomingQuery->orderBy('start_at', 'desc'),
+            'created_desc' => $upcomingQuery->orderBy('created_at', 'desc'),
+            'created_asc' => $upcomingQuery->orderBy('created_at', 'asc'),
+            default => $upcomingQuery->orderBy('start_at', 'asc'),
+        };
+        $upcomingEvents = $upcomingQuery->get();
+
+        $groupedUpcoming = $upcomingEvents->groupBy('category');
+
+        $pastQuery = Event::published()->past();
+        $applyFilters($pastQuery);
+        $pastQuery->orderBy('start_at', 'desc');
+        $pastEvents = $pastQuery->limit(80)->get();
+
+        $calendarMonth = $calMonth && preg_match('/^\d{4}-\d{2}$/', $calMonth)
+            ? Carbon::createFromFormat('Y-m', $calMonth)->startOfMonth()
+            : now()->startOfMonth();
+        $calStart = $calendarMonth->copy()->startOfMonth();
+        $calEnd = $calendarMonth->copy()->endOfMonth();
+        $calendarCounts = [];
+        foreach (
+            Event::published()
+                ->where('start_at', '>=', $calStart)
+                ->where('start_at', '<=', $calEnd)
+                ->get(['start_at']) as $ev
+        ) {
+            $d = $ev->start_at->format('Y-m-d');
+            $calendarCounts[$d] = ($calendarCounts[$d] ?? 0) + 1;
+        }
+
         $pendingEvents = collect();
         if (Auth::check() && Auth::user()->isAdmin()) {
             $pendingEvents = Event::where('status', Event::STATUS_PENDING)->orderBy('created_at', 'desc')->get();
         }
 
         return view('events.index', [
-            'events' => $events,
+            'groupedUpcoming' => $groupedUpcoming,
+            'pastEvents' => $pastEvents,
             'pendingEvents' => $pendingEvents,
+            'categories' => Event::CATEGORIES,
+            'search' => $search,
+            'selectedCategory' => $category,
+            'sort' => $sort,
+            'calendarMonth' => $calendarMonth,
+            'calendarCounts' => $calendarCounts,
         ]);
     }
 
@@ -47,25 +107,35 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'end_at' => $request->filled('end_at') ? $request->input('end_at') : null,
+        ]);
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'category' => 'required|string|in:' . implode(',', array_keys(Event::CATEGORIES)),
             'prefecture' => 'nullable|string|max:20',
             'place' => 'nullable|string|max:255',
             'start_at' => 'required|date|after_or_equal:now',
             'end_at' => 'nullable|date|after_or_equal:start_at',
             'url' => 'nullable|url|max:2048',
             'description' => 'nullable|string|max:5000',
+            'submitter_name' => 'nullable|string|max:255',
             'submitter_email' => 'nullable|email|max:255',
         ]);
 
         $user = Auth::user();
         $isLoggedIn = (bool) $user;
+        if (!$isLoggedIn && empty($validated['submitter_name'])) {
+            return back()->withErrors(['submitter_name' => '非会員の場合は主催者名が必須です。'])->withInput();
+        }
         if (!$isLoggedIn && empty($validated['submitter_email'])) {
             return back()->withErrors(['submitter_email' => '非会員の場合はメールアドレスが必須です。'])->withInput();
         }
 
         $event = Event::create([
             'title' => $validated['title'],
+            'category' => $validated['category'],
             'prefecture' => $validated['prefecture'] ?? null,
             'place' => $validated['place'] ?? null,
             'start_at' => $validated['start_at'],
@@ -73,6 +143,7 @@ class EventController extends Controller
             'url' => $validated['url'] ?? null,
             'description' => $validated['description'] ?? null,
             'created_by' => $isLoggedIn ? $user->id : null,
+            'submitter_name' => $isLoggedIn ? ($validated['submitter_name'] ?? $user->name) : $validated['submitter_name'],
             'submitter_email' => $isLoggedIn ? null : $validated['submitter_email'],
             'email_verified_at' => $isLoggedIn ? now() : null,
             'verification_token' => $isLoggedIn ? null : Str::random(64),

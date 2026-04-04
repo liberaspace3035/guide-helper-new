@@ -57,17 +57,7 @@ class GuideProposalService
         if (!in_array($requestType, ['outing', 'home'], true)) {
             throw new \Exception('request_type は outing または home を指定してください');
         }
-
-        // 資格チェック（依頼タイプに応じた資格を持っているか）
-        $guideProfile = $guide->guideProfile;
-        if ($guideProfile) {
-            if ($requestType === 'outing' && !$guideProfile->canSupportOuting()) {
-                throw new \Exception('外出支援を提案するには、同行援護一般課程または応用課程の資格が必要です');
-            }
-            if ($requestType === 'home' && !$guideProfile->canSupportHome()) {
-                throw new \Exception('自宅支援を提案するには、介護福祉士・介護実務者研修・介護初任者研修のいずれかの資格が必要です');
-            }
-        }
+        $this->assertGuideCanProposeRequestType($guide, $requestType);
 
         // 過去の日付での提案は作成不可
         $proposedDate = $data['proposed_date'] ?? null;
@@ -120,6 +110,7 @@ class GuideProposalService
         if (!in_array($requestType, ['outing', 'home'], true)) {
             throw new \Exception('request_type は outing または home を指定してください');
         }
+        $this->assertGuideCanProposeRequestType($guide, $requestType);
 
         // 過去の日付での提案は作成不可
         $proposedDate = $data['proposed_date'] ?? null;
@@ -184,6 +175,25 @@ class GuideProposalService
             'created_count' => $created,
             'message' => '全体に一斉提案を送信しました',
         ];
+    }
+
+    /**
+     * ガイドが指定した依頼タイプを提案可能かを検証
+     */
+    private function assertGuideCanProposeRequestType(User $guide, string $requestType): void
+    {
+        $guideProfile = $guide->guideProfile;
+        if (!$guideProfile) {
+            throw new \Exception('提案を行うには、プロフィールで必要資格を設定してください');
+        }
+
+        if ($requestType === 'outing' && !$guideProfile->canSupportOuting()) {
+            throw new \Exception('外出支援を提案するには、同行援護一般課程または応用課程の資格が必要です');
+        }
+
+        if ($requestType === 'home' && !$guideProfile->canSupportHome()) {
+            throw new \Exception('自宅支援を提案するには、介護福祉士・介護実務者研修・介護初任者研修のいずれかの資格が必要です');
+        }
     }
 
     /**

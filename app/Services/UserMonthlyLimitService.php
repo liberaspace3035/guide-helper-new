@@ -147,5 +147,34 @@ class UserMonthlyLimitService
         $limit = $this->getOrCreateLimit($userId, $year, $month, $requestType);
         return (float) $limit->used_hours;
     }
+
+    /**
+     * 継続ルール保存後に、既存の user_monthly_limits の limit_hours を
+     * その月に適用されるルール値へ揃える（一覧・残時間表示と実効値のずれを防ぐ）
+     */
+    public function syncMonthlyLimitHoursFromRules(int $userId, Carbon $fromMonthStart, int $monthsAhead = 48): void
+    {
+        $cursor = $fromMonthStart->copy()->startOfMonth();
+        for ($i = 0; $i < $monthsAhead; $i++) {
+            $y = (int) $cursor->year;
+            $m = (int) $cursor->month;
+            foreach (['outing', 'home'] as $requestType) {
+                $ruleHours = $this->getDefaultLimitFromRule($userId, $y, $m, $requestType);
+                if ($ruleHours === null) {
+                    continue;
+                }
+                $row = UserMonthlyLimit::where('user_id', $userId)
+                    ->where('year', $y)
+                    ->where('month', $m)
+                    ->where('request_type', $requestType)
+                    ->first();
+                if ($row !== null) {
+                    $row->limit_hours = $ruleHours;
+                    $row->save();
+                }
+            }
+            $cursor->addMonth();
+        }
+    }
 }
 

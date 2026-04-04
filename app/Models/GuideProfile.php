@@ -57,6 +57,7 @@ class GuideProfile extends Model
         'goal',
         'qualifications',
         'preferred_work_hours',
+        'filter_requests_by_availability',
     ];
 
     protected $casts = [
@@ -65,6 +66,7 @@ class GuideProfile extends Model
         'available_times' => 'array',
         'qualifications' => 'array',
         'priority_points' => 'array',
+        'filter_requests_by_availability' => 'boolean',
     ];
 
     public function user()

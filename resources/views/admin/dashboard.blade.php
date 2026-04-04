@@ -3040,15 +3040,13 @@ function adminDashboard() {
             if (ids.length === 0) { alert('未承認のユーザーがありません'); return; }
             if (!confirm(`表示中の未承認ユーザー ${ids.length} 件を一括承認しますか？`)) return;
             try {
-                const res = await this.apiFetch('/api/admin/users/batch-approve', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) { alert(data.error || '一括承認に失敗しました'); return; }
+                const data = await this.apiFetch('/api/admin/users/batch-approve', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
                 alert(data.message || `${data.successful_count ?? 0}件を承認しました`);
                 this.selectedUsers = [];
                 await this.fetchUsers();
             } catch (e) {
                 console.error(e);
-                alert('一括承認に失敗しました');
+                alert(e.message || '一括承認に失敗しました');
             }
         },
         async batchApproveUsers() {
@@ -3059,15 +3057,13 @@ function adminDashboard() {
             if (ids.length === 0) { alert('選択された未承認ユーザーがありません'); return; }
             if (!confirm(`選択した ${ids.length} 件を承認しますか？`)) return;
             try {
-                const res = await this.apiFetch('/api/admin/users/batch-approve', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) { alert(data.error || '一括承認に失敗しました'); return; }
+                const data = await this.apiFetch('/api/admin/users/batch-approve', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
                 alert(data.message || `${data.successful_count ?? 0}件を承認しました`);
                 this.selectedUsers = [];
                 await this.fetchUsers();
             } catch (e) {
                 console.error(e);
-                alert('一括承認に失敗しました');
+                alert(e.message || '一括承認に失敗しました');
             }
         },
         async rejectAllUsers() {
@@ -3075,15 +3071,13 @@ function adminDashboard() {
             if (ids.length === 0) { alert('承認済みのユーザーがありません'); return; }
             if (!confirm(`表示中の承認済みユーザー ${ids.length} 件を一括拒否しますか？`)) return;
             try {
-                const res = await this.apiFetch('/api/admin/users/batch-reject', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) { alert(data.error || '一括拒否に失敗しました'); return; }
+                const data = await this.apiFetch('/api/admin/users/batch-reject', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
                 alert(data.message || `${data.successful_count ?? 0}件を拒否しました`);
                 this.selectedUsers = [];
                 await this.fetchUsers();
             } catch (e) {
                 console.error(e);
-                alert('一括拒否に失敗しました');
+                alert(e.message || '一括拒否に失敗しました');
             }
         },
         async batchRejectUsers() {
@@ -3094,15 +3088,13 @@ function adminDashboard() {
             if (ids.length === 0) { alert('選択された承認済みユーザーがありません'); return; }
             if (!confirm(`選択した ${ids.length} 件を拒否しますか？`)) return;
             try {
-                const res = await this.apiFetch('/api/admin/users/batch-reject', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) { alert(data.error || '一括拒否に失敗しました'); return; }
+                const data = await this.apiFetch('/api/admin/users/batch-reject', { method: 'POST', body: JSON.stringify({ user_ids: ids }) });
                 alert(data.message || `${data.successful_count ?? 0}件を拒否しました`);
                 this.selectedUsers = [];
                 await this.fetchUsers();
             } catch (e) {
                 console.error(e);
-                alert('一括拒否に失敗しました');
+                alert(e.message || '一括拒否に失敗しました');
             }
         },
 
@@ -3122,15 +3114,13 @@ function adminDashboard() {
             if (ids.length === 0) { alert('未承認のガイドがありません'); return; }
             if (!confirm(`表示中の未承認ガイド ${ids.length} 件を一括承認しますか？`)) return;
             try {
-                const res = await this.apiFetch('/api/admin/guides/batch-approve', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) { alert(data.error || '一括承認に失敗しました'); return; }
+                const data = await this.apiFetch('/api/admin/guides/batch-approve', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
                 alert(data.message || `${data.successful_count ?? 0}件を承認しました`);
                 this.selectedGuides = [];
                 await this.fetchGuides();
             } catch (e) {
                 console.error(e);
-                alert('一括承認に失敗しました');
+                alert(e.message || '一括承認に失敗しました');
             }
         },
         async batchApproveGuides() {
@@ -3141,15 +3131,13 @@ function adminDashboard() {
             if (ids.length === 0) { alert('選択された未承認ガイドがありません'); return; }
             if (!confirm(`選択した ${ids.length} 件を承認しますか？`)) return;
             try {
-                const res = await this.apiFetch('/api/admin/guides/batch-approve', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) { alert(data.error || '一括承認に失敗しました'); return; }
+                const data = await this.apiFetch('/api/admin/guides/batch-approve', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
                 alert(data.message || `${data.successful_count ?? 0}件を承認しました`);
                 this.selectedGuides = [];
                 await this.fetchGuides();
             } catch (e) {
                 console.error(e);
-                alert('一括承認に失敗しました');
+                alert(e.message || '一括承認に失敗しました');
             }
         },
         async rejectAllGuides() {
@@ -3157,15 +3145,13 @@ function adminDashboard() {
             if (ids.length === 0) { alert('承認済みのガイドがありません'); return; }
             if (!confirm(`表示中の承認済みガイド ${ids.length} 件を一括拒否しますか？`)) return;
             try {
-                const res = await this.apiFetch('/api/admin/guides/batch-reject', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) { alert(data.error || '一括拒否に失敗しました'); return; }
+                const data = await this.apiFetch('/api/admin/guides/batch-reject', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
                 alert(data.message || `${data.successful_count ?? 0}件を拒否しました`);
                 this.selectedGuides = [];
                 await this.fetchGuides();
             } catch (e) {
                 console.error(e);
-                alert('一括拒否に失敗しました');
+                alert(e.message || '一括拒否に失敗しました');
             }
         },
         async batchRejectGuides() {
@@ -3176,15 +3162,13 @@ function adminDashboard() {
             if (ids.length === 0) { alert('選択された承認済みガイドがありません'); return; }
             if (!confirm(`選択した ${ids.length} 件を拒否しますか？`)) return;
             try {
-                const res = await this.apiFetch('/api/admin/guides/batch-reject', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) { alert(data.error || '一括拒否に失敗しました'); return; }
+                const data = await this.apiFetch('/api/admin/guides/batch-reject', { method: 'POST', body: JSON.stringify({ guide_ids: ids }) });
                 alert(data.message || `${data.successful_count ?? 0}件を拒否しました`);
                 this.selectedGuides = [];
                 await this.fetchGuides();
             } catch (e) {
                 console.error(e);
-                alert('一括拒否に失敗しました');
+                alert(e.message || '一括拒否に失敗しました');
             }
         },
 
