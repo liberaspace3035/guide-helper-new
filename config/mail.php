@@ -115,4 +115,9 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    | 利用者・ガイドから「運営へのメッセージ」が届いたときの通知先（未設定時は MAIL_FROM_ADDRESS）
+    */
+    'support_notify_address' => env('SUPPORT_NOTIFY_EMAIL') ?: env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+
 ];

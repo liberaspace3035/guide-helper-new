@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GuideProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,6 +16,18 @@ class ProfileController extends Controller
             $user->load('userProfile');
             $user->profile = $user->userProfile;
         } else if ($user->role === 'guide') {
+            GuideProfile::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'introduction' => '',
+                    'qualifications' => [],
+                    'priority_points' => [],
+                    'available_areas' => [],
+                    'available_days' => [],
+                    'available_times' => [],
+                    'filter_requests_by_availability' => false,
+                ]
+            );
             $user->load('guideProfile');
             $user->profile = $user->guideProfile;
             // GuideProfileモデルで'array'キャストが設定されているため、既に配列になっている
@@ -95,6 +108,9 @@ class ProfileController extends Controller
             $profile->available_areas = $validated['available_areas'] ?? $profile->available_areas;
             $profile->available_days = $validated['available_days'] ?? $profile->available_days;
             $profile->available_times = $validated['available_times'] ?? $profile->available_times;
+            $days = array_values(array_filter((array) ($profile->available_days ?? [])));
+            $times = array_values(array_filter((array) ($profile->available_times ?? [])));
+            $profile->preferred_work_hours = '対応日: ' . implode('・', $days) . "\n" . '対応時間: ' . implode('・', $times);
             // 重視ポイント
             if (array_key_exists('priority_points', $validated)) {
                 $profile->priority_points = $validated['priority_points'];

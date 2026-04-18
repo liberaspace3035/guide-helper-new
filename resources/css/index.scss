@@ -278,7 +278,9 @@ button:disabled {
   color: var(--text-on-primary);
 }
 
-// リンクのボタンスタイルにも適用
+// リンクのボタンスタイル（<button> と同じパディング・高さに揃え、カード内のずれを防ぐ）
+a.btn-primary,
+a.btn-secondary,
 a.btn-danger,
 a.btn-warning,
 a.btn-success {
@@ -287,8 +289,20 @@ a.btn-success {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
+  padding: 0.625rem 1.5rem;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+  min-height: 36px;
+  box-sizing: border-box;
+  line-height: 1.25;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--transition-base);
 }
 
+a.btn-primary:hover,
+a.btn-secondary:hover,
 a.btn-danger:hover,
 a.btn-warning:hover,
 a.btn-success:hover {
@@ -359,6 +373,24 @@ a.btn-success:hover {
   width: 100%;
 }
 
+// マイカレンダー等：カード内の複数ボタンを同一行で揃える（form が flex 子だと幅が崩れるのを防ぐ）
+.personal-calendar-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+
+  form {
+    display: contents;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    flex-shrink: 0;
+  }
+}
+
 // リンクスタイル
 a {
   color: var(--primary-color);
@@ -375,21 +407,6 @@ a:focus-visible {
   outline: 2px solid var(--primary-color);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
-}
-
-// リンクのボタンスタイル
-a.btn-primary,
-a.btn-secondary {
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-}
-
-a.btn-primary:hover,
-a.btn-secondary:hover {
-  text-decoration: none;
 }
 
 // フォーム要素 - クリーンでモダン

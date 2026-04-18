@@ -4,15 +4,29 @@
 <div class="register-container" x-data="registerForm()" x-init="init()">
     <div class="register-card">
         <h1>新規登録</h1>
+        <p class="register-lead" style="font-size:0.95rem; line-height:1.65; color:#334155; margin:0 0 1rem;">
+            One Stepは、一般社団法人With Blindが運営する、視覚障害者向けの外出・自宅での生活支援サービスサイトです。
+            同行援護は、外出時の移動や買い物、通院、イベント参加などをガイドが支えるサービスです。
+            居宅介護は、自宅での生活の中で必要な支援を行うサービスです。家事援助や育児支援等で、買い物、洗濯、掃除などを支援します。
+            千葉県と大阪を拠点に、全国へサービスを拡大中です。ご登録後、面談や必要なお手続きについてメールでご案内します。
+        </p>
+        <div class="register-progress" aria-label="登録の進捗" style="margin-bottom:1.25rem; padding:0.75rem 1rem; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
+            <p style="margin:0 0 0.5rem; font-size:0.9rem; font-weight:600;">所要時間の目安: 約10〜15分</p>
+            <ol style="margin:0; padding-left:1.25rem; font-size:0.88rem; line-height:1.5; color:#475569;">
+                <li>アカウント種別・基本情報</li>
+                <li>詳細情報（利用者またはガイド）</li>
+                <li>確認・送信</li>
+            </ol>
+        </div>
         <!-- ご利用可否の確認に関する注意書き -->
         <div class="registration-notice">
             <div class="notice-icon">⚠</div>
             <div class="notice-content">
                 <p class="notice-text">
-                    ご利用にはご利用可否の確認があります。ユーザーは「利用契約書」、ガイドは「入社手続」の実施後、運営者による承認を経てご利用いただけます。
+                    登録後、一般社団法人With Blindの担当者が内容を確認し、利用者・ガイドそれぞれに必要な面談や契約手続きをご案内します。承認後にご利用・ご活動を開始いただけます。
                 </p>
                 <p class="notice-text">
-                    登録後に運営からメールでご連絡いたします。
+                    ご利用にはご利用可否の確認があります。ユーザーは「利用契約書」、ガイドは「入社手続」の実施後、運営者による承認を経てご利用いただけます。登録後に運営からメールでご連絡いたします。
                 </p>
             </div>
         </div>
@@ -513,7 +527,7 @@
                         ></textarea>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="register-guide-qualifications">
                         <label>保有資格 <span class="required">*</span></label>
                         <p class="form-help-text">該当する資格をすべて選択してください。外出支援・自宅支援を行うには各種資格が必要です。</p>
                         
@@ -564,7 +578,7 @@
                     <div class="form-group">
                         <label>希望勤務条件 <span class="required">*</span></label>
                         <p class="form-help-text">対応可能な曜日と時間帯を選択してください（複数選択可）。</p>
-                        <div class="form-group">
+                        <div class="form-group" id="register-guide-available-days">
                             <label>対応可能日 <span class="required">*</span></label>
                             <div class="checkbox-group">
                                 @foreach(['月','火','水','木','金','土','日','祝日'] as $day)
@@ -580,7 +594,7 @@
                                 @endforeach
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="register-guide-available-times">
                             <label>対応可能時間帯 <span class="required">*</span></label>
                             <div class="checkbox-group">
                                 @foreach(['午前から可','午後から可','1日フリー可','その都度調整'] as $time)
@@ -795,6 +809,16 @@ function registerForm() {
                 }
             });
             this.step = 'input';
+            this.$nextTick(() => {
+                if (Object.keys(this.fieldErrors).length > 0) {
+                    const sum = document.getElementById('register-error-summary');
+                    if (sum) {
+                        sum.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                        this.scrollToFirstError();
+                    }
+                }
+            });
         },
         parseBirthDateToParts() {
             if (!this.formData.birth_date || !this.formData.birth_date.includes('-')) return;
@@ -940,24 +964,54 @@ function registerForm() {
             if (this.formData.role === 'user') {
                 this.normalizeInterviewOptional('interview_date_2');
                 this.normalizeInterviewOptional('interview_date_3');
-                if (!this.formData.interview_date_1) { this.error = '面談希望日時（第1希望）を入力してください'; this.scrollToFirstError(); return; }
+                const u = {};
+                if (!this.formData.interview_date_1) {
+                    u.interview_date_1 = '面談希望日時（第1希望）を入力してください';
+                }
                 if (!this.formData.application_reason) {
-                    this.fieldErrors.application_reason = '応募のきっかけを選択してください';
-                    this.error = '';
+                    u.application_reason = '応募のきっかけを選択してください';
+                }
+                if (this.formData.application_reason === 'その他（自由記述）' && !this.formData.application_reason_other?.trim()) {
+                    u.application_reason_other = 'その他の内容を記入してください';
+                }
+                if (!this.formData.visual_disability_status) {
+                    u.visual_disability_status = '視覚障害の状況を入力してください';
+                }
+                if (!this.formData.disability_support_level) {
+                    u.disability_support_level = '障害支援区分を選択してください';
+                }
+                if (!this.formData.daily_life_situation) {
+                    u.daily_life_situation = '普段の生活状況を入力してください';
+                }
+                Object.assign(this.fieldErrors, u);
+                if (Object.keys(u).length > 0) {
                     this.scrollToFirstError();
                     return;
                 }
-                if (this.formData.application_reason === 'その他（自由記述）' && !this.formData.application_reason_other?.trim()) { this.error = 'その他の内容を記入してください'; this.scrollToFirstError(); return; }
-                if (!this.formData.visual_disability_status) { this.error = '視覚障害の状況を入力してください'; this.scrollToFirstError(); return; }
-                if (!this.formData.disability_support_level) { this.error = '障害支援区分を選択してください'; this.scrollToFirstError(); return; }
-                if (!this.formData.daily_life_situation) { this.error = '普段の生活状況を入力してください'; this.scrollToFirstError(); return; }
             } else if (this.formData.role === 'guide') {
-                if (!this.formData.application_reason) { this.error = '応募理由を入力してください'; this.scrollToFirstError(); return; }
-                if (!this.formData.goal) { this.error = '実現したいことを入力してください'; this.scrollToFirstError(); return; }
-                if (!this.formData.qualifications || this.formData.qualifications.length === 0) { this.error = '保有資格を1件以上選択してください'; this.scrollToFirstError(); return; }
-                if (!this.canSupportOuting() && !this.canSupportHome()) { this.error = '外出支援または自宅支援が可能な資格を選択してください'; this.scrollToFirstError(); return; }
-                if (!this.formData.available_days || this.formData.available_days.length === 0) { this.error = '対応可能日を1つ以上選択してください'; this.scrollToFirstError(); return; }
-                if (!this.formData.available_times || this.formData.available_times.length === 0) { this.error = '対応可能時間帯を1つ以上選択してください'; this.scrollToFirstError(); return; }
+                const g = {};
+                if (!this.formData.application_reason) {
+                    g.application_reason = '応募理由を入力してください';
+                }
+                if (!this.formData.goal) {
+                    g.goal = '実現したいことを入力してください';
+                }
+                if (!this.formData.qualifications || this.formData.qualifications.length === 0) {
+                    g.qualifications = '保有資格を1件以上選択してください';
+                } else if (!this.canSupportOuting() && !this.canSupportHome()) {
+                    g.qualifications = '外出支援または自宅支援が可能な資格を選択してください';
+                }
+                if (!this.formData.available_days || this.formData.available_days.length === 0) {
+                    g.available_days = '対応可能日を1つ以上選択してください';
+                }
+                if (!this.formData.available_times || this.formData.available_times.length === 0) {
+                    g.available_times = '対応可能時間帯を1つ以上選択してください';
+                }
+                Object.assign(this.fieldErrors, g);
+                if (Object.keys(g).length > 0) {
+                    this.scrollToFirstError();
+                    return;
+                }
             }
             this.step = 'confirm';
             this.$el.querySelector('.confirm-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1015,12 +1069,12 @@ function registerForm() {
         scrollToFirstError() {
             const anchor = document.getElementById('register-errors-anchor');
             if (anchor && (this.error || Object.keys(this.fieldErrors).length > 0)) {
-                anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
             if (this.error) {
                 const alertEl = document.getElementById('register-error-client');
                 if (alertEl) {
-                    alertEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    alertEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
                 if (Object.keys(this.fieldErrors).length === 0) return;
             }
@@ -1039,13 +1093,30 @@ function registerForm() {
                     email: 'email',
                     email_confirmation: 'email_confirmation',
                     password: 'password',
-                    confirmPassword: 'confirmPassword'
+                    confirmPassword: 'confirmPassword',
+                    interview_date_1: 'interview_date_1',
+                    interview_date_2: 'interview_date_2',
+                    interview_date_3: 'interview_date_3',
+                    application_reason: 'application_reason',
+                    application_reason_other: 'application_reason_other',
+                    visual_disability_status: 'visual_disability_status',
+                    disability_support_level: 'disability_support_level',
+                    daily_life_situation: 'daily_life_situation',
+                    goal: 'goal',
+                    available_days: 'register-guide-available-days',
+                    available_times: 'register-guide-available-times',
+                    qualifications: 'register-guide-qualifications',
                 };
                 const id = idMap[firstErrorId] || firstErrorId;
-                const el = document.getElementById(id);
+                let el = document.getElementById(id);
+                if (!el && firstErrorId === 'qualifications') {
+                    el = document.getElementById('register-guide-qualifications') || document.querySelector('input[name="qualifications[]"]');
+                }
                 if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el.focus();
+                    if (typeof el.focus === 'function') {
+                        el.focus();
+                    }
                 }
             }
         },
@@ -1141,17 +1212,18 @@ function registerForm() {
         handleSubmit(ev) {
             if (this.step === 'confirm') {
                 this.error = '';
+                this.fieldErrors = {};
                 if (this.formData.role === 'user') {
                     if (!this.formData.application_reason) {
                         ev.preventDefault();
-                        this.error = '応募のきっかけが未選択のため送信できません。入力画面に戻って選択してください。';
+                        this.fieldErrors.application_reason = '応募のきっかけが未選択のため送信できません。入力画面に戻って選択してください。';
                         this.step = 'input';
                         this.$nextTick(() => this.scrollToFirstError());
                         return;
                     }
                     if (this.formData.application_reason === 'その他（自由記述）' && !this.formData.application_reason_other?.trim()) {
                         ev.preventDefault();
-                        this.error = '「その他」の内容を入力してください。';
+                        this.fieldErrors.application_reason_other = '「その他」の内容を入力してください。';
                         this.step = 'input';
                         this.$nextTick(() => this.scrollToFirstError());
                         return;
@@ -1174,77 +1246,28 @@ function registerForm() {
             
             // エラーがある場合は送信しない
             if (Object.keys(this.fieldErrors).length > 0) {
+                this.$nextTick(() => this.scrollToFirstError());
                 return;
             }
             
             // メール確認チェック
             if (this.formData.email !== this.formData.email_confirmation) {
                 this.fieldErrors.email_confirmation = 'メールアドレスが一致しません';
+                this.$nextTick(() => this.scrollToFirstError());
                 return;
             }
             
             // パスワード確認チェック
             if (this.formData.password !== this.formData.confirmPassword) {
                 this.fieldErrors.confirmPassword = 'パスワードが一致しません';
+                this.$nextTick(() => this.scrollToFirstError());
                 return;
             }
             
             if (this.formData.password.length < 6) {
                 this.fieldErrors.password = 'パスワードは6文字以上で入力してください';
+                this.$nextTick(() => this.scrollToFirstError());
                 return;
-            }
-
-            // ロール別の必須項目チェック
-            if (this.formData.role === 'user') {
-                if (!this.formData.interview_date_1) {
-                    this.error = '面談希望日時（第1希望）を入力してください';
-                    return;
-                }
-                if (!this.formData.application_reason) {
-                    this.error = '応募のきっかけを選択してください';
-                    return;
-                }
-                if (this.formData.application_reason === 'その他（自由記述）' && !this.formData.application_reason_other?.trim()) {
-                    this.error = 'その他の内容を記入してください';
-                    return;
-                }
-                if (!this.formData.visual_disability_status) {
-                    this.error = '視覚障害の状況を入力してください';
-                    return;
-                }
-                if (!this.formData.disability_support_level) {
-                    this.error = '障害支援区分を選択してください';
-                    return;
-                }
-                if (!this.formData.daily_life_situation) {
-                    this.error = '普段の生活状況を入力してください';
-                    return;
-                }
-            } else if (this.formData.role === 'guide') {
-                if (!this.formData.application_reason) {
-                    this.error = '応募理由を入力してください';
-                    return;
-                }
-                if (!this.formData.goal) {
-                    this.error = '実現したいことを入力してください';
-                    return;
-                }
-                if (!this.formData.qualifications || this.formData.qualifications.length === 0) {
-                    this.error = '保有資格を1件以上選択してください';
-                    return;
-                }
-                if (!this.canSupportOuting() && !this.canSupportHome()) {
-                    this.error = '外出支援または自宅支援が可能な資格を選択してください';
-                    return;
-                }
-                if (!this.formData.available_days || this.formData.available_days.length === 0) {
-                    this.error = '対応可能日を1つ以上選択してください';
-                    return;
-                }
-                if (!this.formData.available_times || this.formData.available_times.length === 0) {
-                    this.error = '対応可能時間帯を1つ以上選択してください';
-                    return;
-                }
             }
 
             this.validateAndGoToConfirm();

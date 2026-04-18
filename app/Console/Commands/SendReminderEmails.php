@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Announcement;
 use App\Models\AnnouncementRead;
 use App\Models\Matching;
+use App\Models\PersonalCalendarEntry;
 use Carbon\Carbon;
 
 class SendReminderEmails extends Command
@@ -27,6 +28,8 @@ class SendReminderEmails extends Command
 
     public function handle()
     {
+        $sentCount = $this->processPersonalCalendarReminders();
+
         $now = Carbon::now()->format('H:i');
         $reminderSetting = EmailNotificationSetting::where('notification_type', 'reminder')->first();
         $announcementSetting = EmailNotificationSetting::where('notification_type', 'announcement_reminder')->first();
@@ -44,11 +47,12 @@ class SendReminderEmails extends Command
         // --force でない場合は、いずれかの設定時刻と一致したときだけ送信
         if (! $this->option('force')) {
             if (! $timeMatches) {
-                \Log::info('SendReminderEmails: 送信時刻外のためスキップ（送信なし）', [
+                \Log::info('SendReminderEmails: 送信時刻外のためスキップ（依頼・報告等は送信なし。マイカレンダーリマインドは別途処理済み）', [
                     'now' => $now,
                     'reminder_scheduled' => $reminderTime,
                     'announcement_scheduled' => $announcementTime,
                     'timezone' => config('app.timezone'),
+                    'personal_calendar_sent' => $sentCount,
                 ]);
                 return 0;
             }
@@ -77,7 +81,6 @@ class SendReminderEmails extends Command
             ->with('user')
             ->get() : collect();
 
-        $sentCount = 0;
         foreach ($pendingRequests as $request) {
             if ($request->user) {
                 $this->emailService->sendReminderNotification($request->user, [
@@ -238,6 +241,74 @@ class SendReminderEmails extends Command
         $this->info("リマインドメールを {$sentCount} 件送信しました");
         \Log::info('SendReminderEmails: 完了', ['sent_count' => $sentCount]);
         return 0;
+    }
+
+    /**
+     * マイカレンダー登録予定のリマインド（開始約30分前・前日7:00台）
+     * メール送信はリマインド通知が有効なときのみ（EmailNotificationService 内で判定）
+     */
+    protected function processPersonalCalendarReminders(): int
+    {
+        $sent = 0;
+        $now = Carbon::now();
+
+        $from = $now->copy()->addMinutes(29);
+        $to = $now->copy()->addMinutes(31);
+        $soon = PersonalCalendarEntry::with('user')
+            ->whereNull('reminder_30min_sent_at')
+            ->where('start_at', '>', $now)
+            ->whereBetween('start_at', [$from, $to])
+            ->get();
+
+        foreach ($soon as $entry) {
+            $user = $entry->user;
+            if (!$user || !$user->email) {
+                continue;
+            }
+            $place = trim(implode(' ', array_filter([$entry->prefecture, $entry->place])));
+            $startAt = $entry->start_at instanceof Carbon
+                ? $entry->start_at->format('Y-m-d H:i')
+                : (string) $entry->start_at;
+            if ($this->emailService->sendPersonalCalendarReminder30Min($user, [
+                'title' => $entry->title ?? '',
+                'start_at' => $startAt,
+                'place' => $place !== '' ? $place : '（未入力）',
+            ])) {
+                $entry->forceFill(['reminder_30min_sent_at' => $now])->save();
+                $sent++;
+            }
+        }
+
+        // 前日の朝7時台（分単位のスケジューラ実行のずれに対応）
+        $hm = $now->format('H:i');
+        if ($hm >= '07:00' && $hm <= '07:02') {
+            $start = Carbon::tomorrow()->startOfDay();
+            $end = Carbon::tomorrow()->endOfDay();
+            $dayBefore = PersonalCalendarEntry::with('user')
+                ->whereNull('reminder_day_before_sent_at')
+                ->whereBetween('start_at', [$start, $end])
+                ->get();
+            foreach ($dayBefore as $entry) {
+                $user = $entry->user;
+                if (!$user || !$user->email) {
+                    continue;
+                }
+                $place = trim(implode(' ', array_filter([$entry->prefecture, $entry->place])));
+                $startAt = $entry->start_at instanceof Carbon
+                    ? $entry->start_at->format('Y-m-d H:i')
+                    : (string) $entry->start_at;
+                if ($this->emailService->sendPersonalCalendarReminderDayBefore($user, [
+                    'title' => $entry->title ?? '',
+                    'start_at' => $startAt,
+                    'place' => $place !== '' ? $place : '（未入力）',
+                ])) {
+                    $entry->forceFill(['reminder_day_before_sent_at' => $now])->save();
+                    $sent++;
+                }
+            }
+        }
+
+        return $sent;
     }
 
     /**

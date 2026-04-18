@@ -11,7 +11,9 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\PersonalCalendarController;
 use App\Http\Controllers\Admin\EventAdminController;
 use App\Http\Controllers\Admin\SitePublicNoticeAdminController;
+use App\Http\Controllers\Admin\SupportMessageAdminController;
 use App\Http\Controllers\SitePublicNoticeController;
+use App\Http\Controllers\SupportMessageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -131,6 +133,9 @@ Route::middleware(['auth'])->group(function () {
            Route::get('/announcements', [\App\Http\Controllers\AnnouncementController::class, 'index'])->name('announcements.index');
            Route::post('/announcements/{id}/read', [\App\Http\Controllers\AnnouncementController::class, 'markAsRead'])->name('announcements.read');
            Route::post('/announcements/{id}/unread', [\App\Http\Controllers\AnnouncementController::class, 'markAsUnread'])->name('announcements.unread');
+
+           Route::get('/support', [SupportMessageController::class, 'index'])->name('support.index');
+           Route::post('/support', [SupportMessageController::class, 'store'])->name('support.store')->middleware('throttle:30,1');
     
     // 管理者専用ルート
     Route::middleware(['role:admin'])->group(function () {
@@ -147,6 +152,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/public-notices/{id}/edit', [SitePublicNoticeAdminController::class, 'edit'])->name('admin.public-notices.edit');
         Route::put('/admin/public-notices/{id}', [SitePublicNoticeAdminController::class, 'update'])->name('admin.public-notices.update');
         Route::delete('/admin/public-notices/{id}', [SitePublicNoticeAdminController::class, 'destroy'])->name('admin.public-notices.destroy');
+        Route::get('/admin/support', [SupportMessageAdminController::class, 'index'])->name('admin.support.index');
+        Route::post('/admin/support/auto-reply', [SupportMessageAdminController::class, 'updateAutoReply'])->name('admin.support.auto-reply');
+        Route::post('/admin/support/new', [SupportMessageAdminController::class, 'storeNew'])->name('admin.support.new');
+        Route::get('/admin/support/{userId}', [SupportMessageAdminController::class, 'show'])->name('admin.support.show');
+        Route::post('/admin/support/{userId}', [SupportMessageAdminController::class, 'store'])->name('admin.support.store');
     });
     
     // ユーザー自身の月次限度時間関連（セッション認証用）

@@ -44,11 +44,11 @@
                 @endif
             </div>
             <div class="matching-actions">
-                <a :href="`/chat/${matching.id}`" class="btn-primary btn-with-icon" aria-label="チャットを開く">
+                <a :href="`/chat/${matching.id}`" class="btn-primary btn-with-icon" aria-label="メッセージを開く">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    <span>チャットを開く</span>
+                    <span>メッセージを開く</span>
                 </a>
                 @if(auth()->user()->isUser())
                 <button type="button" @click="blockUser(matching.guide_id, matching.guide_name)" class="btn-danger btn-with-icon" :disabled="blocking" aria-label="このガイドをブロック">

@@ -17,7 +17,7 @@
                                 <span x-text="otherUserName + 'さん'"></span>
                             </template>
                             <template x-if="!matchingInfo">
-                                <span>チャット相手</span>
+                                <span>メッセージ相手</span>
                             </template>
                         </h1>
                         <template x-if="matchingInfo">
@@ -75,7 +75,7 @@
                 <template x-if="matchingInfo">
                     <div class="chat-header-status">
                         <span class="status-dot"></span>
-                        <span class="status-text">チャット利用可能</span>
+                        <span class="status-text">メッセージ利用可能</span>
                     </div>
                 </template>
             </div>
@@ -87,7 +87,7 @@
         x-ref="messagesContainer"
         role="log" 
         aria-live="polite" 
-        aria-label="チャットメッセージ"
+        aria-label="メッセージ一覧"
     >
         <!-- ネットワークエラー通知 -->
         <template x-if="networkError">
@@ -137,8 +137,8 @@
                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                     </svg>
                     <div class="chat-info-content">
-                        <p class="chat-info-title">チャットについて</p>
-                        <p class="chat-info-text">チャットはガイド確定後から報告書承認完了まで利用できます。確定したガイドとの連絡にご利用ください。</p>
+                        <p class="chat-info-title">メッセージについて</p>
+                        <p class="chat-info-text">メッセージはガイド確定後から報告書承認完了まで利用できます。確定したガイドとの連絡にご利用ください。</p>
                     </div>
                 </div>
             </div>
@@ -286,11 +286,11 @@ function chatData() {
         retryDelay: 1000, // リトライの初期遅延（1秒）
         interval: null, // ポーリングのインターバルID
         get otherUserName() {
-            if (!this.matchingInfo) return 'チャット相手';
+            if (!this.matchingInfo) return 'メッセージ相手';
             if (this.userRole === 'user') {
-                return this.matchingInfo.guide_name || 'チャット相手';
+                return this.matchingInfo.guide_name || 'メッセージ相手';
             } else {
-                return this.matchingInfo.user_name || 'チャット相手';
+                return this.matchingInfo.user_name || 'メッセージ相手';
             }
         },
         init() {

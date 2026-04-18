@@ -57,11 +57,11 @@
                     </div>
                     <div class="request-actions">
                         <template x-if="matchedGuideMap[request.id]?.matching_id">
-                            <a :href="`/chat/${matchedGuideMap[request.id].matching_id}`" class="btn-primary btn-with-icon" aria-label="チャットを開く">
+                            <a :href="`/chat/${matchedGuideMap[request.id].matching_id}`" class="btn-primary btn-with-icon" aria-label="メッセージを開く">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                 </svg>
-                                <span>チャットを開く</span>
+                                <span>メッセージを開く</span>
                             </a>
                         </template>
                         <template x-if="!matchedGuideMap[request.id]?.matching_id">
@@ -381,7 +381,7 @@ function requestsData() {
                 const data = await res.json();
                 this.selectedGuideMap = { ...this.selectedGuideMap, [requestId]: guideId };
                 const msg = data?.auto_matching
-                    ? 'ガイドに選択されたことが通知されました。詳細な連絡はチャットでお願いします。'
+                    ? 'ガイドに選択されたことが通知されました。詳細な連絡はメッセージでお願いします。'
                     : '管理者がご利用可否の確認を行っています。完了までお待ちください。';
                 this.selectMessageMap = { ...this.selectMessageMap, [requestId]: msg };
             } catch (err) {

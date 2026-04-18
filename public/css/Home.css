@@ -426,3 +426,52 @@ html {
   }
 }
 
+/* 未ログイン・ヒーロー: 左にカレンダー・ログイン、右に登録（後読み込みの .hero-actions との整合） */
+.hero-actions.hero-actions--guest-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  align-items: stretch;
+  width: 100%;
+  max-width: 36rem;
+  justify-content: stretch;
+  flex-wrap: nowrap;
+}
+
+@media (min-width: 1024px) {
+  .hero-actions.hero-actions--guest-grid {
+    margin-left: 0;
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 1023px) {
+  .hero-actions.hero-actions--guest-grid {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-actions.hero-actions--guest-grid {
+    grid-template-columns: 1fr;
+    max-width: 22rem;
+  }
+}
+
+.hero-actions--guest-grid .hero-actions-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  min-width: 0;
+}
+
+.hero-actions--guest-grid .btn-hero-primary,
+.hero-actions--guest-grid .btn-hero-secondary {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+  text-align: center;
+}
+

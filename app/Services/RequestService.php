@@ -519,9 +519,8 @@ class RequestService
             }
         }
 
-        $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
         foreach ($guides as $guide) {
-            if (!$this->shouldNotifyGuideForOpenRequest($guide, $request, $requestPrefecture)) {
+            if (!$this->shouldNotifyGuideForOpenRequest($guide, $request)) {
                 continue;
             }
             Notification::create([
@@ -536,20 +535,12 @@ class RequestService
     }
 
     /**
-     * 指名以外の新規依頼について、ガイドへ通知するか（対応エリア・対応可能枠）
+     * 指名以外の新規依頼について、ガイドへ通知するか（対応可能枠の設定のみ反映。エリアはオープン募集では絞らない）
      */
-    protected function shouldNotifyGuideForOpenRequest(User $guide, Request $request, ?string $requestPrefecture): bool
+    protected function shouldNotifyGuideForOpenRequest(User $guide, Request $request): bool
     {
         if (!$guide->guideProfile) {
-            return false;
-        }
-
-        $availableAreas = $guide->guideProfile->available_areas;
-        if (!is_array($availableAreas)) {
-            $availableAreas = is_string($availableAreas) ? (json_decode($availableAreas, true) ?? []) : [];
-        }
-        if (!empty($availableAreas) && $requestPrefecture && !in_array($requestPrefecture, $availableAreas, true)) {
-            return false;
+            return true;
         }
 
         if ($guide->guideProfile->filter_requests_by_availability) {
@@ -655,8 +646,6 @@ class RequestService
             }
         }
 
-        $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
-
         // 条件に合致するガイドを検索（ブロック関係を除外）
         $guides = User::where('role', 'guide')
             ->where('is_allowed', true)
@@ -665,7 +654,7 @@ class RequestService
             ->get();
 
         foreach ($guides as $guide) {
-            if (!$this->shouldNotifyGuideForOpenRequest($guide, $request, $requestPrefecture)) {
+            if (!$this->shouldNotifyGuideForOpenRequest($guide, $request)) {
                 continue;
             }
             Notification::create([
@@ -787,34 +776,30 @@ class RequestService
         $autoMatching = AdminSetting::where('setting_key', 'auto_matching')
             ->value('setting_value') === 'true';
         
-        // ガイドが対応可能な支援タイプを取得
+        // ガイドが対応可能な支援タイプを取得（指名依頼のときのみ一覧から除外に使用）
         $canSupportOuting = $guideProfile ? $guideProfile->canSupportOuting() : false;
         $canSupportHome = $guideProfile ? $guideProfile->canSupportHome() : false;
 
-        // 各依頼に応募済み情報を追加し、対応範囲外・資格外の依頼を除外
-        $filteredRequests = $requests->filter(function ($request) use ($availableAreas, $guideId, $canSupportOuting, $canSupportHome, $filterByAvailability, $availabilitySlots) {
-            // 指名ガイドの場合は対応範囲チェックをスキップ（資格チェックは行う）
+        // 各依頼に応募済み情報を追加。オープン募集は資格・対応エリアで絞らない（どのガイドも応募可能）。
+        $filteredRequests = $requests->filter(function ($request) use ($guideId, $canSupportOuting, $canSupportHome, $filterByAvailability, $availabilitySlots) {
             $isNominated = $request->nominated_guide_id == $guideId;
-            
-            // 資格チェック（指名ガイドでもスキップしない - 法令遵守のため）
             $requestType = $request->request_type;
-            if ($requestType === 'outing' && !$canSupportOuting) {
-                \Log::info('資格不足で依頼を除外（外出支援）', [
-                    'request_id' => $request->id,
-                    'guide_id' => $guideId,
-                ]);
-                return false;
-            }
-            if ($requestType === 'home' && !$canSupportHome) {
-                \Log::info('資格不足で依頼を除外（自宅支援）', [
-                    'request_id' => $request->id,
-                    'guide_id' => $guideId,
-                ]);
-                return false;
-            }
-            
-            // 指名ガイドの場合は対応範囲・対応枠の絞り込みをスキップ
+
             if ($isNominated) {
+                if ($requestType === 'outing' && !$canSupportOuting) {
+                    \Log::info('資格不足で依頼を除外（外出支援・指名）', [
+                        'request_id' => $request->id,
+                        'guide_id' => $guideId,
+                    ]);
+                    return false;
+                }
+                if ($requestType === 'home' && !$canSupportHome) {
+                    \Log::info('資格不足で依頼を除外（自宅支援・指名）', [
+                        'request_id' => $request->id,
+                        'guide_id' => $guideId,
+                    ]);
+                    return false;
+                }
                 return true;
             }
 
@@ -826,36 +811,8 @@ class RequestService
                     return false;
                 }
             }
-            
-            // 対応範囲が設定されていない場合はすべて表示
-            if (empty($availableAreas)) {
-                return true;
-            }
-            
-            // 依頼の都道府県を取得（prefectureカラムがあればそれを使用、なければ住所から抽出）
-            $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
-            
-            if (!$requestPrefecture) {
-                // 都道府県が取得できない場合は表示（安全側に倒す）
-                // 古いデータでprefectureカラムがnullの場合も表示
-                return true;
-            }
-            
-            // ガイドの対応範囲に依頼の都道府県が含まれているかチェック（完全一致）
-            $isInArea = in_array($requestPrefecture, $availableAreas, true);
-            
-            \Log::info('ガイドの依頼一覧フィルタリング（詳細）', [
-                'request_id' => $request->id,
-                'guide_id' => $guideId,
-                'request_prefecture_column' => $request->prefecture,
-                'request_destination_address' => $request->destination_address,
-                'extracted_prefecture' => $requestPrefecture,
-                'available_areas' => $availableAreas,
-                'is_in_array' => $isInArea,
-                'will_include' => $isInArea,
-            ]);
-            
-            return $isInArea;
+
+            return true;
         });
         
         \Log::info('フィルタリング結果', [

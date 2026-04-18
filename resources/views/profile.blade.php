@@ -3,12 +3,11 @@
 @section('content')
 <div class="profile-container" x-data="profileForm()" x-init="init()">
     <h1>プロフィール編集</h1>
-    @php($supportEmail = config('mail.from.address'))
     <div class="form-group">
         <p class="form-help-text">登録情報のうち「表示のみ」の項目は、運営承認後にのみ修正されます。</p>
         <a
             class="btn-secondary"
-            href="mailto:{{ $supportEmail }}?subject={{ rawurlencode('プロフィール修正申請') }}&body={{ rawurlencode('【ユーザーID】' . $user->id . '\n【お名前】' . $user->name . '\n【修正希望項目】\n【修正理由】') }}"
+            href="mailto:{{ config('mail.from.address') }}?subject={{ rawurlencode('プロフィール修正申請') }}&body={{ rawurlencode('【ユーザーID】' . $user->id . '\n【お名前】' . $user->name . '\n【修正希望項目】\n【修正理由】') }}"
             aria-label="プロフィール修正申請をメールで送る"
         >
             プロフィール修正申請・お問い合わせ
@@ -205,7 +204,7 @@
                     placeholder="利用者に表示される内容ですので、ガイドとして心掛けていることや得意分野などを記載してください。趣味も記載してください。"
                     required
                     aria-required="true"
-                >{{ $user->guideProfile->introduction ?? '' }}</textarea>
+                >{{ optional($user->guideProfile)->introduction ?? '' }}</textarea>
                 <small class="form-help-text">利用者に表示される内容ですので、ガイドとして心掛けていることや得意分野などを記載してください。趣味も記載してください。</small>
             </div>
 
@@ -284,7 +283,7 @@
                             id="priority_points_other"
                             name="priority_points_other"
                             x-model="formData.priority_points_other"
-                            value="{{ $user->guideProfile->priority_points_other ?? '' }}"
+                            value="{{ optional($user->guideProfile)->priority_points_other ?? '' }}"
                             maxlength="255"
                             placeholder="その他に重視することがあれば記入"
                         />
@@ -378,7 +377,7 @@
                 <label>従業員番号（表示のみ）</label>
                 <input
                     type="text"
-                    value="{{ $user->guideProfile->employee_number ?? '' }}"
+                    value="{{ optional($user->guideProfile)->employee_number ?? '' }}"
                     disabled
                     aria-readonly="true"
                 />
@@ -592,14 +591,14 @@ function profileForm() {
             phone: '{{ $user->phone ?? '' }}',
             address: '{{ $user->address ?? '' }}',
             notes: '{{ $user->userProfile->notes ?? '' }}',
-            introduction: '{{ $user->userProfile->introduction ?? ($user->guideProfile->introduction ?? '') }}',
+            introduction: '{{ optional($user->userProfile)->introduction ?? optional($user->guideProfile)->introduction ?? '' }}',
             accept_guide_proposals: {{ ($user->userProfile->accept_guide_proposals ?? true) ? 'true' : 'false' }},
             show_name_in_proposals: {{ ($user->userProfile->show_name_in_proposals ?? false) ? 'true' : 'false' }},
             available_areas: @json($user->guideProfile ? ($user->guideProfile->available_areas ?? []) : []),
             available_days: @json($user->guideProfile ? ($user->guideProfile->available_days ?? []) : []),
             available_times: @json($user->guideProfile ? ($user->guideProfile->available_times ?? []) : []),
-            priority_points: @json($user->isGuide() ? ($user->guideProfile->priority_points ?? []) : ($user->userProfile->priority_points ?? [])),
-            priority_points_other: '{{ $user->isGuide() ? ($user->guideProfile->priority_points_other ?? '') : ($user->userProfile->priority_points_other ?? '') }}',
+            priority_points: @json($user->isGuide() ? (optional($user->guideProfile)->priority_points ?? []) : (optional($user->userProfile)->priority_points ?? [])),
+            priority_points_other: '{{ $user->isGuide() ? (optional($user->guideProfile)->priority_points_other ?? '') : (optional($user->userProfile)->priority_points_other ?? '') }}',
             qualifications: @json($user->guideProfile ? $user->guideProfile->getQualificationKeys() : []),
             filter_requests_by_availability: {{ old('filter_requests_by_availability', optional($user->guideProfile)->filter_requests_by_availability ?? false) ? 'true' : 'false' }},
         },

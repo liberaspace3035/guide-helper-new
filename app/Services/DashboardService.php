@@ -16,9 +16,12 @@ class DashboardService
 {
     protected $announcementService;
 
-    public function __construct(AnnouncementService $announcementService)
+    protected RequestService $requestService;
+
+    public function __construct(AnnouncementService $announcementService, RequestService $requestService)
     {
         $this->announcementService = $announcementService;
+        $this->requestService = $requestService;
     }
 
     public function getDashboardData(User $user): array
@@ -90,8 +93,7 @@ class DashboardService
 
     protected function getGuideStats(int $guideId): array
     {
-        $availableRequests = Request::where('status', 'pending')
-            ->count();
+        $availableRequests = $this->requestService->getAvailableRequestsForGuide($guideId)->count();
         $activeMatchings = Matching::where('guide_id', $guideId)
             ->whereIn('status', ['matched', 'in_progress'])
             ->whereNull('report_completed_at') // 管理者承認済みのマッチングを除外

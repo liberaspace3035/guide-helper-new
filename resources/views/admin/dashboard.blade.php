@@ -19,6 +19,7 @@
         <div class="admin-dashboard-header">
             <h1>管理画面</h1>
             <p class="admin-welcome-message">システム全体の管理と設定を行います</p>
+            <p class="admin-welcome-message" style="margin-top:0.35rem;"><a href="{{ route('admin.support.index') }}">利用者・ガイドとの個別メッセージ（運営への問い合わせ・返信）</a></p>
         </div>
 
         <!-- タブコンテンツラッパー -->

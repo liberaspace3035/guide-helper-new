@@ -118,20 +118,26 @@
                             <span>新規依頼を作成</span>
                         </a>
                     @endif
-                    <a href="{{ route('requests.index') }}" class="quick-action-btn secondary">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="8" y1="6" x2="21" y2="6"></line>
-                            <line x1="8" y1="12" x2="21" y2="12"></line>
-                            <line x1="8" y1="18" x2="21" y2="18"></line>
-                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                        </svg>
-                        <span>依頼一覧</span>
-                        <template x-if="stats && stats.requestsWithApplications > 0">
+                    <template x-if="(stats?.requestsWithApplications || 0) > 0">
+                        <a href="{{ route('requests.index') }}" class="quick-action-btn secondary">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                            <span>依頼一覧</span>
                             <span class="action-badge" :aria-label="`応募がある依頼 ${stats.requestsWithApplications}件`" x-text="stats.requestsWithApplications > 99 ? '99+' : stats.requestsWithApplications"></span>
-                        </template>
-                    </a>
+                        </a>
+                    </template>
+                    <p
+                        x-show="(stats?.requestsWithApplications || 0) === 0"
+                        class="user-dashboard-zero-applications form-help-text"
+                    >
+                        現在、依頼に応募がある件は0件です。
+                    </p>
                 </div>
             </section>
 
@@ -482,7 +488,7 @@
                                     </td>
                                     <td class="table-actions text-center">
                                         <div class="action-buttons">
-                                            <a :href="`{{ url('/chat') }}/${matching.id}`" class="action-btn action-btn-chat" :aria-label="`チャット: ${matching.guide_name}`" :title="`${matching.guide_name}さんとチャット`">
+                                            <a :href="`{{ url('/chat') }}/${matching.id}`" class="action-btn action-btn-chat" :aria-label="`メッセージ: ${matching.guide_name}`" :title="`${matching.guide_name}さんとメッセージ`">
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                                 </svg>
@@ -536,20 +542,26 @@
                             <span>自己PRを入力する</span>
                         </a>
                     @else
-                        <a href="{{ route('guide.requests.index') }}" class="quick-action-btn secondary">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="8" y1="6" x2="21" y2="6"></line>
-                                <line x1="8" y1="12" x2="21" y2="12"></line>
-                                <line x1="8" y1="18" x2="21" y2="18"></line>
-                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                            </svg>
-                            <span>依頼一覧</span>
-                            <template x-if="stats?.availableRequests > 0">
+                        <template x-if="(stats?.availableRequests || 0) > 0">
+                            <a href="{{ route('guide.requests.index') }}" class="quick-action-btn secondary">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                                <span>応募一覧へ</span>
                                 <span class="action-badge" x-text="stats.availableRequests"></span>
-                            </template>
-                        </a>
+                            </a>
+                        </template>
+                        <p
+                            x-show="(stats?.availableRequests || 0) === 0"
+                            class="guide-dashboard-zero-requests form-help-text"
+                        >
+                            現在、応募できる依頼は0件です。
+                        </p>
                     @endif
             <template x-if="activeMatchings.length > 0">
                 <a :href="`{{ url('/guide/reports/new') }}/${activeMatchings[0].id}`" class="quick-action-btn primary">
@@ -640,7 +652,7 @@
                 <div class="stats-grid" x-show="stats">
                     <div class="stat-item highlight">
                         <span class="stat-value" x-text="stats?.availableRequests || 0"></span>
-                        <span class="stat-label">新規依頼</span>
+                        <span class="stat-label">応募可能な依頼</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-value" x-text="stats?.activeMatchings || 0"></span>
@@ -812,7 +824,7 @@
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                     </svg>
-                                    <span>チャット</span>
+                                    <span>メッセージ</span>
                                 </a>
                                 <a :href="`{{ route('guide.reports.create', '') }}/${matching.id}`" class="btn-primary btn-icon">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -850,10 +862,17 @@
                         <line x1="3" y1="18" x2="3.01" y2="18"></line>
                     </svg>
                     <h3>進行中の予定はありません</h3>
-                    <p>依頼一覧から応募して、ガイドが確定するとここに表示されます。</p>
-                    <a href="{{ route('guide.requests.index') }}" class="btn-primary">
-                        依頼を探す
-                    </a>
+                    <template x-if="(stats?.availableRequests || 0) > 0">
+                        <div>
+                            <p>応募一覧から応募し、マッチングが成立するとここに表示されます。</p>
+                            <a href="{{ route('guide.requests.index') }}" class="btn-primary">
+                                応募一覧を見る
+                            </a>
+                        </div>
+                    </template>
+                    <template x-if="(stats?.availableRequests || 0) === 0">
+                        <p>現在、応募できる依頼はありません。新しい依頼が公開されると、ここから応募一覧へ進めます。</p>
+                    </template>
                 </section>
             </template>
         @endif

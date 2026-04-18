@@ -433,11 +433,13 @@ html {
   flex-direction: column;
   gap: var(--spacing-md);
   margin-top: var(--spacing-xl);
-  
-  @media (min-width: 1024px) {
-    flex-direction: row;
+
+  &:not(.hero-actions--guest-grid) {
+    @media (min-width: 1024px) {
+      flex-direction: row;
+    }
   }
-  
+
   // ヒーローセクションのボタンは大きく表示
   .btn-hero-primary,
   .btn-hero-secondary {
@@ -447,6 +449,47 @@ html {
     font-weight: 700 !important;
     border-radius: 6px !important;
     min-height: 48px !important;
+  }
+}
+
+// 未ログイン: 左＝カレンダー・ログイン（アウトライン）、右＝利用者・ガイド登録（塗り）
+.hero-actions--guest-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  align-items: stretch;
+  width: 100%;
+  max-width: 36rem;
+
+  @media (min-width: 1024px) {
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  @media (max-width: 1023px) {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+    max-width: 22rem;
+  }
+
+  .hero-actions-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    min-width: 0;
+  }
+
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+    text-align: center;
   }
 }
 

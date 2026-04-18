@@ -17,11 +17,15 @@ class PersonalCalendarEntry extends Model
         'end_at',
         'url',
         'description',
+        'reminder_30min_sent_at',
+        'reminder_day_before_sent_at',
     ];
 
     protected $casts = [
         'start_at' => 'datetime',
         'end_at' => 'datetime',
+        'reminder_30min_sent_at' => 'datetime',
+        'reminder_day_before_sent_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

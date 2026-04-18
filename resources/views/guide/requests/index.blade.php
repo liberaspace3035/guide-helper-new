@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="requests-container" x-data="guideRequestsData()" x-init="init()">
-    <h1>依頼一覧</h1>
+    <h1>応募一覧</h1>
     <p class="info-text">
         依頼が承認されるまでは利用者の個人情報は表示されません。依頼に積極的に応募してください。
     </p>
@@ -212,7 +212,8 @@
 
     <template x-if="!loading && !error && requests.length === 0">
         <div class="empty-state">
-            <p>現在、利用可能な依頼はありません</p>
+            <p>応募できる依頼は現在0件です</p>
+            <p class="info-text" style="margin-top:0.5rem;">条件に合う依頼が公開されると、ここに一覧表示されます。</p>
         </div>
     </template>
 

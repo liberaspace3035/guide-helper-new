@@ -21,7 +21,7 @@
                     <h2>{{ $entry->title }}</h2>
                     <p><strong>場所:</strong> {{ trim(($entry->prefecture ?? '') . ' ' . ($entry->place ?? '')) ?: '未設定' }}</p>
                     <p><strong>日時:</strong> {{ $entry->start_at?->format('Y/m/d H:i') }}@if($entry->end_at) - {{ $entry->end_at->format('Y/m/d H:i') }}@endif</p>
-                    <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
+                    <div class="personal-calendar-card-actions">
                         @if(auth()->user()->isUser())
                             <a href="{{ route('requests.create', ['personal_entry_id' => $entry->id]) }}" class="btn-primary">ガイド依頼を作成</a>
                         @endif

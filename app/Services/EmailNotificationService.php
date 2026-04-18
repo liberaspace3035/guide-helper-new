@@ -108,6 +108,8 @@ class EmailNotificationService
             'reminder_report_approval' => 'reminder',
             'user_account_approved' => 'approval',
             'guide_account_approved' => 'approval',
+            'personal_calendar_reminder_30min' => 'reminder',
+            'personal_calendar_reminder_day_before' => 'reminder',
         ];
         return $mapping[$templateKey] ?? 'request';
     }
@@ -120,6 +122,32 @@ class EmailNotificationService
         $templateKey = $isGuide ? 'guide_account_approved' : 'user_account_approved';
         return $this->sendNotification($templateKey, $user, [
             'user_name' => $user->name ?? '',
+        ]);
+    }
+
+    /**
+     * マイカレンダー予定のリマインド（開始30分前）
+     */
+    public function sendPersonalCalendarReminder30Min(User $user, array $data): bool
+    {
+        return $this->sendNotification('personal_calendar_reminder_30min', $user, [
+            'user_name' => $user->name ?? '',
+            'title' => $data['title'] ?? '',
+            'start_at' => $data['start_at'] ?? '',
+            'place' => $data['place'] ?? '',
+        ]);
+    }
+
+    /**
+     * マイカレンダー予定のリマインド（前日朝7時想定）
+     */
+    public function sendPersonalCalendarReminderDayBefore(User $user, array $data): bool
+    {
+        return $this->sendNotification('personal_calendar_reminder_day_before', $user, [
+            'user_name' => $user->name ?? '',
+            'title' => $data['title'] ?? '',
+            'start_at' => $data['start_at'] ?? '',
+            'place' => $data['place'] ?? '',
         ]);
     }
 

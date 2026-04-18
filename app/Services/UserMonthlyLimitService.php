@@ -163,15 +163,18 @@ class UserMonthlyLimitService
                 if ($ruleHours === null) {
                     continue;
                 }
-                $row = UserMonthlyLimit::where('user_id', $userId)
-                    ->where('year', $y)
-                    ->where('month', $m)
-                    ->where('request_type', $requestType)
-                    ->first();
-                if ($row !== null) {
-                    $row->limit_hours = $ruleHours;
-                    $row->save();
-                }
+                // 月別行が未作成でもルール値を反映（一覧の表示ずれ防止）
+                UserMonthlyLimit::updateOrCreate(
+                    [
+                        'user_id' => $userId,
+                        'year' => $y,
+                        'month' => $m,
+                        'request_type' => $requestType,
+                    ],
+                    [
+                        'limit_hours' => $ruleHours,
+                    ]
+                );
             }
             $cursor->addMonth();
         }

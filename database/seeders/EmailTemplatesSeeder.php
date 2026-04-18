@@ -23,7 +23,7 @@ class EmailTemplatesSeeder extends Seeder
             [
                 'template_key' => 'matching_notification',
                 'subject' => 'ガイドが確定しました',
-                'body' => 'ガイドが確定しました。チャットで詳細を確認してください。\n\nガイド確定ID: {{matching_id}}\n依頼タイプ: {{request_type}}\n依頼日時: {{request_date}} {{request_time}}',
+                'body' => 'ガイドが確定しました。メッセージで詳細を確認してください。\n\nガイド確定ID: {{matching_id}}\n依頼タイプ: {{request_type}}\n依頼日時: {{request_date}} {{request_time}}',
                 'is_active' => true,
             ],
             [
@@ -114,6 +114,18 @@ class EmailTemplatesSeeder extends Seeder
                 'template_key' => 'reminder_report_approval',
                 'subject' => '報告書の承認をお願いします',
                 'body' => "{{user_name}} 様\n\nガイドから提出された報告書が承認待ちです。\n\n報告書ID: {{report_id}}\n依頼日: {{request_date}}\nガイド名: {{guide_name}}\n\nログインのうえ、報告書の確認・承認をお願いいたします。\n\n「One Step」視覚障害者向け外出・自宅での生活支援アプリ",
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'personal_calendar_reminder_30min',
+                'subject' => '【マイカレンダー】30分後に予定があります',
+                'body' => "{{user_name}} 様\n\nマイカレンダーに登録された予定がまもなく開始します。\n\n件名: {{title}}\n開始: {{start_at}}\n場所: {{place}}\n\nログインのうえ、マイカレンダーでご確認ください。\n\n「One Step」",
+                'is_active' => true,
+            ],
+            [
+                'template_key' => 'personal_calendar_reminder_day_before',
+                'subject' => '【マイカレンダー】明日の予定のお知らせ',
+                'body' => "{{user_name}} 様\n\nマイカレンダーに登録された明日の予定をお知らせします。\n\n件名: {{title}}\n開始: {{start_at}}\n場所: {{place}}\n\nログインのうえ、マイカレンダーでご確認ください。\n\n「One Step」",
                 'is_active' => true,
             ],
         ];

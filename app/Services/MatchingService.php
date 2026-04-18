@@ -72,54 +72,54 @@ class MatchingService
             throw new \Exception('この依頼には応募できません');
         }
 
-        // ガイドの対応範囲チェック
+        $isOpenRequest = $request->nominated_guide_id === null;
         $guideProfile = $guide->guideProfile;
-        if ($guideProfile) {
-            $availableAreas = $guideProfile->available_areas;
-            
-            // 配列でない場合の処理
-            if (!is_array($availableAreas)) {
-                if (is_string($availableAreas)) {
-                    $availableAreas = json_decode($availableAreas, true) ?? [];
-                } else {
-                    $availableAreas = [];
+
+        // 指名依頼のみ、対応エリア・資格を確認（オープン募集は応募可能）
+        if (!$isOpenRequest) {
+            // ガイドの対応範囲チェック
+            if ($guideProfile) {
+                $availableAreas = $guideProfile->available_areas;
+
+                if (!is_array($availableAreas)) {
+                    if (is_string($availableAreas)) {
+                        $availableAreas = json_decode($availableAreas, true) ?? [];
+                    } else {
+                        $availableAreas = [];
+                    }
                 }
-            }
-            
-            // 対応範囲が設定されている場合のみチェック
-            if (!empty($availableAreas)) {
-                // 依頼の都道府県を取得（prefectureカラムがあればそれを使用、なければ住所から抽出）
-                $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
-                
-                \Log::info('ガイドの対応範囲チェック', [
-                    'guide_id' => $guideId,
-                    'request_id' => $requestId,
-                    'request_prefecture' => $request->prefecture,
-                    'request_address' => $request->destination_address,
-                    'extracted_prefecture' => $requestPrefecture,
-                    'available_areas' => $availableAreas,
-                    'is_in_area' => $requestPrefecture ? in_array($requestPrefecture, $availableAreas, true) : null,
-                ]);
-                
-                if ($requestPrefecture) {
-                    // ガイドの対応範囲に依頼の都道府県が含まれているかチェック（完全一致）
-                    if (!in_array($requestPrefecture, $availableAreas, true)) {
-                        throw new \Exception('この依頼の場所は、あなたの対応範囲外です。対応範囲: ' . implode(', ', $availableAreas));
+
+                if (!empty($availableAreas)) {
+                    $requestPrefecture = $request->prefecture ?? $this->maskAddressService->extractPrefecture($request->destination_address);
+
+                    \Log::info('ガイドの対応範囲チェック', [
+                        'guide_id' => $guideId,
+                        'request_id' => $requestId,
+                        'request_prefecture' => $request->prefecture,
+                        'request_address' => $request->destination_address,
+                        'extracted_prefecture' => $requestPrefecture,
+                        'available_areas' => $availableAreas,
+                        'is_in_area' => $requestPrefecture ? in_array($requestPrefecture, $availableAreas, true) : null,
+                    ]);
+
+                    if ($requestPrefecture) {
+                        if (!in_array($requestPrefecture, $availableAreas, true)) {
+                            throw new \Exception('この依頼の場所は、あなたの対応範囲外です。対応範囲: ' . implode(', ', $availableAreas));
+                        }
                     }
                 }
             }
-        }
 
-        // 資格チェック（依頼タイプに応じた資格を持っているか）
-        if ($guideProfile) {
-            $requestType = $request->request_type;
-            
-            if ($requestType === 'outing' && !$guideProfile->canSupportOuting()) {
-                throw new \Exception('外出支援を行うには、同行援護一般課程または応用課程の資格が必要です');
-            }
-            
-            if ($requestType === 'home' && !$guideProfile->canSupportHome()) {
-                throw new \Exception('自宅支援を行うには、介護福祉士・介護実務者研修・介護初任者研修のいずれかの資格が必要です');
+            if ($guideProfile) {
+                $requestType = $request->request_type;
+
+                if ($requestType === 'outing' && !$guideProfile->canSupportOuting()) {
+                    throw new \Exception('外出支援を行うには、同行援護一般課程または応用課程の資格が必要です');
+                }
+
+                if ($requestType === 'home' && !$guideProfile->canSupportHome()) {
+                    throw new \Exception('自宅支援を行うには、介護福祉士・介護実務者研修・介護初任者研修のいずれかの資格が必要です');
+                }
             }
         }
 
@@ -214,7 +214,7 @@ class MatchingService
                 'user_id' => $userId,
                 'type' => 'matching',
                 'title' => 'マッチングが成立しました',
-                'message' => 'マッチングが成立しました。チャットで詳細を確認してください。',
+                'message' => 'マッチングが成立しました。メッセージで詳細を確認してください。',
                 'related_id' => $matching->id,
             ]);
 
@@ -222,7 +222,7 @@ class MatchingService
                 'user_id' => $guideId,
                 'type' => 'matching',
                 'title' => 'マッチングが成立しました',
-                'message' => 'マッチングが成立しました。チャットで詳細を確認してください。',
+                'message' => 'マッチングが成立しました。メッセージで詳細を確認してください。',
                 'related_id' => $matching->id,
             ]);
 

@@ -14,7 +14,8 @@
 <div class="container" style="max-width: 960px; margin: 0 auto; padding: 1rem;">
     <h1>イベントカレンダー（公開）</h1>
     <p>本カレンダーは、どなたでもイベントの閲覧・登録が可能です。</p>
-    <p>プライベートな予定はログイン後の「マイカレンダー」で管理できます。</p>
+    <p>また、イベントや講座のお知らせなど、他の方にも役立つ情報があれば、自由にご登録ください。</p>
+    <p>なお、プライベートなご自身の予定は「マイカレンダー」に追加して管理できます。マイカレンダーはログイン後に利用することができます。</p>
 
     <div style="margin: 1rem 0; display:flex; gap:.5rem; flex-wrap:wrap;">
         <a href="{{ route('events.create') }}" class="btn-primary">イベントを登録する</a>

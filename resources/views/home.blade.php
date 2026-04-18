@@ -37,25 +37,38 @@
                     <span class="hero-keyword">同行援護</span>
                 </h1>
                 <p class="hero-subtitle">
-                    視覚障害がある方の『行きたい』を、専門のガイドがサポート。One Stepならもっと気軽に、もっと便利に。
+                    One Stepならもっと気軽に、もっと便利に。One Stepは、一般社団法人With Blindが運営する、視覚障害者向けの外出・自宅での生活支援サービスです。同行援護による外出支援に加え、居宅介護による自宅での生活支援も提供しています。
+                    関東・関西を軸に、千葉・東京・神奈川・大阪・京都・神戸などを中心に全国展開を目指しています。
                 </p>
-                <div class="hero-actions">
-                    <a href="{{ route('events.index') }}" class="btn-secondary btn-hero-secondary" aria-label="イベントカレンダーへ">
-                        イベントカレンダー
-                    </a>
-                    @auth
+                @auth
+                    <div class="hero-actions">
+                        <a href="{{ route('events.index') }}" class="btn-secondary btn-hero-secondary" aria-label="イベントカレンダーへ">
+                            イベントカレンダー
+                        </a>
                         <a href="{{ route('dashboard') }}" class="btn-primary btn-hero-primary" aria-label="ダッシュボードへ移動">
                             ダッシュボードへ
                         </a>
-                    @else
-                        <a href="{{ route('register') }}" class="btn-primary btn-hero-primary" aria-label="無料で登録">
-                            無料で登録
-                        </a>
-                        <a href="{{ route('login') }}" class="btn-secondary btn-hero-secondary" aria-label="ログインページへ">
-                            ログイン
-                        </a>
-                    @endauth
-                </div>
+                    </div>
+                @else
+                    <div class="hero-actions hero-actions--guest-grid">
+                        <div class="hero-actions-col hero-actions-col--secondary" aria-label="カレンダーとログイン">
+                            <a href="{{ route('events.index') }}" class="btn-secondary btn-hero-secondary" aria-label="イベントカレンダーへ">
+                                イベントカレンダー
+                            </a>
+                            <a href="{{ route('login') }}" class="btn-secondary btn-hero-secondary" aria-label="ログインページへ">
+                                ログイン
+                            </a>
+                        </div>
+                        <div class="hero-actions-col hero-actions-col--primary" aria-label="新規登録">
+                            <a href="{{ route('register', ['role' => 'user']) }}" class="btn-primary btn-hero-primary" aria-label="利用者として登録">
+                                利用者として登録
+                            </a>
+                            <a href="{{ route('register', ['role' => 'guide']) }}" class="btn-primary btn-hero-primary" aria-label="ガイドとして登録">
+                                ガイドとして登録
+                            </a>
+                        </div>
+                    </div>
+                @endauth
             </div>
             <div class="hero-visual-area" aria-hidden="true">
                 <!-- ビジュアル背景の抽象的な形状 -->
@@ -111,6 +124,35 @@
     </section>
     @endif
 
+    <section class="container home-feature-intro" style="max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 0;" aria-label="このページでできること">
+        <details class="home-details-card" style="border:1px solid #e2e8f0; border-radius:8px; padding:1rem 1.25rem; background:#fff;">
+            <summary style="cursor:pointer; font-weight:700; font-size:1.05rem;">このページでできること（タップで開閉）</summary>
+            <div style="margin-top:1rem; font-size:0.95rem; line-height:1.65;">
+                <p style="font-weight:600; margin-bottom:0.35rem;">【利用者の方にできること】</p>
+                <ul style="margin:0 0 1rem 1.1rem; padding:0;">
+                    <li>ガイドに外出支援や自宅支援を依頼できます</li>
+                    <li>希望するガイドを指名して依頼できます</li>
+                    <li>イベントカレンダーから支援依頼につなげることができます</li>
+                    <li>マイカレンダーに予定を登録し、予定に合わせて支援を依頼できます</li>
+                    <li>ガイドの対応可能日時を確認できます</li>
+                </ul>
+                <p style="font-weight:600; margin-bottom:0.35rem;">【ガイドの方にできること】</p>
+                <ul style="margin:0 0 1rem 1.1rem; padding:0;">
+                    <li>利用者からの依頼に応募できます</li>
+                    <li>利用者を指名して支援を提案できます</li>
+                    <li>外出や自宅での支援内容を提案できます</li>
+                    <li>イベントカレンダーを登録・閲覧できます</li>
+                    <li>マイカレンダーで予定を管理できます</li>
+                </ul>
+                <p style="font-weight:600; margin-bottom:0.35rem;">【カレンダーについて】</p>
+                <ul style="margin:0 0 0 1.1rem; padding:0;">
+                    <li>イベントカレンダーは、どなたでも登録・閲覧できます。視覚障害に関するイベント情報を登録してください。</li>
+                    <li>マイカレンダーは、ご本人のみ投稿・閲覧できます。ご自身のプライベートな予定の管理やガイド予定の管理で利用してください。</li>
+                </ul>
+            </div>
+        </details>
+    </section>
+
     <!-- 特徴セクション -->
     <section class="features-section" aria-label="サービスの特徴">
         <!-- 波形SVGデコレーション -->
@@ -139,9 +181,9 @@
                             <use href="{{ asset('images/icons-sprite.svg#icon-chat') }}"></use>
                         </svg>
                     </div>
-                    <h3 class="feature-title">リアルタイムチャット</h3>
+                    <h3 class="feature-title">リアルタイムメッセージ</h3>
                     <p class="feature-description">
-                        ガイド確定後は、アプリ内チャットで直接コミュニケーションが取れます。
+                        ガイド確定後は、アプリ内メッセージで直接やり取りができます。
                     </p>
                 </div>
                 <div class="feature-card">
@@ -152,7 +194,7 @@
                     </div>
                     <h3 class="feature-title">詳細レポート</h3>
                     <p class="feature-description">
-                        活動後にガイドが報告書を作成し、利用者が承認して確定されます。
+                        活動後の報告確認手続きをガイドと利用者が実施することで、利用者の利用時間とガイドの活動時間が確定します。
                     </p>
                 </div>
                 <div class="feature-card">
@@ -170,132 +212,38 @@
         </div>
     </section>
 
-    <!-- 使い方セクション（利用者向け） -->
-    <section class="how-it-works-section" aria-label="利用までの流れ（利用者向け）">
-        <!-- 波形SVGデコレーション -->
+    <!-- 利用までの流れ -->
+    <section class="how-it-works-section" aria-label="利用までの流れ">
         <div class="steps-wave-bg" aria-hidden="true">
             <svg viewBox="0 0 1200 120" preserveAspectRatio="none" class="wave-svg">
                 <path d="M0,120 Q300,80 600,120 T1200,120 L1200,0 L0,0 Z" fill="#eff6ff" class="wave-path"/>
             </svg>
         </div>
         <div class="container">
-            <h2 class="section-title">利用までの流れ（利用者向け）</h2>
+            <h2 class="section-title">利用までの流れ</h2>
             <p class="how-it-works-intro">
-                本サービスは、障害福祉サービスの一つとして運営しています。
-                視覚障害当事者が中心となって運営しているため、制度の説明だけでなく、「実際の生活にどう役立つか」という視点を大切にしています。
+                一般社団法人With Blindが運営する障害福祉サービスです。視覚障害当事者の視点を大切にしながら、制度の説明だけでなく、実際の生活の中でどう役立つかを丁寧にご案内します。
             </p>
 
-            <h3 class="flow-subsection-title">【初回ご利用時】</h3>
-            <div class="steps-container">
-                <div class="step-item">
-                    <div class="step-number-wrapper">
-                        <div class="step-number">1</div>
-                        <svg class="step-number-bg" viewBox="0 0 100 100" aria-hidden="true">
-                            <circle cx="50" cy="50" r="45" fill="#EBF8FF"/>
-                        </svg>
-                    </div>
-                    <div class="step-illustration">
-                        <svg class="step-illustration-svg" aria-hidden="true">
-                            <use href="{{ asset('images/icons-sprite.svg#illustration-register') }}"></use>
-                        </svg>
-                    </div>
-                    <h4 class="step-title">アカウント登録（仮登録）</h4>
-                    <p class="step-description">
-                        メールアドレスと基本情報をご入力いただきます。
-                    </p>
-                    <div class="step-connector" aria-hidden="true">
-                        <svg viewBox="0 0 100 20" class="step-arrow">
-                            <path d="M 0 10 L 80 10 M 70 5 L 80 10 L 70 15" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                </div>
-                <div class="step-item">
-                    <div class="step-number-wrapper">
-                        <div class="step-number">2</div>
-                        <svg class="step-number-bg" viewBox="0 0 100 100" aria-hidden="true">
-                            <circle cx="50" cy="50" r="45" fill="#EBF8FF"/>
-                        </svg>
-                    </div>
-                    <div class="step-illustration">
-                        <svg class="step-illustration-svg" aria-hidden="true">
-                            <use href="{{ asset('images/icons-sprite.svg#illustration-request') }}"></use>
-                        </svg>
-                    </div>
-                    <h4 class="step-title">面談の実施（本登録）</h4>
-                    <p class="step-description">
-                        オンライン等で面談を行い、制度の内容をご説明してニーズを確認します。公的な障害福祉サービスとして適正に運営するため、ご理解いただいたうえで本登録となります。趣旨・ルールのご理解が難しい場合は登録をお断りすることがあります。
-                    </p>
-                </div>
-            </div>
+            <h3 class="flow-subsection-title">【利用者の方】</h3>
+            <ol class="home-flow-list" style="line-height:1.75; margin:0 0 1.5rem 1.25rem; padding:0;">
+                <li style="margin-bottom:0.65rem;"><strong>アカウント登録</strong> — まずは本ページから利用者登録をします。</li>
+                <li style="margin-bottom:0.65rem;"><strong>面談・ご説明</strong> — 運営よりご連絡し、サービス内容やご利用方法をご案内します。</li>
+                <li style="margin-bottom:0.65rem;"><strong>利用契約・本登録</strong> — 必要なお手続き完了後、サービスをご利用いただけます。</li>
+                <li style="margin-bottom:0.65rem;"><strong>依頼作成</strong> — 日時・場所・希望する支援内容を入力します。</li>
+                <li style="margin-bottom:0.65rem;"><strong>ガイド確定</strong> — 条件に合うガイドヘルパーが決まります。</li>
+                <li style="margin-bottom:0.65rem;"><strong>サービス利用</strong> — 当日は内容に沿って支援を受けられます。</li>
+            </ol>
 
-            <h3 class="flow-subsection-title">【2回目以降のご利用】</h3>
-            <p class="flow-subsection-note">
-                本登録完了後は面談は不要です。
-                ログイン後、ご自身でリクエストを作成し、いつでもご利用いただけます。
-            </p>
-            <div class="steps-container">
-                <div class="step-item">
-                    <div class="step-number-wrapper">
-                        <div class="step-number">3</div>
-                        <svg class="step-number-bg" viewBox="0 0 100 100" aria-hidden="true">
-                            <circle cx="50" cy="50" r="45" fill="#EBF8FF"/>
-                        </svg>
-                    </div>
-                    <div class="step-illustration">
-                        <svg class="step-illustration-svg" aria-hidden="true">
-                            <use href="{{ asset('images/icons-sprite.svg#illustration-request') }}"></use>
-                        </svg>
-                    </div>
-                    <h4 class="step-title">リクエスト作成</h4>
-                    <p class="step-description">
-                        ご自身で日時・場所・必要なサポート内容を入力します。
-                    </p>
-                    <div class="step-connector" aria-hidden="true">
-                        <svg viewBox="0 0 100 20" class="step-arrow">
-                            <path d="M 0 10 L 80 10 M 70 5 L 80 10 L 70 15" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                </div>
-                <div class="step-item">
-                    <div class="step-number-wrapper">
-                        <div class="step-number">4</div>
-                        <svg class="step-number-bg" viewBox="0 0 100 100" aria-hidden="true">
-                            <circle cx="50" cy="50" r="45" fill="#EBF8FF"/>
-                        </svg>
-                    </div>
-                    <div class="step-illustration">
-                        <svg class="step-illustration-svg" aria-hidden="true">
-                            <use href="{{ asset('images/icons-sprite.svg#illustration-matching') }}"></use>
-                        </svg>
-                    </div>
-                    <h4 class="step-title">ガイド確定</h4>
-                    <p class="step-description">
-                        応募の中から条件が合うガイドが確定します。
-                    </p>
-                    <div class="step-connector" aria-hidden="true">
-                        <svg viewBox="0 0 100 20" class="step-arrow">
-                            <path d="M 0 10 L 80 10 M 70 5 L 80 10 L 70 15" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                </div>
-                <div class="step-item">
-                    <div class="step-number-wrapper">
-                        <div class="step-number">5</div>
-                        <svg class="step-number-bg" viewBox="0 0 100 100" aria-hidden="true">
-                            <circle cx="50" cy="50" r="45" fill="#EBF8FF"/>
-                        </svg>
-                    </div>
-                    <div class="step-illustration">
-                        <svg class="step-illustration-svg" aria-hidden="true">
-                            <use href="{{ asset('images/icons-sprite.svg#illustration-activity') }}"></use>
-                        </svg>
-                    </div>
-                    <h4 class="step-title">活動開始</h4>
-                    <p class="step-description">
-                        当日ガイドヘルパーと活動を行います。当日までに待ち合わせ場所や要望についてメッセージ機能で詳細を確認することもできます。
-                    </p>
-                </div>
-            </div>
+            <h3 class="flow-subsection-title">【ガイドの方】</h3>
+            <ol class="home-flow-list" style="line-height:1.75; margin:0 0 0 1.25rem; padding:0;">
+                <li style="margin-bottom:0.65rem;"><strong>アカウント登録</strong> — まずは本ページからガイド登録をします。</li>
+                <li style="margin-bottom:0.65rem;"><strong>面談・資格確認</strong> — 運営よりご連絡し、資格や活動内容を確認します。</li>
+                <li style="margin-bottom:0.65rem;"><strong>手続き・本登録</strong> — 必要なお手続き完了後、活動を開始できます。</li>
+                <li style="margin-bottom:0.65rem;"><strong>依頼へ応募</strong> — 条件に合う依頼に応募できます。</li>
+                <li style="margin-bottom:0.65rem;"><strong>ガイド確定</strong> — 利用者との条件が合えばガイドとして確定します。</li>
+                <li style="margin-bottom:0.65rem;"><strong>支援実施</strong> — 当日は依頼内容に沿って支援を行います。</li>
+            </ol>
         </div>
     </section>
 
@@ -303,17 +251,21 @@
     @guest
         <section class="cta-section" aria-label="今すぐ始める">
             <div class="container">
-                <h2 class="cta-title">今すぐ始めましょう</h2>
+                <h2 class="cta-title">今すぐ始める</h2>
                 <p class="cta-description">
-                    無料でアカウントを作成して、ガイドヘルパーサービスを利用できます
+                    無料でアカウントを作成し、視覚障害者向けの外出支援・自宅生活支援サービスをご利用いただけます。
                 </p>
-                <!-- マイクロコピー -->
+                <p class="cta-description" style="margin-top:0.75rem;">
+                    利用者の方も、ガイドの方も、無料でアカウント登録ができます。<br>
+                    ご利用や活動開始には、初回面談と必要なお手続きがあります。<br>
+                    詳細は登録後に、一般社団法人With Blindよりご案内します。
+                </p>
                 <div class="cta-microcopy">
                     <div class="cta-point">
                         <svg class="cta-check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                        <span>登録3分</span>
+                        <span>登録の目安: 約10〜15分</span>
                     </div>
                     <div class="cta-point">
                         <svg class="cta-check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -322,17 +274,17 @@
                         <span>初回面談あり</span>
                     </div>
                 </div>
-                <div class="cta-actions">
-                    <a href="{{ route('register') }}" class="btn-cta-primary btn-large" aria-label="無料で登録">
-                        無料で登録
+                <div class="cta-actions" style="flex-direction:column; align-items:stretch; gap:0.75rem;">
+                    <a href="{{ route('register', ['role' => 'user']) }}" class="btn-cta-primary btn-large" aria-label="利用者として登録">
+                        利用者として登録
+                    </a>
+                    <a href="{{ route('register', ['role' => 'guide']) }}" class="btn-cta-primary btn-large" aria-label="ガイドとして登録">
+                        ガイドとして登録
                     </a>
                     <a href="{{ route('login') }}" class="btn-secondary btn-large" aria-label="ログインページへ">
                         ログイン
                     </a>
                 </div>
-                <p class="cta-note">
-                    ご利用・ガイドとしてのご活動には、初回の面談および契約書の締結が必要です。詳細は新規登録後にご案内いたします。
-                </p>
             </div>
         </section>
     @endguest
