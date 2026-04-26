@@ -12,6 +12,35 @@
     @if(session('success'))
         <div class="success-message" role="status">{{ session('success') }}</div>
     @endif
+    @if(auth()->user()->isGuide())
+        <section style="margin-bottom: 1.25rem;">
+            <h2 style="font-size: 1.1rem; margin: 0 0 0.5rem;">依頼関連の予定（承諾済み・応募中）</h2>
+            <p class="info-text" style="margin-top: 0;">応募一覧・マッチング状況から、今後の依頼予定をまとめて表示しています。</p>
+            @if(($guideScheduleItems ?? collect())->isEmpty())
+                <p>表示できる依頼予定はありません。</p>
+            @else
+                <div class="requests-list">
+                    @foreach($guideScheduleItems as $item)
+                        <article class="request-card">
+                            <h3 style="margin-bottom: 0.5rem;">{{ $item['title'] }}</h3>
+                            <p>
+                                <strong>状態:</strong>
+                                <span class="status-badge {{ $item['kind'] === 'accepted' ? 'status-matched' : 'status-pending' }}">{{ $item['status_label'] }}</span>
+                            </p>
+                            <p><strong>場所:</strong> {{ trim(($item['prefecture'] ?? '') . ' ' . ($item['place'] ?? '')) ?: '未設定' }}</p>
+                            <p><strong>日時:</strong> {{ \Carbon\Carbon::parse($item['request_date'])->format('Y/m/d') }}@if(!empty($item['start_time'])) {{ substr($item['start_time'], 0, 5) }}@endif@if(!empty($item['end_time'])) - {{ substr($item['end_time'], 0, 5) }}@endif</p>
+                            @if(!empty($item['meeting_place']))
+                                <p><strong>待ち合わせ場所:</strong> {{ $item['meeting_place'] }}</p>
+                            @endif
+                            @if(!empty($item['service_content']))
+                                <p><strong>内容:</strong> {{ $item['service_content'] }}</p>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
+            @endif
+        </section>
+    @endif
     @if($entries->count() === 0)
         <p>予定はありません。</p>
     @else

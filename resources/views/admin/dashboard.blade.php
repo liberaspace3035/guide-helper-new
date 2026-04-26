@@ -1895,6 +1895,23 @@
                                         />
                                     </template>
                                 </div>
+                                <div class="modal-field" x-show="selectedUserProfile.postal_code || editingUserProfile">
+                                    <strong>郵便番号</strong>
+                                    <template x-if="!editingUserProfile">
+                                        <span x-text="selectedUserProfile.postal_code"></span>
+                                    </template>
+                                    <template x-if="editingUserProfile">
+                                        <input
+                                            type="text"
+                                            class="modal-input"
+                                            x-model="editingUserProfileData.postal_code"
+                                            @input="editingUserProfileData.postal_code = $event.target.value.replace(/[^0-9-]/g, '').slice(0, 8)"
+                                            maxlength="8"
+                                            placeholder="123-4567"
+                                            aria-label="郵便番号"
+                                        />
+                                    </template>
+                                </div>
                                 <div class="modal-field" x-show="selectedUserProfile.address || editingUserProfile">
                                     <strong>住所</strong>
                                     <template x-if="!editingUserProfile">
@@ -3332,6 +3349,7 @@ function adminDashboard() {
             this.editingUserProfileData = {
                 name: this.selectedUserProfile.name || '',
                 phone: this.selectedUserProfile.phone || '',
+                postal_code: this.selectedUserProfile.postal_code || '',
                 address: this.selectedUserProfile.address || '',
                 contact_method: this.selectedUserProfile.contact_method || '',
                 notes: this.selectedUserProfile.notes || '',

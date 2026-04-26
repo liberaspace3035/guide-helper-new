@@ -543,6 +543,7 @@ class AdminService
                     'email' => $user->email,
                     'name' => $user->name,
                     'phone' => $user->phone,
+                    'postal_code' => $user->postal_code,
                     'address' => $user->address,
                     'birth_date' => $user->birth_date,
                     'age' => $user->age,
@@ -703,6 +704,18 @@ class AdminService
         }
         if (isset($data['phone'])) {
             $userData['phone'] = $data['phone'];
+        }
+        if (array_key_exists('postal_code', $data)) {
+            $postalCode = trim((string) ($data['postal_code'] ?? ''));
+            if ($postalCode !== '') {
+                $postalCode = preg_replace('/\D/', '', $postalCode);
+                if (strlen((string) $postalCode) === 7) {
+                    $postalCode = substr($postalCode, 0, 3) . '-' . substr($postalCode, 3);
+                }
+            } else {
+                $postalCode = null;
+            }
+            $userData['postal_code'] = $postalCode;
         }
         if (isset($data['address'])) {
             $userData['address'] = $data['address'];

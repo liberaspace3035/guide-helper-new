@@ -501,6 +501,7 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'sometimes|required|string|max:100',
             'phone' => 'nullable|string|max:20',
+            'postal_code' => ['nullable', 'string', 'max:10', 'regex:/^\d{3}-?\d{4}$/'],
             'address' => 'nullable|string',
             'contact_method' => 'nullable|string|max:50',
             'notes' => 'nullable|string',
@@ -509,12 +510,14 @@ class AdminController extends Controller
             'admin_comment' => 'nullable|string',
         ], [
             'recipient_number.regex' => '受給者証番号は半角数字10桁で入力してください。',
+            'postal_code.regex' => '郵便番号は「123-4567」または「1234567」の形式で入力してください。',
         ]);
 
         try {
             $this->adminService->updateUserProfile($id, $request->only([
                 'name',
                 'phone',
+                'postal_code',
                 'address',
                 'contact_method',
                 'notes',
