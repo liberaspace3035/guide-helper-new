@@ -626,48 +626,107 @@
 
                 <div class="confirm-block">
                     <h3 class="confirm-block-title">基本情報</h3>
-                    <div class="confirm-list">
-                        <div class="confirm-row"><span class="confirm-label">登録タイプ</span><span class="confirm-value" x-text="formData.role === 'user' ? '利用者' : 'ガイド'"></span></div>
-                        <div class="confirm-row"><span class="confirm-label">お名前</span><span class="confirm-value" x-text="(formData.last_name || '') + ' ' + (formData.first_name || '')"></span></div>
-                        <div class="confirm-row"><span class="confirm-label">お名前（カナ）</span><span class="confirm-value" x-text="(formData.last_name_kana || '') + ' ' + (formData.first_name_kana || '')"></span></div>
-                        <div class="confirm-row"><span class="confirm-label">生年月日</span><span class="confirm-value" x-text="formData.birth_date || '—'"></span></div>
-                        <div class="confirm-row"><span class="confirm-label">性別</span><span class="confirm-value" x-text="getGenderLabel(formData.gender)"></span></div>
-                    </div>
+                    <dl class="confirm-list">
+                        <div class="confirm-row">
+                            <dt class="confirm-label">登録タイプ</dt>
+                            <dd class="confirm-value" x-text="formData.role === 'user' ? '利用者' : 'ガイド'"></dd>
+                        </div>
+                        <div class="confirm-row">
+                            <dt class="confirm-label">お名前</dt>
+                            <dd class="confirm-value" x-text="(formData.last_name || '') + ' ' + (formData.first_name || '')"></dd>
+                        </div>
+                        <div class="confirm-row">
+                            <dt class="confirm-label">お名前（カナ）</dt>
+                            <dd class="confirm-value" x-text="(formData.last_name_kana || '') + ' ' + (formData.first_name_kana || '')"></dd>
+                        </div>
+                        <div class="confirm-row">
+                            <dt class="confirm-label">生年月日</dt>
+                            <dd class="confirm-value" x-text="formData.birth_date || '—'"></dd>
+                        </div>
+                        <div class="confirm-row">
+                            <dt class="confirm-label">性別</dt>
+                            <dd class="confirm-value" x-text="getGenderLabel(formData.gender)"></dd>
+                        </div>
+                    </dl>
                 </div>
 
                 <div class="confirm-block">
                     <h3 class="confirm-block-title">連絡先</h3>
-                    <div class="confirm-list">
-                        <div class="confirm-row"><span class="confirm-label">郵便番号</span><span class="confirm-value" x-text="formData.postal_code || '—'"></span></div>
-                        <div class="confirm-row"><span class="confirm-label">住所</span><span class="confirm-value" x-text="formData.address || '—'"></span></div>
-                        <div class="confirm-row"><span class="confirm-label">電話番号</span><span class="confirm-value" x-text="formData.phone || '—'"></span></div>
-                        <div class="confirm-row"><span class="confirm-label">メールアドレス</span><span class="confirm-value" x-text="formData.email || '—'"></span></div>
-                        <div class="confirm-row"><span class="confirm-label">パスワード</span><span class="confirm-value">********</span></div>
-                    </div>
+                    <dl class="confirm-list">
+                        <div class="confirm-row">
+                            <dt class="confirm-label">郵便番号</dt>
+                            <dd class="confirm-value" x-text="formData.postal_code || '—'"></dd>
+                        </div>
+                        <div class="confirm-row">
+                            <dt class="confirm-label">住所</dt>
+                            <dd class="confirm-value" x-text="formData.address || '—'"></dd>
+                        </div>
+                        <div class="confirm-row">
+                            <dt class="confirm-label">電話番号</dt>
+                            <dd class="confirm-value" x-text="formData.phone || '—'"></dd>
+                        </div>
+                        <div class="confirm-row">
+                            <dt class="confirm-label">メールアドレス</dt>
+                            <dd class="confirm-value" x-text="formData.email || '—'"></dd>
+                        </div>
+                        <div class="confirm-row">
+                            <dt class="confirm-label">パスワード</dt>
+                            <dd class="confirm-value">********</dd>
+                        </div>
+                    </dl>
                 </div>
 
                 <template x-if="formData.role === 'user'">
                     <div class="confirm-block">
                         <h3 class="confirm-block-title">利用者情報</h3>
-                        <div class="confirm-list">
-                            <div class="confirm-row"><span class="confirm-label">面談希望日時（第1希望）</span><span class="confirm-value" x-text="formatConfirmDateTime(formData.interview_date_1)"></span></div>
-                            <div class="confirm-row"><span class="confirm-label">面談希望日時（第2希望）</span><span class="confirm-value" x-text="formatConfirmDateTime(formData.interview_date_2) || '—'"></span></div>
-                            <div class="confirm-row"><span class="confirm-label">面談希望日時（第3希望）</span><span class="confirm-value" x-text="formatConfirmDateTime(formData.interview_date_3) || '—'"></span></div>
-                            <div class="confirm-row"><span class="confirm-label">応募のきっかけ</span><span class="confirm-value" x-text="getApplicationReasonValue() || '—'"></span></div>
-                            <div class="confirm-row"><span class="confirm-label">視覚障害の状況</span><span class="confirm-value confirm-text-block" x-text="formData.visual_disability_status || '—'"></span></div>
-                            <div class="confirm-row"><span class="confirm-label">障害支援区分</span><span class="confirm-value" x-text="formData.disability_support_level || '—'"></span></div>
-                            <div class="confirm-row"><span class="confirm-label">普段の生活状況</span><span class="confirm-value confirm-text-block" x-text="formData.daily_life_situation || '—'"></span></div>
-                        </div>
+                        <dl class="confirm-list">
+                            <div class="confirm-row">
+                                <dt class="confirm-label">面談希望日時（第1希望）</dt>
+                                <dd class="confirm-value" x-text="formatConfirmDateTime(formData.interview_date_1)"></dd>
+                            </div>
+                            <div class="confirm-row">
+                                <dt class="confirm-label">面談希望日時（第2希望）</dt>
+                                <dd class="confirm-value" x-text="formatConfirmDateTime(formData.interview_date_2) || '—'"></dd>
+                            </div>
+                            <div class="confirm-row">
+                                <dt class="confirm-label">面談希望日時（第3希望）</dt>
+                                <dd class="confirm-value" x-text="formatConfirmDateTime(formData.interview_date_3) || '—'"></dd>
+                            </div>
+                            <div class="confirm-row">
+                                <dt class="confirm-label">応募のきっかけ</dt>
+                                <dd class="confirm-value" x-text="getApplicationReasonValue() || '—'"></dd>
+                            </div>
+                            <div class="confirm-row">
+                                <dt class="confirm-label">視覚障害の状況</dt>
+                                <dd class="confirm-value confirm-text-block" x-text="formData.visual_disability_status || '—'"></dd>
+                            </div>
+                            <div class="confirm-row">
+                                <dt class="confirm-label">障害支援区分</dt>
+                                <dd class="confirm-value" x-text="formData.disability_support_level || '—'"></dd>
+                            </div>
+                            <div class="confirm-row">
+                                <dt class="confirm-label">普段の生活状況</dt>
+                                <dd class="confirm-value confirm-text-block" x-text="formData.daily_life_situation || '—'"></dd>
+                            </div>
+                        </dl>
                     </div>
                 </template>
 
                 <template x-if="formData.role === 'guide'">
                     <div class="confirm-block">
                         <h3 class="confirm-block-title">ガイド情報</h3>
-                        <div class="confirm-list">
-                            <div class="confirm-row"><span class="confirm-label">応募理由</span><span class="confirm-value confirm-text-block" x-text="formData.application_reason || '—'"></span></div>
-                            <div class="confirm-row"><span class="confirm-label">実現したいこと</span><span class="confirm-value confirm-text-block" x-text="formData.goal || '—'"></span></div>
-                            <div class="confirm-row"><span class="confirm-label">保有資格</span><span class="confirm-value">
+                        <dl class="confirm-list">
+                            <div class="confirm-row">
+                                <dt class="confirm-label">応募理由</dt>
+                                <dd class="confirm-value confirm-text-block" x-text="formData.application_reason || '—'"></dd>
+                            </div>
+                            <div class="confirm-row">
+                                <dt class="confirm-label">実現したいこと</dt>
+                                <dd class="confirm-value confirm-text-block" x-text="formData.goal || '—'"></dd>
+                            </div>
+                            <div class="confirm-row">
+                                <dt class="confirm-label">保有資格</dt>
+                                <dd class="confirm-value">
                                 <template x-for="(qual, index) in formData.qualifications" :key="index">
                                     <div class="confirm-qual-item" x-text="getQualificationLabel(qual)"></div>
                                 </template>
@@ -675,10 +734,17 @@
                                     <span x-show="canSupportOuting()" class="support-badge support-outing">外出支援可</span>
                                     <span x-show="canSupportHome()" class="support-badge support-home">自宅支援可</span>
                                 </div>
-                            </span></div>
-                            <div class="confirm-row"><span class="confirm-label">対応可能日</span><span class="confirm-value" x-text="(formData.available_days || []).length ? formData.available_days.join('・') : '—'"></span></div>
-                            <div class="confirm-row"><span class="confirm-label">対応可能時間帯</span><span class="confirm-value" x-text="(formData.available_times || []).length ? formData.available_times.join('・') : '—'"></span></div>
-                        </div>
+                                </dd>
+                            </div>
+                            <div class="confirm-row">
+                                <dt class="confirm-label">対応可能日</dt>
+                                <dd class="confirm-value" x-text="(formData.available_days || []).length ? formData.available_days.join('・') : '—'"></dd>
+                            </div>
+                            <div class="confirm-row">
+                                <dt class="confirm-label">対応可能時間帯</dt>
+                                <dd class="confirm-value" x-text="(formData.available_times || []).length ? formData.available_times.join('・') : '—'"></dd>
+                            </div>
+                        </dl>
                     </div>
                 </template>
 

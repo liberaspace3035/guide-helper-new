@@ -428,6 +428,21 @@ html {
   }
 }
 
+// トップ最上部：公式説明（2段落）→ スマホでかんたん → 見出し
+.hero-service-lead {
+  text-align: inherit;
+  margin-bottom: var(--spacing-lg);
+
+  .hero-subtitle {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .hero-subtitle:first-of-type {
+    margin-bottom: 0.75em;
+  }
+}
+
 .hero-actions {
   display: flex;
   flex-direction: column;

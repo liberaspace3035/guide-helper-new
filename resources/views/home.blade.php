@@ -32,14 +32,14 @@
         
         <div class="hero-content">
             <div class="hero-text-area">
+                <div class="hero-service-lead" role="group" aria-label="サービス説明">
+                    <p class="hero-subtitle">One Stepならもっと気軽に、もっと便利に。One Stepは、一般社団法人With Blindが運営する、視覚障害者向けの外出・自宅での生活支援サービスです。同行援護による外出支援に加え、居宅介護による自宅での生活支援も提供しています。</p>
+                    <p class="hero-subtitle">関東・関西を軸に、千葉・東京・神奈川・大阪・京都・神戸などを中心に全国展開を目指しています。</p>
+                </div>
                 <p class="hero-catchphrase">スマホでかんたん</p>
                 <h1 class="hero-main-title">
                     <span class="hero-keyword">同行援護</span>
                 </h1>
-                <p class="hero-subtitle">
-                    One Stepならもっと気軽に、もっと便利に。One Stepは、一般社団法人With Blindが運営する、視覚障害者向けの外出・自宅での生活支援サービスです。同行援護による外出支援に加え、居宅介護による自宅での生活支援も提供しています。
-                    関東・関西を軸に、千葉・東京・神奈川・大阪・京都・神戸などを中心に全国展開を目指しています。
-                </p>
                 @auth
                     <div class="hero-actions">
                         <a href="{{ route('events.index') }}" class="btn-secondary btn-hero-secondary" aria-label="イベントカレンダーへ">

@@ -18,7 +18,8 @@
         @guest
             <div class="form-group">
                 <label for="submitter_email">メールアドレス <span class="required">*</span></label>
-                <input id="submitter_email" name="submitter_email" type="email" value="{{ old('submitter_email') }}" required>
+                <input id="submitter_email" name="submitter_email" type="email" value="{{ old('submitter_email') }}" required aria-describedby="submitter_email-help">
+                <p id="submitter_email-help" style="margin-top: 0.4rem; font-size: 0.9rem; color: #475569;">メール認証を行いますので正確に入力してください。</p>
             </div>
         @endguest
         <div class="form-group">
