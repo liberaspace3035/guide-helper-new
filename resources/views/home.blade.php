@@ -101,28 +101,30 @@
         </div>
     </section>
 
-    @if(isset($publicNotices) && $publicNotices->isNotEmpty())
     <section class="container" style="max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 0;" aria-label="お知らせ">
         <h2 class="section-title" style="margin-bottom: 1rem;">お知らせ</h2>
-        <div class="requests-list" style="display: grid; gap: 0.75rem;">
-            @foreach($publicNotices as $n)
-                <article class="request-card" style="padding: 1rem;">
-                    <p style="font-size: 0.85rem; color: #64748b; margin: 0 0 0.35rem;">
-                        {{ $n->published_at?->format('Y/m/d') }} · {{ $n->getCategoryLabel() }}
-                    </p>
-                    <h3 style="font-size: 1.05rem; margin: 0 0 0.35rem;">{{ $n->title }}</h3>
-                    <p style="margin: 0; white-space: pre-wrap; font-size: 0.95rem;">{{ \Illuminate\Support\Str::limit($n->body, 200) }}</p>
-                    @if($n->detail_url)
-                        <p style="margin: 0.5rem 0 0;"><a href="{{ $n->detail_url }}" target="_blank" rel="noopener noreferrer">詳細リンク</a></p>
-                    @endif
-                </article>
-            @endforeach
-        </div>
+        @if(isset($publicNotices) && $publicNotices->isNotEmpty())
+            <div class="requests-list" style="display: grid; gap: 0.75rem;">
+                @foreach($publicNotices as $n)
+                    <article class="request-card" style="padding: 1rem;">
+                        <p style="font-size: 0.85rem; color: #64748b; margin: 0 0 0.35rem;">
+                            {{ $n->published_at?->format('Y/m/d') }} · {{ $n->getCategoryLabel() }}
+                        </p>
+                        <h3 style="font-size: 1.05rem; margin: 0 0 0.35rem;">{{ $n->title }}</h3>
+                        <p style="margin: 0; white-space: pre-wrap; font-size: 0.95rem;">{{ \Illuminate\Support\Str::limit($n->body, 200) }}</p>
+                        @if($n->detail_url)
+                            <p style="margin: 0.5rem 0 0;"><a href="{{ $n->detail_url }}" target="_blank" rel="noopener noreferrer">詳細リンク</a></p>
+                        @endif
+                    </article>
+                @endforeach
+            </div>
+        @else
+            <p style="margin: 0;">現在、公開中のお知らせはありません。</p>
+        @endif
         <p style="margin-top: 1rem;">
             <a href="{{ route('public-notices.index') }}" class="btn-secondary">お知らせ一覧へ</a>
         </p>
     </section>
-    @endif
 
     <section class="container home-feature-intro" style="max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 0;" aria-label="このページでできること">
         <details class="home-details-card" style="border:1px solid #e2e8f0; border-radius:8px; padding:1rem 1.25rem; background:#fff;">

@@ -61,14 +61,19 @@ class EventController extends Controller
         $calStart = $calendarMonth->copy()->startOfMonth();
         $calEnd = $calendarMonth->copy()->endOfMonth();
         $calendarCounts = [];
+        $calendarFirstEventIds = [];
         foreach (
             Event::published()
                 ->where('start_at', '>=', $calStart)
                 ->where('start_at', '<=', $calEnd)
-                ->get(['start_at']) as $ev
+                ->orderBy('start_at')
+                ->get(['id', 'start_at']) as $ev
         ) {
             $d = $ev->start_at->format('Y-m-d');
             $calendarCounts[$d] = ($calendarCounts[$d] ?? 0) + 1;
+            if (!isset($calendarFirstEventIds[$d])) {
+                $calendarFirstEventIds[$d] = (int) $ev->id;
+            }
         }
 
         $pendingEvents = collect();
@@ -86,6 +91,7 @@ class EventController extends Controller
             'sort' => $sort,
             'calendarMonth' => $calendarMonth,
             'calendarCounts' => $calendarCounts,
+            'calendarFirstEventIds' => $calendarFirstEventIds,
         ]);
     }
 

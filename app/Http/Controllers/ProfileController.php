@@ -51,6 +51,7 @@ class ProfileController extends Controller
         $rules = [
             'name' => 'sometimes|required|string|max:100',
             'phone' => 'nullable|string|max:20',
+            'postal_code' => ['nullable', 'string', 'max:10', 'regex:/^\d{3}-?\d{4}$/'],
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
             'introduction' => ($user->isUser() || $user->isGuide()) ? 'required|string|max:2000' : 'nullable|string',
@@ -69,6 +70,7 @@ class ProfileController extends Controller
             'introduction.required' => $user->isUser()
                 ? '依頼を作成するには、自己PR（自己紹介）の入力が必須です。'
                 : '依頼に応募するには、自己PR（自己紹介）の入力が必須です。',
+            'postal_code.regex' => '郵便番号は「123-4567」または「1234567」の形式で入力してください。',
         ];
         $validated = $request->validate($rules, $messages);
 
@@ -79,6 +81,21 @@ class ProfileController extends Controller
                 'phone' => $validated['phone'] ?? $user->phone,
                 'address' => $validated['address'] ?? $user->address,
             ]);
+        }
+
+        // 郵便番号は本人でも編集可能
+        if (array_key_exists('postal_code', $validated)) {
+            $postalCode = trim((string) $validated['postal_code']);
+            if ($postalCode !== '') {
+                $postalCode = preg_replace('/\D/', '', $postalCode);
+                if (strlen((string) $postalCode) === 7) {
+                    $postalCode = substr($postalCode, 0, 3) . '-' . substr($postalCode, 3);
+                }
+            } else {
+                $postalCode = null;
+            }
+            $user->postal_code = $postalCode;
+            $user->save();
         }
 
         // プロフィール更新

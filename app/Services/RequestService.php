@@ -713,9 +713,6 @@ class RequestService
     {
         $guide = User::with(['guideProfile', 'guideAvailabilitySlots'])->findOrFail($guideId);
         $guideProfile = $guide->guideProfile;
-        $availabilitySlots = $guide->guideAvailabilitySlots;
-        $filterByAvailability = $guideProfile && $guideProfile->filter_requests_by_availability;
-        
         // ガイドの対応範囲を取得
         $availableAreas = [];
         if ($guideProfile) {
@@ -780,8 +777,10 @@ class RequestService
         $canSupportOuting = $guideProfile ? $guideProfile->canSupportOuting() : false;
         $canSupportHome = $guideProfile ? $guideProfile->canSupportHome() : false;
 
-        // 各依頼に応募済み情報を追加。オープン募集は資格・対応エリアで絞らない（どのガイドも応募可能）。
-        $filteredRequests = $requests->filter(function ($request) use ($guideId, $canSupportOuting, $canSupportHome, $filterByAvailability, $availabilitySlots) {
+        // 各依頼に応募済み情報を追加。
+        // オープン募集（指名なし）は「どのガイドでも応募可」を優先し、一覧では対応可能枠で除外しない。
+        // ※対応可能枠フィルタは通知配信側でのみ利用する（閲覧可能性を落とさないため）。
+        $filteredRequests = $requests->filter(function ($request) use ($guideId, $canSupportOuting, $canSupportHome) {
             $isNominated = $request->nominated_guide_id == $guideId;
             $requestType = $request->request_type;
 
@@ -801,15 +800,6 @@ class RequestService
                     return false;
                 }
                 return true;
-            }
-
-            if ($filterByAvailability) {
-                if ($availabilitySlots->isEmpty()) {
-                    return false;
-                }
-                if (!GuideAvailabilityService::requestOverlapsAnySlot($request, $availabilitySlots)) {
-                    return false;
-                }
             }
 
             return true;

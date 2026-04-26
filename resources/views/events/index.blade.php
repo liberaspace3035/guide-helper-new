@@ -95,34 +95,64 @@
 
     <section class="request-card" style="margin-bottom:1.5rem;">
         <h2 style="margin-top:0;">カレンダー（月別件数）</h2>
-        <p style="color:#64748b; font-size:.9rem;">{{ $calendarMonth->format('Y年n月') }}の公開イベント件数です。</p>
+        <p style="color:#64748b; font-size:.9rem;">{{ $calendarMonth->format('Y年n月') }}の公開イベント件数です。イベントがある日付は、日付リンクから詳細に移動できます。</p>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem;">
             <a href="{{ $buildCalUrl(['cal_month' => $prevM]) }}" class="btn-secondary">← 前月</a>
             <strong>{{ $calendarMonth->format('Y年n月') }}</strong>
             <a href="{{ $buildCalUrl(['cal_month' => $nextM]) }}" class="btn-secondary">翌月 →</a>
         </div>
-        <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:2px; font-size:.75rem; text-align:center;">
-            @foreach(['日','月','火','水','木','金','土'] as $w)
-                <div style="font-weight:700; padding:.25rem;">{{ $w }}</div>
-            @endforeach
-            @php
-                $firstDow = (int) $calendarMonth->copy()->startOfMonth()->format('w');
-            @endphp
-            @for($i = 0; $i < $firstDow; $i++)
-                <div></div>
-            @endfor
-            @for($d = 1; $d <= $daysInMonth; $d++)
-                @php
-                    $dateKey = $calendarMonth->format('Y-m') . '-' . str_pad((string)$d, 2, '0', STR_PAD_LEFT);
-                    $cnt = (int) ($calendarCounts[$dateKey] ?? 0);
-                @endphp
-                <div style="border:1px solid #e2e8f0; padding:.35rem .2rem; min-height:2.5rem; background:{{ $cnt ? '#eff6ff' : '#fafafa' }};">
-                    <div>{{ $d }}</div>
-                    @if($cnt)
-                        <div style="font-weight:700; color:#1d4ed8;">{{ $cnt }}</div>
-                    @endif
-                </div>
-            @endfor
+        @php
+            $firstDow = (int) $calendarMonth->copy()->startOfMonth()->format('w');
+            $totalCells = (int) (ceil(($firstDow + $daysInMonth) / 7) * 7);
+        @endphp
+        <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:.82rem;">
+                <caption style="text-align:left; margin-bottom:.5rem; color:#334155;">
+                    {{ $calendarMonth->format('Y年n月') }} 公開イベント月間カレンダー
+                </caption>
+                <thead>
+                    <tr>
+                        @foreach(['日','月','火','水','木','金','土'] as $w)
+                            <th scope="col" style="border:1px solid #e2e8f0; padding:.4rem; background:#f8fafc; font-weight:700;">{{ $w }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @for($cell = 0; $cell < $totalCells; $cell += 7)
+                        <tr>
+                            @for($dow = 0; $dow < 7; $dow++)
+                                @php
+                                    $index = $cell + $dow;
+                                    $day = $index - $firstDow + 1;
+                                @endphp
+                                @if($day < 1 || $day > $daysInMonth)
+                                    <td style="border:1px solid #e2e8f0; padding:.45rem; height:4.1rem; background:#f8fafc;" aria-hidden="true"></td>
+                                @else
+                                    @php
+                                        $dateKey = $calendarMonth->format('Y-m') . '-' . str_pad((string)$day, 2, '0', STR_PAD_LEFT);
+                                        $cnt = (int) ($calendarCounts[$dateKey] ?? 0);
+                                        $eventId = $calendarFirstEventIds[$dateKey] ?? null;
+                                    @endphp
+                                    <td style="border:1px solid #e2e8f0; padding:.45rem; height:4.1rem; vertical-align:top; background:{{ $cnt ? '#eff6ff' : '#fafafa' }};">
+                                        @if($cnt && $eventId)
+                                            <a
+                                                href="{{ route('events.show', $eventId) }}"
+                                                style="display:inline-block; font-weight:700;"
+                                                aria-label="{{ $calendarMonth->format('Y年n月') }}{{ $day }}日のイベント詳細へ（{{ $cnt }}件）"
+                                            >{{ $day }}日</a>
+                                        @else
+                                            <span>{{ $day }}日</span>
+                                        @endif
+                                        <div style="margin-top:.25rem; font-weight:700; color:{{ $cnt ? '#1d4ed8' : '#64748b' }};">
+                                            {{ $cnt }}件
+                                        </div>
+                                    </td>
+                                @endif
+                            @endfor
+                        </tr>
+                    @endfor
+                </tbody>
+            </table>
         </div>
     </section>
 

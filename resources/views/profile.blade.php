@@ -61,6 +61,21 @@
         </div>
 
         <div class="form-group">
+            <label for="postal_code">郵便番号</label>
+            <input
+                type="text"
+                id="postal_code"
+                name="postal_code"
+                x-model="formData.postal_code"
+                value="{{ $user->postal_code }}"
+                inputmode="numeric"
+                maxlength="8"
+                placeholder="例: 123-4567"
+            />
+            <small class="form-help-text">「123-4567」または「1234567」で入力できます。</small>
+        </div>
+
+        <div class="form-group">
             <label for="address">住所
                 @if(!$user->isAdmin())
                     <span class="readonly-label">（表示のみ）</span>
@@ -589,6 +604,7 @@ function profileForm() {
         formData: {
             name: '{{ $user->name }}',
             phone: '{{ $user->phone ?? '' }}',
+            postal_code: '{{ $user->postal_code ?? '' }}',
             address: '{{ $user->address ?? '' }}',
             notes: '{{ $user->userProfile->notes ?? '' }}',
             introduction: '{{ optional($user->userProfile)->introduction ?? optional($user->guideProfile)->introduction ?? '' }}',

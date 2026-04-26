@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\GuideAcceptance;
+use App\Models\Matching;
 use App\Models\PersonalCalendarEntry;
 use App\Services\EventCalendarService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,8 +20,82 @@ class PersonalCalendarController extends Controller
     public function index()
     {
         $entries = PersonalCalendarEntry::where('user_id', Auth::id())->orderBy('start_at')->paginate(30);
+        $guideScheduleItems = collect();
 
-        return view('calendar.personal.index', ['entries' => $entries]);
+        if (Auth::user()?->isGuide()) {
+            $guideId = Auth::id();
+            $today = Carbon::today()->toDateString();
+
+            $acceptedItems = Matching::query()
+                ->where('guide_id', $guideId)
+                ->whereIn('status', ['matched', 'in_progress'])
+                ->whereHas('request', fn ($q) => $q->whereDate('request_date', '>=', $today))
+                ->with('request:id,request_type,prefecture,destination_address,meeting_place,service_content,request_date,start_time,end_time,status')
+                ->orderByDesc('matched_at')
+                ->get()
+                ->map(function (Matching $matching) {
+                    $request = $matching->request;
+                    if (!$request || !$request->request_date) {
+                        return null;
+                    }
+
+                    return [
+                        'kind' => 'accepted',
+                        'title' => ($request->request_type === 'outing' ? '外出' : '自宅') . '支援（承諾済み）',
+                        'status_label' => '承諾済み',
+                        'prefecture' => $request->prefecture,
+                        'place' => $request->destination_address,
+                        'meeting_place' => $request->meeting_place,
+                        'service_content' => $request->service_content,
+                        'request_date' => $request->request_date?->format('Y-m-d'),
+                        'start_time' => $request->start_time,
+                        'end_time' => $request->end_time,
+                    ];
+                })
+                ->filter();
+
+            $pendingItems = GuideAcceptance::query()
+                ->where('guide_id', $guideId)
+                ->where('status', 'pending')
+                ->whereHas('request', fn ($q) => $q->whereDate('request_date', '>=', $today))
+                ->with('request:id,request_type,prefecture,destination_address,meeting_place,service_content,request_date,start_time,end_time,status')
+                ->latest('created_at')
+                ->get()
+                ->map(function (GuideAcceptance $acceptance) {
+                    $request = $acceptance->request;
+                    if (!$request || !$request->request_date) {
+                        return null;
+                    }
+
+                    return [
+                        'kind' => 'pending',
+                        'title' => ($request->request_type === 'outing' ? '外出' : '自宅') . '支援（応募中）',
+                        'status_label' => '応募中',
+                        'prefecture' => $request->prefecture,
+                        'place' => $request->destination_address,
+                        'meeting_place' => $request->meeting_place,
+                        'service_content' => $request->service_content,
+                        'request_date' => $request->request_date?->format('Y-m-d'),
+                        'start_time' => $request->start_time,
+                        'end_time' => $request->end_time,
+                    ];
+                })
+                ->filter();
+
+            $guideScheduleItems = $acceptedItems
+                ->merge($pendingItems)
+                ->sortBy(function (array $item) {
+                    $startTime = $item['start_time'] ?: '00:00:00';
+
+                    return ($item['request_date'] ?? '') . ' ' . $startTime;
+                })
+                ->values();
+        }
+
+        return view('calendar.personal.index', [
+            'entries' => $entries,
+            'guideScheduleItems' => $guideScheduleItems,
+        ]);
     }
 
     public function create(Request $request)
