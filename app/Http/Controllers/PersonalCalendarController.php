@@ -47,7 +47,7 @@ class PersonalCalendarController extends Controller
                         'place' => $request->destination_address,
                         'meeting_place' => $request->meeting_place,
                         'service_content' => $request->service_content,
-                        'request_date' => $request->request_date?->format('Y-m-d'),
+                        'request_date' => $this->formatRequestDate($request->request_date),
                         'start_time' => $request->start_time,
                         'end_time' => $request->end_time,
                     ];
@@ -75,7 +75,7 @@ class PersonalCalendarController extends Controller
                         'place' => $request->destination_address,
                         'meeting_place' => $request->meeting_place,
                         'service_content' => $request->service_content,
-                        'request_date' => $request->request_date?->format('Y-m-d'),
+                        'request_date' => $this->formatRequestDate($request->request_date),
                         'start_time' => $request->start_time,
                         'end_time' => $request->end_time,
                     ];
@@ -161,5 +161,23 @@ class PersonalCalendarController extends Controller
         $entry->delete();
 
         return redirect()->route('calendar.personal.index')->with('success', '予定を削除しました。');
+    }
+
+    private function formatRequestDate(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        try {
+            if ($value instanceof \DateTimeInterface) {
+                return $value->format('Y-m-d');
+            }
+
+            return Carbon::parse((string) $value)->format('Y-m-d');
+        } catch (\Throwable $e) {
+            $raw = (string) $value;
+            return strlen($raw) >= 10 ? substr($raw, 0, 10) : null;
+        }
     }
 }

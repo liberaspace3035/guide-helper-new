@@ -4,7 +4,7 @@
 <div class="container" style="max-width: 960px; margin: 0 auto; padding: 1rem;">
     <h1>対応可能枠（依頼通知・一覧の絞り込み用）</h1>
     <p class="form-help-text" style="margin-bottom:1rem;">
-        プロフィールで「枠に合う依頼のみ通知・一覧表示」をオンにしたとき、ここで登録した日時と重なる依頼だけが通知・依頼一覧に表示されます。指名依頼は従来どおり対象外です。
+        プロフィールで「枠に合う依頼のみ通知・一覧表示」をオンにしたとき、ここで登録した日時と重なる依頼だけが通知・依頼一覧に表示されます。指名依頼は対象外です。
     </p>
     <div style="margin-bottom:1rem; display:flex; gap:.5rem; flex-wrap:wrap;">
         <a href="{{ route('guide.availability.create') }}" class="btn-primary">枠を追加</a>

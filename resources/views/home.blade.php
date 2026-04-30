@@ -38,7 +38,7 @@
                 </div>
                 <p class="hero-catchphrase">スマホでかんたん</p>
                 <h1 class="hero-main-title">
-                    <span class="hero-keyword">同行援護</span>
+                    <span class="hero-keyword">外出・自宅での支援</span>
                 </h1>
                 @auth
                     <div class="hero-actions">

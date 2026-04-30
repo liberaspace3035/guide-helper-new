@@ -56,6 +56,13 @@
                         <p><strong>作成日:</strong> <span x-text="formatDate(request.created_at)"></span></p>
                     </div>
                     <div class="request-actions">
+                        <a
+                            class="btn-secondary"
+                            :href="`{{ route('requests.create') }}?source_request_id=${request.id}`"
+                            aria-label="この依頼内容で再作成"
+                        >
+                            この内容で再作成
+                        </a>
                         <template x-if="matchedGuideMap[request.id]?.matching_id">
                             <a :href="`/chat/${matchedGuideMap[request.id].matching_id}`" class="btn-primary btn-with-icon" aria-label="メッセージを開く">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

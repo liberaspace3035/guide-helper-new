@@ -189,6 +189,7 @@
                                         <p class="proposal-sent-card__status">
                                             <span class="status-badge" :class="p.status === 'accepted' ? 'status-matched' : p.status === 'rejected' ? 'status-cancelled' : 'status-pending'" x-text="p.status === 'pending' ? '待機中' : p.status === 'accepted' ? '承諾済み' : '辞退'"></span>
                                         </p>
+                                        <button type="button" class="btn-secondary btn-sm" @click="reuseProposal(p)">この内容で再提案</button>
                                     </div>
                                 </template>
                             </article>
@@ -478,6 +479,26 @@ function guideRequestsData() {
             } finally {
                 this.proposalSubmitting = false;
             }
+        },
+        reuseProposal(proposal) {
+            if (!proposal || proposal.is_bulk) return;
+            this.proposalForm.proposal_target = 'individual';
+            this.proposalForm.user_id = proposal.user_id ? String(proposal.user_id) : '';
+            this.proposalForm.request_type = proposal.request_type || 'outing';
+            this.proposalForm.prefecture = proposal.prefecture || '';
+            this.proposalForm.destination_address = proposal.destination_address || '';
+            this.proposalForm.meeting_place = proposal.meeting_place || '';
+            this.proposalForm.proposed_date = '';
+            this.proposalForm.start_time = proposal.start_time || '';
+            this.proposalForm.end_time = proposal.end_time || '';
+            this.proposalForm.service_content = proposal.service_content || '';
+            this.proposalForm.message = proposal.message || '';
+            this.ensureProposalRequestTypeByQualification();
+            this.showProposalForm = true;
+            this.$nextTick(() => {
+                const dateInput = document.getElementById('proposal-date');
+                if (dateInput) dateInput.focus();
+            });
         },
         async fetchRequests() {
             try {

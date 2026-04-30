@@ -123,11 +123,15 @@ class EventController extends Controller
             'prefecture' => 'nullable|string|max:20',
             'place' => 'nullable|string|max:255',
             'start_at' => 'required|date|after_or_equal:now',
-            'end_at' => 'nullable|date|after_or_equal:start_at',
+            'end_at' => 'nullable|date|after_or_equal:now|after:start_at',
             'url' => 'nullable|url|max:2048',
             'description' => 'nullable|string|max:5000',
             'submitter_name' => 'nullable|string|max:255',
             'submitter_email' => 'nullable|email|max:255',
+        ], [
+            'start_at.after_or_equal' => '開始日時には過去の日付は登録できません。',
+            'end_at.after_or_equal' => '終了日時には過去の日付は登録できません。',
+            'end_at.after' => '終了日時は開始日時より後を指定してください。',
         ]);
 
         $user = Auth::user();

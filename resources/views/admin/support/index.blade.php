@@ -8,6 +8,11 @@
     @if(session('success'))
         <p role="status" style="padding:0.75rem; background:#ecfdf5; border:1px solid #6ee7b7; border-radius:6px;">{{ session('success') }}</p>
     @endif
+    @if(!empty($supportSetupWarning))
+        <p role="alert" style="padding:0.75rem; background:#fff7ed; border:1px solid #fdba74; border-radius:6px; color:#9a3412;">
+            {{ $supportSetupWarning }}
+        </p>
+    @endif
 
     <section style="margin:2rem 0; padding:1rem; border:1px solid #e2e8f0; border-radius:8px;">
         <h2 style="margin-top:0;">自動返信メールの定型文</h2>

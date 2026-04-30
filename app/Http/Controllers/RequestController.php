@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Event;
 use App\Models\PersonalCalendarEntry;
+use App\Models\Request as UserRequest;
 use App\Services\RequestService;
 use App\Services\UserMonthlyLimitService;
 use App\Services\EventCalendarService;
@@ -65,6 +66,21 @@ class RequestController extends Controller
             $entry = PersonalCalendarEntry::where('user_id', $user->id)->find((int) request('personal_entry_id'));
             if ($entry) {
                 $prefillEvent = $this->eventCalendarService->toPrefillForRequestFromPersonal($entry);
+            }
+        } elseif ($user->isUser() && request()->filled('source_request_id')) {
+            $source = UserRequest::where('user_id', $user->id)->find((int) request('source_request_id'));
+            if ($source) {
+                $split = $this->eventCalendarService->splitPlace($source->prefecture, $source->destination_address);
+                $prefillEvent = [
+                    'request_type' => $source->request_type ?? 'outing',
+                    'prefecture' => $split['prefecture'] ?? ($source->prefecture ?? ''),
+                    'destination_address' => $split['destination_address'] ?? ($source->destination_address ?? ''),
+                    'meeting_place' => $source->meeting_place ?? '',
+                    'service_content' => $source->service_content ?? '',
+                    'request_date' => now()->format('Y-m-d'),
+                    'start_time' => $source->start_time ?? '09:00',
+                    'end_time' => $source->end_time ?? '10:00',
+                ];
             }
         }
 

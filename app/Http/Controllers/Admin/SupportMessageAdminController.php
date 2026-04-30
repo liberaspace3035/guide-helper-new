@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\SupportMessageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class SupportMessageAdminController extends Controller
 {
@@ -17,22 +18,30 @@ class SupportMessageAdminController extends Controller
 
     public function index()
     {
-        $participantIds = SupportMessage::query()->distinct()->pluck('user_id');
-        $participants = User::query()
-            ->whereIn('id', $participantIds)
-            ->orderBy('name')
-            ->get();
+        $supportTableReady = Schema::hasTable('support_messages');
+        $threads = collect();
+        $supportSetupWarning = null;
 
-        $threads = $participants->map(function (User $u) {
-            $last = SupportMessage::query()->where('user_id', $u->id)->orderByDesc('id')->first();
+        if ($supportTableReady) {
+            $participantIds = SupportMessage::query()->distinct()->pluck('user_id');
+            $participants = User::query()
+                ->whereIn('id', $participantIds)
+                ->orderBy('name')
+                ->get();
 
-            return [
-                'user' => $u,
-                'last_message' => $last,
-            ];
-        })->sortByDesc(function ($t) {
-            return $t['last_message']?->created_at?->getTimestamp() ?? 0;
-        })->values();
+            $threads = $participants->map(function (User $u) {
+                $last = SupportMessage::query()->where('user_id', $u->id)->orderByDesc('id')->first();
+
+                return [
+                    'user' => $u,
+                    'last_message' => $last,
+                ];
+            })->sortByDesc(function ($t) {
+                return $t['last_message']?->created_at?->getTimestamp() ?? 0;
+            })->values();
+        } else {
+            $supportSetupWarning = 'サポートメッセージ機能のテーブルが未作成です。`php artisan migrate --force` を実行してください。';
+        }
 
         $allTargets = User::query()
             ->whereIn('role', ['user', 'guide'])
@@ -45,6 +54,7 @@ class SupportMessageAdminController extends Controller
             'allTargets' => $allTargets,
             'autoReplySubject' => $this->supportMessageService->getAutoReplySubject(),
             'autoReplyBody' => $this->supportMessageService->getAutoReplyBodyTemplate(),
+            'supportSetupWarning' => $supportSetupWarning,
         ]);
     }
 

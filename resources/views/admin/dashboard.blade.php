@@ -1299,22 +1299,27 @@
                         </div>
                         <div class="template-form">
                             <div class="form-group">
-                                <label class="form-label">トリガー（送信のきっかけ） <span style="color: var(--error-color);">*</span></label>
-                                <select
-                                    x-model="newTemplate.template_key"
-                                    class="form-control"
-                                    @change="onNewTemplateTriggerChange()"
-                                >
-                                    <option value="">選択してください</option>
-                                    <template x-for="t in emailTemplateTriggers" :key="t.template_key">
-                                        <option
-                                            :value="t.template_key"
-                                            :disabled="t.already_has_template"
-                                            x-text="t.already_has_template ? (t.label + '（登録済み）') : (t.label + ' — ' + t.description)"
-                                        ></option>
+                                <fieldset style="border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem;">
+                                    <legend class="form-label" style="padding: 0 0.25rem;">トリガー（送信のきっかけ） <span style="color: var(--error-color);">*</span></legend>
+                                    <template x-if="emailTemplateTriggers.length === 0">
+                                        <p class="form-text" style="margin-top: 0;">トリガーを読み込み中です...</p>
                                     </template>
-                                </select>
-                                <small class="form-text">送信タイミングをトリガーで選択します。登録済みのトリガーは編集から変更してください。</small>
+                                    <template x-for="t in emailTemplateTriggers" :key="t.template_key">
+                                        <label style="display: block; margin-bottom: 0.5rem; cursor: pointer;" :style="t.already_has_template ? 'opacity:0.6; cursor:not-allowed;' : ''">
+                                            <input
+                                                type="radio"
+                                                name="new_template_trigger"
+                                                :value="t.template_key"
+                                                x-model="newTemplate.template_key"
+                                                @change="onNewTemplateTriggerChange()"
+                                                :disabled="t.already_has_template"
+                                            >
+                                            <span x-text="t.label"></span>
+                                            <span class="form-text" style="display:block; margin-left: 1.5rem;" x-text="t.already_has_template ? '登録済み（既存テンプレートを編集してください）' : (t.description || '送信タイミングを説明文に記載してください')"></span>
+                                        </label>
+                                    </template>
+                                </fieldset>
+                                <small class="form-text">読み上げで選びやすいラジオボタン形式です。登録済みのトリガーは編集から変更してください。</small>
                             </div>
                             <div class="form-group" x-show="newTemplate.template_key">
                                 <label class="form-label">送信先</label>
@@ -1981,7 +1986,7 @@
                                     <strong>備考</strong>
                                     <template x-if="!editingUserProfile">
                                         <div class="modal-display-box" style="min-height: auto;">
-                                            <span x-text="selectedUserProfile.notes"></span>
+                                            <span style="display:block; white-space: pre-line;" x-text="selectedUserProfile.notes"></span>
                                         </div>
                                     </template>
                                     <template x-if="editingUserProfile">
@@ -1999,7 +2004,7 @@
                                     <strong>自己紹介</strong>
                                     <template x-if="!editingUserProfile">
                                         <div class="modal-display-box" style="min-height: auto;">
-                                            <span x-text="selectedUserProfile.introduction"></span>
+                                            <span style="display:block; white-space: pre-line;" x-text="selectedUserProfile.introduction"></span>
                                         </div>
                                     </template>
                                     <template x-if="editingUserProfile">
@@ -2029,6 +2034,40 @@
                                             aria-label="管理者メモ"
                                         ></textarea>
                                     </template>
+                                </div>
+                                <div class="modal-field" x-show="selectedUserProfile.interview_date_1">
+                                    <strong>面談希望日時（第1希望）</strong>
+                                    <span x-text="formatDateTime(selectedUserProfile.interview_date_1)"></span>
+                                </div>
+                                <div class="modal-field" x-show="selectedUserProfile.interview_date_2">
+                                    <strong>面談希望日時（第2希望）</strong>
+                                    <span x-text="formatDateTime(selectedUserProfile.interview_date_2)"></span>
+                                </div>
+                                <div class="modal-field" x-show="selectedUserProfile.interview_date_3">
+                                    <strong>面談希望日時（第3希望）</strong>
+                                    <span x-text="formatDateTime(selectedUserProfile.interview_date_3)"></span>
+                                </div>
+                                <div class="modal-field modal-grid-full" x-show="selectedUserProfile.application_reason">
+                                    <strong>申込理由</strong>
+                                    <div class="modal-display-box" style="min-height: auto;">
+                                        <span style="display:block; white-space: pre-line;" x-text="selectedUserProfile.application_reason"></span>
+                                    </div>
+                                </div>
+                                <div class="modal-field modal-grid-full" x-show="selectedUserProfile.visual_disability_status">
+                                    <strong>視覚障害の状況</strong>
+                                    <div class="modal-display-box" style="min-height: auto;">
+                                        <span style="display:block; white-space: pre-line;" x-text="selectedUserProfile.visual_disability_status"></span>
+                                    </div>
+                                </div>
+                                <div class="modal-field" x-show="selectedUserProfile.disability_support_level">
+                                    <strong>障害支援区分</strong>
+                                    <span x-text="selectedUserProfile.disability_support_level"></span>
+                                </div>
+                                <div class="modal-field modal-grid-full" x-show="selectedUserProfile.daily_life_situation">
+                                    <strong>日常生活の状況</strong>
+                                    <div class="modal-display-box" style="min-height: auto;">
+                                        <span style="display:block; white-space: pre-line;" x-text="selectedUserProfile.daily_life_situation"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2180,7 +2219,7 @@
                                     <strong>自己紹介</strong>
                                     <template x-if="!editingGuideProfile">
                                         <div class="modal-display-box" style="min-height: auto;">
-                                            <span x-text="selectedGuideProfile.introduction"></span>
+                                            <span style="display:block; white-space: pre-line;" x-text="selectedGuideProfile.introduction"></span>
                                         </div>
                                     </template>
                                     <template x-if="editingGuideProfile">
@@ -2268,6 +2307,34 @@
                                             </template>
                                         </div>
                                     </template>
+                                </div>
+                                <div class="modal-field modal-grid-full" x-show="selectedGuideProfile.application_reason">
+                                    <strong>申込理由</strong>
+                                    <div class="modal-display-box" style="min-height: auto;">
+                                        <span style="display:block; white-space: pre-line;" x-text="selectedGuideProfile.application_reason"></span>
+                                    </div>
+                                </div>
+                                <div class="modal-field modal-grid-full" x-show="selectedGuideProfile.goal">
+                                    <strong>活動目標</strong>
+                                    <div class="modal-display-box" style="min-height: auto;">
+                                        <span style="display:block; white-space: pre-line;" x-text="selectedGuideProfile.goal"></span>
+                                    </div>
+                                </div>
+                                <div class="modal-field modal-grid-full" x-show="selectedGuideProfile.preferred_work_hours">
+                                    <strong>希望勤務時間</strong>
+                                    <div class="modal-display-box" style="min-height: auto;">
+                                        <span style="display:block; white-space: pre-line;" x-text="selectedGuideProfile.preferred_work_hours"></span>
+                                    </div>
+                                </div>
+                                <div class="modal-field modal-grid-full" x-show="selectedGuideProfile.qualifications && selectedGuideProfile.qualifications.length > 0">
+                                    <strong>保有資格</strong>
+                                    <div class="modal-display-box" style="min-height: auto;">
+                                        <template x-for="(q, idx) in selectedGuideProfile.qualifications" :key="idx">
+                                            <div>
+                                                <span x-text="typeof q === 'string' ? q : (q.name || '—')"></span>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -499,7 +499,7 @@ class AdminService
     public function getAllUsers(string $sort = 'created_desc', ?string $search = null): array
     {
         $query = User::where('role', 'user')
-            ->with('userProfile:id,user_id,contact_method,notes,recipient_number,admin_comment');
+            ->with('userProfile:id,user_id,contact_method,notes,introduction,recipient_number,admin_comment,interview_date_1,interview_date_2,interview_date_3,application_reason,visual_disability_status,disability_support_level,daily_life_situation');
 
         if ($search !== null && trim($search) !== '') {
             $term = '%' . trim($search) . '%';
@@ -555,6 +555,13 @@ class AdminService
                     'introduction' => $user->userProfile->introduction ?? null,
                     'recipient_number' => $user->userProfile->recipient_number ?? null,
                     'admin_comment' => $user->userProfile->admin_comment ?? null,
+                    'interview_date_1' => $user->userProfile->interview_date_1 ?? null,
+                    'interview_date_2' => $user->userProfile->interview_date_2 ?? null,
+                    'interview_date_3' => $user->userProfile->interview_date_3 ?? null,
+                    'application_reason' => $user->userProfile->application_reason ?? null,
+                    'visual_disability_status' => $user->userProfile->visual_disability_status ?? null,
+                    'disability_support_level' => $user->userProfile->disability_support_level ?? null,
+                    'daily_life_situation' => $user->userProfile->daily_life_situation ?? null,
                 ];
             })
             ->toArray();
@@ -619,7 +626,7 @@ class AdminService
     public function getAllGuides(string $sort = 'created_desc', ?string $search = null): array
     {
         $query = User::where('role', 'guide')
-            ->with('guideProfile:id,user_id,introduction,available_areas,available_days,available_times,employee_number,admin_comment');
+            ->with('guideProfile:id,user_id,introduction,available_areas,available_days,available_times,employee_number,admin_comment,application_reason,goal,qualifications,preferred_work_hours');
 
         if ($search !== null && trim($search) !== '') {
             $term = '%' . trim($search) . '%';
@@ -675,6 +682,10 @@ class AdminService
                     'available_times' => $profile->available_times ?? [],
                     'employee_number' => $profile->employee_number ?? null,
                     'admin_comment' => $profile->admin_comment ?? null,
+                    'application_reason' => $profile->application_reason ?? null,
+                    'goal' => $profile->goal ?? null,
+                    'qualifications' => $profile->qualifications ?? [],
+                    'preferred_work_hours' => $profile->preferred_work_hours ?? null,
                 ];
             })
             ->toArray();
